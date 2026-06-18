@@ -1,0 +1,17 @@
+# Docker 环境配置（由 docker-compose 激活）
+spring:
+  datasource:
+    url: jdbc:mysql://mysql:3306/learn_space?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: learnuser
+    password: learnpass123
+
+dify:
+  base-url: http://host.docker.internal:8090/v1
+  recommend-api-key: ${DIFY_RECOMMEND_API_KEY:}
+  recommend-app-mode: workflow
+  interactive-api-key: ${DIFY_INTERACTIVE_API_KEY:}
+  interactive-app-mode: workflow
+
+learn-space:
+  activity:
+    html-output-dir: /app/lesson-generated

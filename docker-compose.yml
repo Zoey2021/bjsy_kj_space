@@ -1,0 +1,59 @@
+# 【需修改】数据库密码等敏感信息，生产环境请修改
+# name：固定 Compose 项目名。父目录为中文时 Docker 无法自动生成项目名，会报 project name must not be empty
+name: learn-space
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: learn-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123
+      MYSQL_DATABASE: learn_space
+      MYSQL_USER: learnuser
+      MYSQL_PASSWORD: learnpass123
+    # 本机若已安装 MySQL（Navicat 常用 3306），此处改为 3307:3306 避免端口冲突
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: learn-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DIFY_RECOMMEND_API_KEY: ${DIFY_RECOMMEND_API_KEY:-}
+      DIFY_INTERACTIVE_API_KEY: ${DIFY_INTERACTIVE_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - lesson_generated:/app/lesson-generated
+
+  frontend:
+    build: ./frontend
+    container_name: learn-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    volumes:
+      - lesson_generated:/usr/share/nginx/html/lessons/generated
+      # 教材 PDF 挂载本地目录，更新文件后无需重建镜像（文件须 chmod 644）
+      - ./frontend/public/textbooks:/usr/share/nginx/html/textbooks:ro
+      - ./frontend/public/pdfjs:/usr/share/nginx/html/pdfjs:ro
+
+volumes:
+  mysql_data:
+  lesson_generated:

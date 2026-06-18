@@ -1,0 +1,44 @@
+# 【需修改】数据库连接信息
+server:
+  port: 8080
+
+spring:
+  application:
+    name: learn-space
+  datasource:
+    # characterEncoding 必须用 UTF-8（Java 8 不认识 utf8mb4 这个 Charset 名）；库表仍用 utf8mb4 即可
+    url: jdbc:mysql://localhost:3306/learn_space?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: Yubao0116
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 5
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+# 【需修改】JWT密钥，生产环境请换成复杂随机字符串
+jwt:
+  secret: LearnSpaceSecretKey2024ForSchoolITCoursePlatformMustBeLongEnough
+  expiration: 86400000
+
+logging:
+  level:
+    com.itech.learnspace: info
+
+# Dify【活动推荐】对接（API Key 在 Dify 应用「访问 API」中复制）
+dify:
+  base-url: http://localhost:8090/v1
+  recommend-api-key: ${DIFY_RECOMMEND_API_KEY:}
+  recommend-app-mode: workflow
+  interactive-api-key: ${DIFY_INTERACTIVE_API_KEY:}
+  interactive-app-mode: workflow

@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>算法与问题解决 — 探究活动</title>
+<style>
+:root {
+  --p: #264653; --s: #2A9D8F; --a: #E9C46A; --l: #F4A261; --coral: #E76F51;
+  --bg: #F7F6F2; --card: #FFF; --bd: #E0E0E0; --tx: #333; --tx2: #666;
+  --sh: 0 2px 12px rgba(0,0,0,0.08); --sh2: 0 4px 24px rgba(0,0,0,0.12);
+  --r: 12px; --rs: 8px; --tr: 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC","Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+
+/* Header */
+.header{background:linear-gradient(135deg,var(--p),#1a3a45);color:#FFF;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh2);z-index:100;position:relative}
+.header-left{display:flex;align-items:center;gap:14px}
+.header-icon{width:42px;height:42px;background:var(--a);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.header h1{font-size:20px;font-weight:700;letter-spacing:.5px}
+.header-sub{font-size:11px;opacity:.75;margin-top:2px}
+.btn-reset{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#FFF;padding:7px 16px;border-radius:var(--rs);cursor:pointer;font-size:13px;transition:var(--tr);font-family:inherit}
+.btn-reset:hover{background:rgba(255,255,255,.22)}
+
+/* Step Nav */
+.step-nav{display:flex;background:var(--card);border-bottom:1px solid var(--bd);padding:0 32px;position:sticky;top:0;z-index:99;box-shadow:0 1px 4px rgba(0,0,0,.04);gap:4px}
+.step-tab{padding:14px 24px;cursor:pointer;font-size:14px;font-weight:600;color:var(--tx2);border-bottom:3px solid transparent;transition:var(--tr);display:flex;align-items:center;gap:8px;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none}
+.step-tab:hover{color:var(--s);background:rgba(42,157,143,.04)}
+.step-tab.active{color:var(--p);border-bottom-color:var(--s)}
+.step-tab .step-num{width:26px;height:26px;border-radius:50%;background:var(--bd);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--tx2);transition:var(--tr)}
+.step-tab.active .step-num{background:var(--s);color:#FFF}
+.step-tab.done .step-num{background:var(--s);color:#FFF}
+.step-tab .done-icon{display:none}
+.step-tab.done .done-icon{display:inline}
+.step-tab.done .num-txt{display:none}
+
+/* Main */
+.main{padding:20px 32px;max-width:1440px;margin:0 auto}
+.step-panel{display:none}
+.step-panel.active{display:block;animation:fadeIn .35s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== STEP 1: Flowchart Builder ===== */
+.fc-layout{display:flex;gap:16px;height:calc(100vh - 200px);min-height:540px}
+/* Left info panel — 题目 + Logo */
+.fc-info-panel{width:270px;min-width:270px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.fc-info-title{font-size:15px;font-weight:700;color:var(--p);display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:2px solid rgba(42,157,143,.2)}
+.fc-info-desc{font-size:13px;color:var(--tx);line-height:1.75}
+.fc-logos{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.fc-logo-item{background:#F8F9FA;border:1.5px solid var(--bd);border-radius:var(--rs);padding:10px;text-align:center}
+.fc-logo-item img{max-width:100%;height:auto;border-radius:6px;margin-bottom:6px}
+.fc-logo-label{font-size:13px;font-weight:700;color:var(--s)}
+.fc-logo-sub{font-size:11px;color:var(--tx2);margin-top:2px}
+
+/* Right workspace — 素材面板 + 工具栏 + 画布 */
+.fc-workspace{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.fc-palette-bar{display:flex;gap:8px;padding:10px 14px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);flex-wrap:wrap;align-items:center}
+.fc-palette-bar .pal-label{font-size:12px;font-weight:700;color:var(--tx2);margin-right:4px}
+.fc-sidebar{width:180px;min-width:180px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px;display:flex;flex-direction:column;gap:10px}
+.fc-sidebar h3{font-size:13px;color:var(--tx2);text-align:center;padding-bottom:8px;border-bottom:1px solid var(--bd);margin-bottom:2px}
+.pal-item{padding:10px 8px;border:2px dashed var(--bd);border-radius:var(--rs);cursor:grab;text-align:center;font-size:12px;font-weight:600;transition:var(--tr);user-select:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+.pal-item:hover{border-color:var(--s);background:rgba(42,157,143,.04);transform:translateY(-2px);box-shadow:var(--sh)}
+.pal-item:active{cursor:grabbing}
+.pal-item .pal-shape{pointer-events:none}
+.pal-preview-s{width:70px;height:28px;border-radius:14px;background:var(--p)}
+.pal-preview-p{width:80px;height:30px;border-radius:6px;background:#E8F4F2;border:2px solid var(--s)}
+.pal-preview-d{width:44px;height:44px;background:#FEF9E7;border:2px solid var(--a);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+
+.fc-main{flex:1;display:flex;flex-direction:column;gap:10px}
+.fc-toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.fc-toolbar button{padding:7px 16px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--card);cursor:pointer;font-size:12px;font-family:inherit;font-weight:500;transition:var(--tr);display:flex;align-items:center;gap:5px}
+.fc-toolbar button:hover{border-color:var(--s);color:var(--s)}
+.fc-toolbar .active-mode{background:var(--s);color:#FFF;border-color:var(--s)}
+.fc-toolbar .btn-danger:hover{border-color:var(--coral);color:var(--coral)}
+.mode-hint{font-size:11px;color:var(--tx2);padding:7px 0;margin-left:auto}
+.mode-hint .mh-connect{color:var(--l);font-weight:600}
+.mode-hint .mh-move{color:var(--s);font-weight:600}
+
+.fc-canvas-wrap{flex:1;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;position:relative}
+.fc-canvas{width:100%;height:100%;position:relative;background-image:radial-gradient(circle,#ddd 1px,transparent 1px);background-size:20px 20px;overflow:auto}
+
+/* Task card (Step 1) — inside left panel */
+.fc-task-card{background:linear-gradient(135deg,#E8F4F2,#F0FAF8);border:1.5px solid rgba(42,157,143,.3);border-radius:var(--r);padding:14px 16px;box-shadow:0 1px 6px rgba(42,157,143,.1)}
+.fc-task-title{font-size:14px;font-weight:700;color:var(--p);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.fc-task-body{display:flex;flex-direction:column;gap:10px}
+.fc-task-desc{font-size:12.5px;color:var(--tx);line-height:1.7}
+.fc-task-steps{display:flex;flex-direction:column;gap:5px}
+.fc-step{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--tx2);line-height:1.5}
+.fc-step-num{width:22px;height:22px;border-radius:50%;background:var(--s);color:#FFF;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.fc-task-tip{width:100%;margin-top:8px;padding:8px 12px;background:rgba(233,196,106,.18);border:1px solid rgba(233,196,106,.35);border-radius:var(--rs);font-size:12.5px;color:#8B6E00;line-height:1.5}
+.fc-canvas-inner{position:relative;width:1100px;height:850px}
+.fc-conn-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}
+
+/* Nodes */
+.fc-node{position:absolute;cursor:move;user-select:none;z-index:10;transition:box-shadow .15s}
+.fc-node:hover{z-index:20}
+.fc-node.dragging{z-index:30;opacity:.85}
+.fc-node .n-body{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:600;line-height:1.25;transition:var(--tr)}
+.fc-node .n-text{position:relative;z-index:2;padding:4px 8px;word-break:break-word;pointer-events:none}
+/* Types */
+.fc-node.type-start .n-body,.fc-node.type-end .n-body{width:125px;height:46px;border-radius:23px;background:var(--p);color:#FFF}
+.fc-node.type-start .n-text,.fc-node.type-end .n-text{color:#FFF}
+.fc-node.type-process .n-body{width:150px;height:52px;border-radius:8px;background:#E8F4F2;border:2px solid var(--s);color:var(--p)}
+.fc-node.type-process .n-text{color:var(--p)}
+.fc-node.type-decision .n-body{width:120px;height:80px;background:#FEF9E7;border:2px solid var(--a);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);color:var(--p)}
+.fc-node.type-decision .n-text{color:var(--p)}
+
+/* Ports */
+.port{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--card);border:2px solid var(--s);z-index:40;cursor:crosshair;transition:var(--tr);opacity:0}
+.fc-node:hover .port,.fc-node .port.port-active{opacity:1}
+.port:hover,.port.port-active{background:var(--a);border-color:var(--a);transform:scale(1.4)}
+.port-in{top:-6px;left:50%;transform:translateX(-50%)}
+.port-in:hover,.port-in.port-active{transform:translateX(-50%) scale(1.4)}
+.port-out{left:50%;transform:translateX(-50%)}
+.port-out:hover,.port-out.port-active{transform:translateX(-50%) scale(1.4)}
+.node-start .port-out,.node-end .port-out,.node-process .port-out{bottom:-6px}
+.node-decision .port-out-yes{bottom:-6px;left:28%}
+.node-decision .port-out-no{bottom:-6px;left:72%}
+.pl-yes,.pl-no{position:absolute;font-size:10px;font-weight:700;color:var(--s);pointer-events:none;z-index:41}
+.pl-yes{bottom:-20px;left:28%;transform:translateX(-50%)}
+.pl-no{bottom:-20px;left:72%;transform:translateX(-50%)}
+/* Delete btn */
+.n-del{position:absolute;top:-10px;right:-10px;width:20px;height:20px;border-radius:50%;background:var(--coral);color:#FFF;border:none;cursor:pointer;font-size:11px;display:none;align-items:center;justify-content:center;z-index:50;line-height:1}
+.fc-node:hover .n-del{display:flex}
+
+/* Ghost */
+.ghost-elem{position:fixed;pointer-events:none;z-index:9999;opacity:.7;transform:translate(-50%,-50%)}
+
+/* Toast */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--p);color:#FFF;padding:12px 24px;border-radius:24px;font-size:14px;z-index:999;box-shadow:var(--sh2);animation:toastIn .35s ease;font-family:inherit}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ===== STEP 2 & 3: Code Activities ===== */
+.code-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;min-height:480px}
+.code-panel{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:22px;display:flex;flex-direction:column}
+.code-panel h3{font-size:15px;color:var(--p);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.code-panel h3 .cp-badge{font-size:11px;background:var(--s);color:#FFF;padding:2px 10px;border-radius:12px;font-weight:400}
+
+/* Code Editor (Python-style) */
+.code-editor{flex:1;background:#1E1E2E;border-radius:var(--rs);padding:18px 12px;font-family:"SF Mono","Fira Code","Consolas","Courier New",monospace;font-size:14px;line-height:1.85;color:#CDD6F4;overflow:auto;position:relative}
+.code-editor{counter-reset:line}
+.code-line{display:block;padding:0 8px;border-radius:3px;white-space:pre;font-family:inherit;font-size:inherit}
+.code-line:hover{background:rgba(255,255,255,.03)}
+/* Syntax colors */
+.code-editor .kw{color:#CBA6F7;font-weight:600}
+.code-editor .st{color:#A6E3A1}
+.code-editor .cm{color:#6C7086;font-style:italic}
+.code-editor .nu{color:#FAB387}
+.code-editor .fn{color:#89B4FA}
+.code-editor .op{color:#89DCEB}
+.code-editor .n{color:#CDD6F4}
+/* PEP8 Indent — 4 spaces per level */
+.indent-1{padding-left:44px !important}
+.indent-2{padding-left:80px !important}
+/* Line numbers */
+.code-line::before{counter-increment:line;content:counter(line);display:inline-block;width:38px;min-width:38px;text-align:right;padding-right:16px;color:#585B70;font-size:12px;user-select:none;vertical-align:baseline}
+/* Inline code input */
+.code-input{display:inline-block;min-width:44px;height:24px;background:#313244;border:2px solid var(--a);border-radius:4px;color:var(--a);font-family:inherit;font-size:13px;text-align:center;padding:0 6px;outline:none;transition:var(--tr);vertical-align:baseline;margin:0 2px}
+.code-input:focus{border-color:var(--s);background:#45475A;box-shadow:0 0 0 3px rgba(42,157,143,.2);color:#CDD6F4}
+.code-input::placeholder{color:#585B70;font-size:11px;font-style:italic}
+.code-input.ok{border-color:var(--s);background:rgba(42,157,143,.15);color:#A6E3A1}
+.code-input.err{border-color:var(--coral);background:rgba(231,111,81,.15);color:#F38BA8}
+
+.code-acts{margin-top:14px;display:flex;gap:10px;align-items:center}
+.btn-run{padding:9px 24px;background:var(--s);color:#FFF;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;transition:var(--tr);font-family:inherit;display:flex;align-items:center;gap:6px}
+.btn-run:hover{background:#238B7E;transform:translateY(-1px);box-shadow:var(--sh)}
+.btn-hint{padding:9px 18px;background:var(--card);color:var(--s);border:1px solid var(--s);border-radius:var(--rs);font-size:13px;cursor:pointer;font-family:inherit;transition:var(--tr)}
+.btn-hint:hover{background:rgba(42,157,143,.06)}
+
+.result-panel{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:22px;display:flex;flex-direction:column}
+.result-panel h3{font-size:15px;color:var(--p);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.result-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--tx2);gap:10px;font-size:14px}
+.result-empty .re-icon{font-size:42px;opacity:.45}
+.result-content{flex:1;display:none;flex-direction:column;gap:14px}
+.result-content.show{display:flex}
+
+.vote-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#F5F5F5;border-radius:var(--rs);padding:10px 14px;font-size:13px}
+.v-chip{padding:3px 10px;border-radius:16px;font-weight:600;font-size:12px}
+.v-chip.a{background:#E8F4F2;color:var(--s)}
+.v-chip.b{background:#FEF9E7;color:#B8860B}
+.v-chip.c{background:#FDE8E8;color:var(--coral)}
+
+.trace-table{width:100%;border-collapse:collapse;font-size:13px}
+.trace-table th{background:var(--p);color:#FFF;padding:8px 12px;text-align:center;font-weight:500;font-size:12px}
+.trace-table th:first-child{border-radius:var(--rs) 0 0 0}
+.trace-table th:last-child{border-radius:0 var(--rs) 0 0}
+.trace-table td{padding:7px 12px;text-align:center;border-bottom:1px solid var(--bd);font-family:"SF Mono","Consolas",monospace;font-size:13px}
+.trace-table tr:nth-child(even) td{background:#FAFAFA}
+.trace-table tr:last-child td{font-weight:700;background:#E8F4F2;border-bottom:none}
+
+.result-msg{padding:14px 16px;border-radius:var(--rs);font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.result-msg.success{background:#E8F4F2;color:var(--s);border:1px solid rgba(42,157,143,.3)}
+.result-msg.fail{background:#FDE8E8;color:var(--coral);border:1px solid rgba(231,111,81,.3)}
+
+/* Responsive */
+@media(max-width:1000px){
+  .fc-layout{flex-direction:column;height:auto}
+  .fc-info-panel{width:100%;min-width:auto;max-height:none}
+  .fc-logos{flex-direction:row}
+  .fc-logo-item{flex:1;min-width:140px}
+  .fc-palette-bar{flex-direction:column;align-items:stretch}
+  .fc-palette-bar .pal-item{flex:1;min-width:70px;padding:8px 4px;font-size:11px}
+  .fc-canvas-wrap{height:450px}
+  .code-layout{grid-template-columns:1fr}
+}
+body.embedded-mode { background: #fff; }
+body.embedded-mode .main { padding: 12px 16px; max-width: none; }
+body.embedded-mode .fc-layout { height: calc(100vh - 32px); min-height: 480px; }
+body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">🧮</div>
+    <div>
+      <h1>算法与问题解决</h1>
+      <div class="header-sub">探究活动 · 同桌协作</div>
+    </div>
+  </div>
+  <button class="btn-reset" onclick="resetAll()">🔄 全部重置</button>
+</div>
+
+<!-- Step Nav -->
+<div class="step-nav" id="stepNav">
+  <button class="step-tab active" data-step="1">
+    <span class="step-num"><span class="num-txt">1</span><span class="done-icon">✓</span></span>
+    探究一：绘制流程图
+  </button>
+  <button class="step-tab" data-step="2">
+    <span class="step-num"><span class="num-txt">2</span><span class="done-icon">✓</span></span>
+    探究二：验证算法
+  </button>
+  <button class="step-tab" data-step="3">
+    <span class="step-num"><span class="num-txt">3</span><span class="done-icon">✓</span></span>
+    探究三：拓展任务
+  </button>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+
+<!-- ==================== STEP 1: Flowchart Builder ==================== -->
+<div class="step-panel active" id="panel1">
+<div class="fc-layout">
+  <!-- 左侧：题目 + Logo展示 -->
+  <div class="fc-info-panel">
+    <div class="fc-info-title">📋 探究活动一：绘制流程图</div>
+
+    <!-- Logo候选展示 -->
+    <div class="fc-logos">
+      <div class="fc-logo-item">
+        <img src="logo_a.jpg" alt="Logo方案A" onerror="this.style.display='none';this.nextSibling.style.display='block'">
+        <span style="display:none;color:var(--coral);font-size:11px">图片加载中...</span>
+        <div class="fc-logo-label">方案 A</div>
+        <div class="logo-sub">科技感 · 六边形设计</div>
+      </div>
+      <div class="fc-logo-item">
+        <img src="logo_b.jpg" alt="Logo方案B" onerror="this.style.display='none';this.nextSibling.style.display='block'">
+        <span style="display:none;color:var(--coral);font-size:11px">图片加载中...</span>
+        <div class="fc-logo-label">方案 B</div>
+        <div class="logo-sub">书香风 · 知识之窗</div>
+      </div>
+    </div>
+
+    <!-- 任务说明 -->
+    <div class="fc-task-card">
+      <div class="fc-task-desc">
+        学校信息中心要从以上两个候选 logo 中选出一个最合适的方案，邀请了<b>1000名师生</b>参与投票（投 A 或 B）。请拖动右侧图块到画布上，用流程图表示计算机统计投票结果的完整过程。
+      </div>
+    </div>
+
+    <!-- 操作步骤 -->
+    <div class="fc-task-steps">
+      <div class="fc-step"><span class="fc-step-num">1</span>从上方拖动「开始/结束」「处理步骤」「条件判断」到画布</div>
+      <div class="fc-step"><span class="fc-step-num">2</span><b>移动模式</b>下双击图块修改文字</div>
+      <div class="fc-step"><span class="fc-step-num">3</span>切换<b>连线模式</b>，点击端口完成连线</div>
+      <div class="fc-step"><span class="fc-step-num">4</span>点击「✅ 检查流程图」验证完整性</div>
+    </div>
+
+    <div class="fc-task-tip">💡 不知道怎么画？先点「📋 加载模板」观察结构，再清空自己画！</div>
+  </div>
+
+  <!-- 右侧：素材面板 + 工具栏 + 画布 -->
+  <div class="fc-workspace">
+    <!-- 素材面板（横向） -->
+    <div class="fc-palette-bar">
+      <span class="pal-label">📦 拖动到画布：</span>
+      <div class="pal-item" draggable="true" data-type="start">
+        <div class="pal-shape pal-preview-s"></div>
+        <span>开始/结束</span>
+      </div>
+      <div class="pal-item" draggable="true" data-type="process">
+        <div class="pal-shape pal-preview-p"></div>
+        <span>处理步骤</span>
+      </div>
+      <div class="pal-item" draggable="true" data-type="decision">
+        <div class="pal-shape pal-preview-d"></div>
+        <span>条件判断</span>
+      </div>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="fc-toolbar">
+      <button id="btnMove" class="active-mode" onclick="setMode('move')">✋ 移动模式</button>
+      <button id="btnConnect" onclick="setMode('connect')">🔗 连线模式</button>
+      <button onclick="loadTemplate()">📋 加载模板</button>
+      <button class="btn-danger" onclick="clearCanvas()">🗑️ 清空画布</button>
+      <button onclick="checkFlowchart()">✅ 检查流程图</button>
+      <span class="mode-hint" id="modeHint">当前：<span class="mh-move">移动模式</span> — 拖动图块调整位置</span>
+    </div>
+    <div class="fc-canvas-wrap" id="canvasWrap">
+      <div class="fc-canvas" id="canvas">
+        <div class="fc-canvas-inner" id="canvasInner">
+          <svg class="fc-conn-svg" id="connSvg"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== STEP 2: Algorithm Verification ==================== -->
+<div class="step-panel" id="panel2">
+<div class="code-layout">
+  <div class="code-panel">
+    <h3>📝 补全代码 <span class="cp-badge">两候选人</span></h3>
+    <div class="code-editor" id="codeBox2">
+<!-- 代码行 -->
+<div class="code-line"><span class="cm"># 初始化票数</span></div>
+<div class="code-line"><span class="n">a</span> <span class="op"> = </span><input class="code-input" id="b2_1" placeholder="?"></div>
+<div class="code-line"><span class="n">b</span> <span class="op"> = </span><input class="code-input" id="b2_2" placeholder="?"></div>
+<div class="code-line"></div>
+<div class="code-line"><span class="cm"># 模拟投票数据</span></div>
+<div class="code-line"><span class="n">votes</span> <span class="op"> = </span>[<span class="st">"a"</span><span class="op">, </span><span class="st">"b"</span><span class="op">, </span><span class="st">"a"</span><span class="op">, </span><span class="st">"a"</span><span class="op">, </span><span class="st">"b"</span><span class="op">, </span><span class="st">"b"</span><span class="op">, </span><span class="st">"a"</span>]</div>
+<div class="code-line"></div>
+<div class="code-line"><span class="kw">for</span> <span class="n">tp</span> <span class="kw">in</span> <span class="n">votes</span><span class="op">:</span></div>
+<div class="code-line indent-1"><span class="kw">if</span> <span class="n">tp</span> <span class="op"> == </span><input class="code-input" id="b2_3" placeholder="?"><span class="op">:</span></div>
+<div class="code-line indent-2"><span class="n">a</span> <span class="op"> = </span><span class="n">a</span> <span class="op"> + </span><span class="nu">1</span></div>
+<div class="code-line indent-1"><span class="kw">if</span> <span class="n">tp</span> <span class="op"> == </span><span class="st">"b"</span><span class="op">:</span></div>
+<div class="code-line indent-2"><span class="n">b</span> <span class="op"> = </span><input class="code-input" id="b2_4" placeholder="?"></div>
+<div class="code-line"></div>
+<div class="code-line"><span class="fn">print</span><span class="op">(</span><span class="st">"A得票:"</span><span class="op">, </span><span class="n">a</span><span class="op">)</span></div>
+<div class="code-line"><span class="fn">print</span><span class="op">(</span><span class="st">"B得票:"</span><span class="op">, </span><span class="n">b</span><span class="op">)</span></div>
+    </div>
+    <div class="code-acts">
+      <button class="btn-run" onclick="runCode(2)">▶ 运行验证</button>
+      <button class="btn-hint" onclick="showHint(2)">💡 给点提示</button>
+    </div>
+  </div>
+  <div class="result-panel" id="resultPanel2">
+    <h3>📊 运行结果</h3>
+    <div class="result-empty" id="resultEmpty2">
+      <div class="re-icon">🔍</div>
+      <div>填写代码中的空白，点击「运行验证」</div>
+      <div style="font-size:12px;color:var(--tx2)">提示：补全4个空白处</div>
+    </div>
+    <div class="result-content" id="resultContent2"></div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== STEP 3: Extended Task ==================== -->
+<div class="step-panel" id="panel3">
+<div class="code-layout">
+  <div class="code-panel">
+    <h3>🚀 修改算法 <span class="cp-badge" style="background:var(--l);color:var(--p)">三候选人</span></h3>
+    <div class="code-editor" id="codeBox3">
+<!-- 代码行 -->
+<div class="code-line"><span class="cm"># 初始化票数 — 请补全</span></div>
+<div class="code-line"><span class="n">a</span> <span class="op"> = </span><input class="code-input" id="b3_1" placeholder="?"></div>
+<div class="code-line"><span class="n">b</span> <span class="op"> = </span><input class="code-input" id="b3_2" placeholder="?"></div>
+<div class="code-line"><span class="n">c</span> <span class="op"> = </span><input class="code-input" id="b3_3" placeholder="?"></div>
+<div class="code-line"></div>
+<div class="code-line"><span class="cm"># 模拟投票数据（有三个候选人了！）</span></div>
+<div class="code-line"><span class="n">votes</span> <span class="op"> = </span>[<span class="st">"a"</span><span class="op">, </span><span class="st">"c"</span><span class="op">, </span><span class="st">"b"</span><span class="op">, </span><span class="st">"a"</span><span class="op">, </span><span class="st">"c"</span><span class="op">, </span><span class="st">"a"</span><span class="op">, </span><span class="st">"c"</span>]</div>
+<div class="code-line"></div>
+<div class="code-line"><span class="kw">for</span> <span class="n">tp</span> <span class="kw">in</span> <span class="n">votes</span><span class="op">:</span></div>
+<div class="code-line indent-1"><span class="kw">if</span> <span class="n">tp</span> <span class="op"> == </span><span class="st">"a"</span><span class="op">:</span></div>
+<div class="code-line indent-2"><span class="n">a</span> <span class="op"> = </span><span class="n">a</span> <span class="op"> + </span><span class="nu">1</span></div>
+<div class="code-line indent-1"><span class="kw">if</span> <span class="n">tp</span> <span class="op"> == </span><span class="st">"b"</span><span class="op">:</span></div>
+<div class="code-line indent-2"><span class="n">b</span> <span class="op"> = </span><span class="n">b</span> <span class="op"> + </span><span class="nu">1</span></div>
+<div class="code-line indent-1"><span class="kw">if</span> <span class="n">tp</span> <span class="op"> == </span><input class="code-input" id="b3_4" placeholder="?"><span class="op">:</span></div>
+<div class="code-line indent-2"><span class="n">c</span> <span class="op"> = </span><input class="code-input" id="b3_5" placeholder="?"></div>
+<div class="code-line"></div>
+<div class="code-line"><span class="fn">print</span><span class="op">(</span><span class="st">"A得票:"</span><span class="op">, </span><span class="n">a</span><span class="op">)</span></div>
+<div class="code-line"><span class="fn">print</span><span class="op">(</span><span class="st">"B得票:"</span><span class="op">, </span><span class="n">b</span><span class="op">)</span></div>
+<div class="code-line"><span class="fn">print</span><span class="op">(</span><span class="st">"C得票:"</span><span class="op">, </span><span class="n">c</span><span class="op">)</span></div>
+    </div>
+    <div class="code-acts">
+      <button class="btn-run" onclick="runCode(3)">▶ 运行验证</button>
+      <button class="btn-hint" onclick="showHint(3)">💡 给点提示</button>
+    </div>
+  </div>
+  <div class="result-panel" id="resultPanel3">
+    <h3>📊 运行结果</h3>
+    <div class="result-empty" id="resultEmpty3">
+      <div class="re-icon">🚀</div>
+      <div>从两候选人到三候选人，算法怎么改？</div>
+      <div style="font-size:12px;color:var(--tx2)">想想：需要增加什么变量？判断条件怎么变？</div>
+    </div>
+    <div class="result-content" id="resultContent3"></div>
+  </div>
+</div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ==================== GLOBAL STATE ====================
+let currentStep = 1;
+let fcMode = 'move'; // 'move' | 'connect'
+let nodes = [];
+let connections = [];
+let nextId = 1;
+let connectSource = null; // {nodeId, port}
+let dragTarget = null;
+let dragOffset = {x:0, y:0};
+let ghostEl = null;
+
+// ==================== STEP NAVIGATION ====================
+document.querySelectorAll('.step-tab').forEach(tab => {
+  tab.addEventListener('click', () => switchStep(parseInt(tab.dataset.step)));
+});
+
+function switchStep(step) {
+  currentStep = step;
+  document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.step-tab[data-step="${step}"]`).classList.add('active');
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel${step}`).classList.add('active');
+  if (step === 1) setTimeout(redrawConnections, 100);
+}
+
+function markStepDone(step) {
+  const tab = document.querySelector(`.step-tab[data-step="${step}"]`);
+  if (tab) tab.classList.add('done');
+  notifyLearnSpaceComplete(step);
+}
+
+const learnSpaceNotifiedSteps = new Set();
+function notifyLearnSpaceComplete(step) {
+  if (!window.parent || window.parent === window) return;
+  if (learnSpaceNotifiedSteps.has(step)) return;
+  learnSpaceNotifiedSteps.add(step);
+  const params = new URLSearchParams(location.search);
+  const idx = parseInt(params.get('activityIndex') || params.get('step') || String(step), 10);
+  window.parent.postMessage({
+    type: 'LEARN_SPACE_SUBMIT',
+    payload: {
+      activityIndex: Number.isFinite(idx) ? idx : step,
+      step,
+      stepCompleted: true,
+      source: 'g6-lesson1'
+    }
+  }, '*');
+}
+
+// ==================== TOAST ====================
+function showToast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; }, 2000);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ==================== STEP 1: FLOWCHART ENGINE ====================
+function setMode(mode) {
+  fcMode = mode;
+  document.getElementById('btnMove').classList.toggle('active-mode', mode === 'move');
+  document.getElementById('btnConnect').classList.toggle('active-mode', mode === 'connect');
+  const hint = document.getElementById('modeHint');
+  if (mode === 'move') hint.innerHTML = '当前：<span class="mh-move">移动模式</span> — 拖动图块调整位置';
+  else hint.innerHTML = '当前：<span class="mh-connect">连线模式</span> — 点击起点端口，再点击终点端口';
+  connectSource = null;
+  document.querySelectorAll('.port-active').forEach(p => p.classList.remove('port-active'));
+}
+
+function getNodeEl(id) { return document.getElementById('node-' + id); }
+
+function getPortPos(nodeId, portType) {
+  const el = getNodeEl(nodeId);
+  if (!el) return {x:0, y:0};
+  const inner = document.getElementById('canvasInner');
+  const ir = inner.getBoundingClientRect();
+  const er = el.getBoundingClientRect();
+  const n = nodes.find(n => n.id === nodeId);
+  if (!n) return {x:0, y:0};
+  const relX = er.left + er.width/2 - ir.left;
+  let relY;
+  if (portType === 'in') relY = er.top - ir.top;
+  else if (portType === 'out-yes') relY = er.bottom - ir.top;
+  else if (portType === 'out-no') relY = er.bottom - ir.top;
+  else relY = er.bottom - ir.top;
+  // Adjust for decision side ports
+  if (portType === 'out-yes') return {x: relX - er.width * 0.22, y: relY};
+  if (portType === 'out-no') return {x: relX + er.width * 0.22, y: relY};
+  return {x: relX, y: relY};
+}
+
+function redrawConnections() {
+  const svg = document.getElementById('connSvg');
+  const inner = document.getElementById('canvasInner');
+  if (!svg || !inner) return;
+  let html = '<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#264653"/></marker></defs>';
+  connections.forEach(conn => {
+    const from = getPortPos(conn.fromId, conn.fromPort);
+    const to = getPortPos(conn.toId, 'in');
+    if (!from || !to) return;
+    const midY = (from.y + to.y) / 2;
+    const d = `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`;
+    html += `<path d="${d}" fill="none" stroke="#264653" stroke-width="2.5" marker-end="url(#arrowhead)"/>`;
+    // Label for decision branches
+    if (conn.label) {
+      const lx = (from.x + to.x) / 2;
+      const ly = midY - 10;
+      html += `<text x="${lx}" y="${ly}" text-anchor="middle" font-size="11" fill="#2A9D8F" font-weight="700">${conn.label}</text>`;
+    }
+  });
+  svg.innerHTML = html;
+}
+
+function createNode(type, x, y, text) {
+  const id = nextId++;
+  const defaultTexts = { start: '开始', end: '结束', process: '处理步骤', decision: '条件判断？' };
+  const node = {
+    id, type,
+    x: Math.max(10, x - 60),
+    y: Math.max(10, y - 20),
+    text: text || defaultTexts[type] || '',
+  };
+  nodes.push(node);
+  renderNode(node);
+  return node;
+}
+
+function renderNode(node) {
+  const inner = document.getElementById('canvasInner');
+  // Remove existing
+  const old = document.getElementById('node-' + node.id);
+  if (old) old.remove();
+
+  const el = document.createElement('div');
+  el.id = 'node-' + node.id;
+  el.className = 'fc-node type-' + node.type;
+  el.style.left = node.x + 'px';
+  el.style.top = node.y + 'px';
+  el.setAttribute('data-id', node.id);
+  el.setAttribute('data-type', node.type);
+
+  let bodyH = '';
+  if (node.type === 'start' || node.type === 'end') {
+    bodyH = `<div class="n-body"><span class="n-text">${escHtml(node.text)}</span></div>`;
+  } else if (node.type === 'process') {
+    bodyH = `<div class="n-body"><span class="n-text">${escHtml(node.text)}</span></div>`;
+  } else if (node.type === 'decision') {
+    bodyH = `<div class="n-body"><span class="n-text">${escHtml(node.text)}</span></div>`;
+  }
+
+  // Ports
+  let portsH = '<span class="port port-in" data-port="in" data-nid="'+node.id+'" title="输入"></span>';
+  if (node.type === 'decision') {
+    portsH += '<span class="port port-out-yes" data-port="out-yes" data-nid="'+node.id+'" title="是/真"></span>';
+    portsH += '<span class="port port-out-no" data-port="out-no" data-nid="'+node.id+'" title="否/假"></span>';
+    portsH += '<span class="pl-yes">是</span><span class="pl-no">否</span>';
+  } else {
+    portsH += '<span class="port port-out" data-port="out" data-nid="'+node.id+'" title="输出"></span>';
+  }
+  portsH += '<button class="n-del" data-nid="'+node.id+'" title="删除">✕</button>';
+
+  el.innerHTML = bodyH + portsH;
+  inner.appendChild(el);
+
+  // Events
+  el.addEventListener('mousedown', (e) => onNodeMouseDown(e, node));
+  el.addEventListener('dblclick', (e) => { e.stopPropagation(); editNodeText(node); });
+  el.querySelector('.n-del').addEventListener('click', (e) => { e.stopPropagation(); deleteNode(node.id); });
+  el.querySelectorAll('.port').forEach(p => {
+    p.addEventListener('mousedown', (e) => { e.stopPropagation(); onPortClick(e, node.id, p.dataset.port); });
+  });
+}
+
+function onNodeMouseDown(e, node) {
+  if (fcMode !== 'move') return;
+  if (e.target.classList.contains('port') || e.target.classList.contains('n-del')) return;
+  e.preventDefault();
+  dragTarget = node;
+  const inner = document.getElementById('canvasInner');
+  const ir = inner.getBoundingClientRect();
+  dragOffset.x = e.clientX - ir.left - node.x;
+  dragOffset.y = e.clientY - ir.top - node.y;
+  const el = getNodeEl(node.id);
+  if (el) el.classList.add('dragging');
+}
+
+function onPortClick(e, nodeId, portType) {
+  e.preventDefault();
+  if (fcMode === 'move') return;
+  // Connect mode
+  if (!connectSource) {
+    connectSource = { nodeId, port: portType };
+    document.querySelectorAll('.port-active').forEach(p => p.classList.remove('port-active'));
+    const portEl = document.querySelector(`.port[data-nid="${nodeId}"][data-port="${portType}"]`);
+    if (portEl) portEl.classList.add('port-active');
+    showToast('已选择起点，请点击目标图块的输入端口（上方圆点）');
+  } else {
+    // Complete connection
+    if (connectSource.nodeId === nodeId) { showToast('不能连接到自身！'); connectSource = null; document.querySelectorAll('.port-active').forEach(p => p.classList.remove('port-active')); return; }
+    // Remove existing connection from same source+port
+    connections = connections.filter(c => !(c.fromId === connectSource.nodeId && c.fromPort === connectSource.port));
+    const label = connectSource.port === 'out-yes' ? '是' : connectSource.port === 'out-no' ? '否' : '';
+    connections.push({ fromId: connectSource.nodeId, fromPort: connectSource.port, toId: nodeId, label });
+    connectSource = null;
+    document.querySelectorAll('.port-active').forEach(p => p.classList.remove('port-active'));
+    redrawConnections();
+    showToast('连线成功！');
+  }
+}
+
+function editNodeText(node) {
+  const newText = prompt('修改文字内容：', node.text);
+  if (newText !== null) {
+    node.text = newText.trim() || node.text;
+    renderNode(node);
+    redrawConnections();
+  }
+}
+
+function deleteNode(id) {
+  nodes = nodes.filter(n => n.id !== id);
+  connections = connections.filter(c => c.fromId !== id && c.toId !== id);
+  const el = getNodeEl(id);
+  if (el) el.remove();
+  redrawConnections();
+}
+
+function clearCanvas() {
+  nodes = [];
+  connections = [];
+  nextId = 1;
+  document.getElementById('canvasInner').innerHTML = '<svg class="fc-conn-svg" id="connSvg"></svg>';
+}
+
+function loadTemplate() {
+  clearCanvas();
+  // Simplified template — 投票算法基本流程（不含循环回连）
+  const template = [
+    {type:'start', x:440, y:20, text:'开始'},
+    {type:'process', x:440, y:105, text:'a=0, b=0'},
+    {type:'process', x:440, y:195, text:'获取投票 → tp'},
+    {type:'decision', x:440, y:295, text:'tp="a"?'},
+    {type:'process', x:250, y:430, text:'a = a + 1'},
+    {type:'process', x:620, y:430, text:'b = b + 1'},
+    {type:'process', x:440, y:555, text:'输出 a, b'},
+    {type:'end', x:440, y:655, text:'结束'},
+  ];
+  template.forEach(t => createNode(t.type, t.x, t.y, t.text));
+  // Auto-connect template (简化版，无循环)
+  const getNid = (i) => nodes[i].id;
+  if (nodes.length === 8) {
+    connections = [
+      {fromId:getNid(0), fromPort:'out', toId:getNid(1), label:''},
+      {fromId:getNid(1), fromPort:'out', toId:getNid(2), label:''},
+      {fromId:getNid(2), fromPort:'out', toId:getNid(3), label:''},
+      {fromId:getNid(3), fromPort:'out-yes', toId:getNid(4), label:'是'},
+      {fromId:getNid(3), fromPort:'out-no', toId:getNid(5), label:'否'},
+      {fromId:getNid(4), fromPort:'out', toId:getNid(6), label:''},
+      {fromId:getNid(5), fromPort:'out', toId:getNid(6), label:''},
+      {fromId:getNid(6), fromPort:'out', toId:getNid(7), label:''},
+    ];
+  }
+  redrawConnections();
+  showToast('简化模板已加载！先观察结构，清空后自己动手画一遍');
+}
+
+function checkFlowchart() {
+  const issues = [];
+  if (nodes.length < 5) issues.push('图块数量不足，建议至少包含开始、结束和关键处理步骤');
+  const hasStart = nodes.some(n => n.type === 'start');
+  const hasEnd = nodes.some(n => n.type === 'end');
+  const hasDecision = nodes.some(n => n.type === 'decision');
+  if (!hasStart) issues.push('缺少「开始」图块');
+  if (!hasEnd) issues.push('缺少「结束」图块');
+  if (!hasDecision) issues.push('缺少「条件判断」菱形图块');
+  if (connections.length < 2) issues.push('连线太少，请连接各个图块');
+  // Check for orphan nodes
+  const connectedIds = new Set();
+  connections.forEach(c => { connectedIds.add(c.fromId); connectedIds.add(c.toId); });
+  const orphans = nodes.filter(n => !connectedIds.has(n.id) && nodes.length > 1);
+  if (orphans.length > 0) issues.push(`有 ${orphans.length} 个图块没有被连线`);
+
+  if (issues.length === 0) {
+    showToast('✅ 流程图检查通过！干得漂亮！');
+    markStepDone(1);
+  } else {
+    alert('⚠️ 检查发现问题：\n\n' + issues.map((s,i) => (i+1)+'. '+s).join('\n'));
+  }
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// Global mouse events for dragging
+document.addEventListener('mousemove', (e) => {
+  if (!dragTarget) return;
+  const inner = document.getElementById('canvasInner');
+  const ir = inner.getBoundingClientRect();
+  dragTarget.x = e.clientX - ir.left - dragOffset.x;
+  dragTarget.y = e.clientY - ir.top - dragOffset.y;
+  const el = getNodeEl(dragTarget.id);
+  if (el) { el.style.left = dragTarget.x + 'px'; el.style.top = dragTarget.y + 'px'; }
+  redrawConnections();
+});
+
+document.addEventListener('mouseup', () => {
+  if (dragTarget) {
+    const el = getNodeEl(dragTarget.id);
+    if (el) el.classList.remove('dragging');
+    dragTarget = null;
+  }
+});
+
+// Ghost element for palette drag
+document.querySelectorAll('.pal-item').forEach(item => {
+  item.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', item.dataset.type);
+    e.dataTransfer.effectAllowed = 'copy';
+  });
+});
+
+const canvasWrap = document.getElementById('canvasWrap');
+canvasWrap.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+canvasWrap.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const type = e.dataTransfer.getData('text/plain');
+  if (!type) return;
+  const canvas = document.getElementById('canvas');
+  const cr = canvas.getBoundingClientRect();
+  const scrollLeft = canvas.scrollLeft;
+  const scrollTop = canvas.scrollTop;
+  const x = e.clientX - cr.left + scrollLeft;
+  const y = e.clientY - cr.top + scrollTop;
+  createNode(type, x, y);
+  redrawConnections();
+});
+
+// ==================== STEP 2 & 3: CODE VERIFICATION ====================
+const activityConfig = {
+  2: {
+    blanks: ['b2_1','b2_2','b2_3','b2_4'],
+    answers: ['0','0','"a"','b + 1'],
+    altAnswers: [['0'],['0'],['"a"','\'a\''],['b+1','b + 1']],
+    testVotes: ['a','b','a','a','b','b','a'],
+    candidates: ['a','b'],
+    expected: {a:4, b:3},
+    hint: '1. 票数从0开始计数\n2. 判断投票给谁用 "a" 比较\n3. b = b + 1 表示给B加一票',
+    desc: '两候选人投票统计'
+  },
+  3: {
+    blanks: ['b3_1','b3_2','b3_3','b3_4','b3_5'],
+    answers: ['0','0','0','"c"','c + 1'],
+    altAnswers: [['0'],['0'],['0'],['"c"','\'c\''],['c+1','c + 1']],
+    testVotes: ['a','c','b','a','c','a','c'],
+    candidates: ['a','b','c'],
+    expected: {a:3, b:1, c:3},
+    hint: '1. 三个候选人都从0开始\n2. 新增判断 tp == "c"\n3. c = c + 1 来累加C的票数',
+    desc: '三候选人投票统计'
+  }
+};
+
+function runCode(step) {
+  const cfg = activityConfig[step];
+  let allCorrect = true;
+  const results = [];
+
+  cfg.blanks.forEach((bid, i) => {
+    const el = document.getElementById(bid);
+    const val = el.value.trim();
+    const expected = cfg.answers[i];
+    const alts = cfg.altAnswers[i] || [];
+    const isCorrect = alts.some(a => val === a);
+
+    el.classList.remove('ok', 'err');
+    if (isCorrect) {
+      el.classList.add('ok');
+      results.push({blank: i, correct: true, got: val, expected});
+    } else {
+      el.classList.add('err');
+      results.push({blank: i, correct: false, got: val || '(空)', expected});
+      allCorrect = false;
+    }
+  });
+
+  // Build result display
+  const panel = document.getElementById('resultContent' + step);
+  const empty = document.getElementById('resultEmpty' + step);
+  empty.style.display = 'none';
+  panel.classList.add('show');
+
+  let html = '';
+
+  if (!allCorrect) {
+    const wrongOnes = results.filter(r => !r.correct);
+    html += `<div class="result-msg fail">❌ 有 ${wrongOnes.length} 处需要修改哦！再检查一下红色标出的位置。</div>`;
+    html += '<div style="font-size:13px;color:var(--tx2);margin-top:8px">';
+    wrongOnes.forEach(r => {
+      html += `<div style="margin:4px 0">🔸 第${r.blank+1}个空：你填了 <b>"${escHtml(r.got)}"</b>，应该填 <b>"${escHtml(r.expected)}"</b></div>`;
+    });
+    html += '</div>';
+  } else {
+    // Simulate execution
+    const votes = cfg.testVotes;
+    const counts = {};
+    cfg.candidates.forEach(c => counts[c] = 0);
+    votes.forEach(v => { if (counts[v] !== undefined) counts[v]++; });
+
+    // Show votes
+    html += '<div class="vote-bar">📥 测试数据：';
+    votes.forEach((v,i) => {
+      html += `<span class="v-chip ${v}">${i+1}. ${v.toUpperCase()}</span>`;
+    });
+    html += '</div>';
+
+    // Trace table
+    html += '<table class="trace-table"><thead><tr><th>步骤</th><th>当前投票</th>';
+    cfg.candidates.forEach(c => html += `<th>${c.toUpperCase()}</th>`);
+    html += '</tr></thead><tbody>';
+    const running = {};
+    cfg.candidates.forEach(c => running[c] = 0);
+    votes.forEach((v, i) => {
+      running[v]++;
+      html += `<tr><td>${i+1}</td><td><span class="v-chip ${v}">${v.toUpperCase()}</span></td>`;
+      cfg.candidates.forEach(c => html += `<td>${running[c]}</td>`);
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+
+    // Final result
+    html += '<div class="result-msg success">✅ 验证成功！算法正确！</div>';
+    html += '<div style="font-size:15px;font-weight:700;color:var(--p);text-align:center;margin-top:8px">';
+    html += '最终结果：';
+    cfg.candidates.forEach(c => {
+      html += ` ${c.toUpperCase()}=${counts[c]}`;
+    });
+    html += '</div>';
+    html += `<div style="font-size:12px;color:var(--tx2);text-align:center;margin-top:8px">共 ${votes.length} 张投票全部统计完毕 ✓</div>`;
+
+    markStepDone(step);
+  }
+
+  panel.innerHTML = html;
+}
+
+function showHint(step) {
+  const cfg = activityConfig[step];
+  alert('💡 提示：\n\n' + cfg.hint);
+}
+
+// ==================== RESET ALL ====================
+function resetAll() {
+  clearCanvas();
+  ['b2_1','b2_2','b2_3','b2_4','b3_1','b3_2','b3_3','b3_4','b3_5'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; el.classList.remove('ok','err'); }
+  });
+  document.querySelectorAll('.result-content').forEach(c => { c.classList.remove('show'); c.innerHTML = ''; });
+  document.querySelectorAll('.result-empty').forEach(e => e.style.display = '');
+  document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('done'));
+  switchStep(1);
+  showToast('已全部重置，可以重新开始！');
+}
+
+// ==================== INIT ====================
+(function initFromQuery() {
+  const params = new URLSearchParams(location.search);
+  const embedded = params.get('embedded') === '1';
+  const step = parseInt(params.get('step') || params.get('activityIndex') || '1', 10);
+  if (embedded) {
+    document.body.classList.add('embedded-mode');
+    const header = document.querySelector('.header');
+    const stepNav = document.getElementById('stepNav');
+    if (header) header.style.display = 'none';
+    if (stepNav) stepNav.style.display = 'none';
+    switchStep(Number.isFinite(step) && step >= 1 && step <= 3 ? step : 1);
+  }
+})();
+
+// Handle canvas scroll + connection redraw
+document.getElementById('canvas').addEventListener('scroll', () => {
+  requestAnimationFrame(redrawConnections);
+});
+
+console.log('✅ 算法与问题解决 — 探究活动互动网页已就绪');
+console.log('  探究一：拖拽绘制流程图（移动模式+连线模式）');
+console.log('  探究二：半成品代码验证算法（两候选人）');
+console.log('  探究三：拓展任务算法修改（三候选人）');
+</script>
+</body>
+</html>
