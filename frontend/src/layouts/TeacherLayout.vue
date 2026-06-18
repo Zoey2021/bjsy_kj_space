@@ -22,9 +22,13 @@
             :key="m.key"
             :index="m.path"
             :title="m.desc"
+            :class="{ 'menu-item--shelved': m.shelved }"
           >
             <el-icon><component :is="iconMap[m.icon]" /></el-icon>
-            <span>{{ m.title }}</span>
+            <span class="menu-label">
+              {{ m.title }}
+              <el-tag v-if="m.shelved" size="small" type="info" effect="plain" class="shelved-tag">筹备中</el-tag>
+            </span>
           </el-menu-item>
         </el-menu>
         <el-button class="collapse-btn" text @click="collapsed = !collapsed">
@@ -146,6 +150,19 @@ const logout = () => {
   background: linear-gradient(135deg, #ede9fe, #e0e7ff) !important;
   color: #5b4fc7;
   font-weight: 600;
+}
+.menu-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.shelved-tag {
+  transform: scale(0.88);
+  vertical-align: middle;
+}
+.side-menu :deep(.menu-item--shelved) {
+  opacity: 0.72;
 }
 .collapse-btn {
   margin: 8px;

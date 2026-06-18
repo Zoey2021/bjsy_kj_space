@@ -8,18 +8,19 @@ export const TEACHER_MODULES = [
     desc: '建课、排课、管理课时'
   },
   {
-    key: 'activity-editor',
-    path: '/teacher/activity-editor',
-    title: '活动编辑',
-    icon: 'EditPen',
-    desc: '配置互动任务与提交方式'
-  },
-  {
     key: 'dashboard',
     path: '/teacher/dashboard',
     title: '班级学情',
     icon: 'DataAnalysis',
     desc: '实时掌握全班学习情况'
+  },
+  {
+    key: 'activity-editor',
+    path: '/teacher/activity-editor',
+    title: '活动编辑',
+    icon: 'EditPen',
+    desc: '配置互动任务与提交方式',
+    shelved: true
   },
   {
     key: 'ai-evaluation',

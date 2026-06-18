@@ -22,7 +22,7 @@ const routes = [
       { path: '', redirect: '/teacher/course-map' },
       { path: 'course-map', component: () => import('../views/teacher/TeacherCourseMap.vue') },
       { path: 'course-map/grade/:gradeId', component: () => import('../views/teacher/TeacherTextbookHub.vue') },
-      { path: 'activity-editor', component: () => import('../views/teacher/ActivityEditor.vue') },
+      { path: 'activity-editor', component: () => import('../views/teacher/ActivityEditorShelved.vue') },
       { path: 'dashboard', component: () => import('../views/teacher/ClassDashboard.vue') },
       { path: 'ai-evaluation', component: () => import('../views/teacher/AiEvaluation.vue') },
       { path: 'points', component: () => import('../views/teacher/PointsManage.vue') },
