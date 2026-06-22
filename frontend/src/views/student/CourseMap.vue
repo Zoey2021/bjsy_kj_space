@@ -17,6 +17,15 @@
           :md="6"
         >
           <div class="grade-card">
+            <button
+              v-if="showCompletedBadge(g.key)"
+              type="button"
+              class="completed-badge"
+              title="查看成绩"
+              @click.stop="openGradeResult(g)"
+            >
+              ✅已完成
+            </button>
             <div class="grade-card-head">{{ g.cardTitle }}</div>
             <div class="dual-covers">
               <div
@@ -37,23 +46,29 @@
       </el-row>
     </section>
 
-    <!-- 校本课程：与配套年级卡同尺寸 -->
-    <section class="panel panel-school" v-if="schoolBooks.length">
+    <!-- 校本课程：按系列分组展示 -->
+    <section class="panel panel-school" v-if="schoolSeriesGroups.length">
       <h2 class="panel-title">校本课程</h2>
       <el-row :gutter="18" class="grade-row">
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col
+          v-for="series in schoolSeriesGroups"
+          :key="series.key"
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
           <div class="grade-card grade-card-school">
-            <div class="grade-card-head">{{ schoolSeriesName }}</div>
+            <div class="grade-card-head">{{ series.cardTitle }}</div>
             <div class="dual-covers">
               <div
-                v-for="book in schoolBooks"
+                v-for="book in series.books"
                 :key="book.id"
                 class="book-slot"
                 @click="openBook(book.id)"
               >
                 <div class="book-thumb school-thumb">
                   <img v-if="book.coverUrl" :src="book.coverUrl" :alt="book.name" />
-                  <div v-else class="thumb-placeholder school-ph">{{ schoolPlaceholderChar }}</div>
+                  <div v-else class="thumb-placeholder school-ph">本</div>
                 </div>
                 <div class="book-label">{{ book.name }}</div>
               </div>
@@ -66,17 +81,37 @@
       <h2 class="panel-title">校本课程</h2>
       <el-empty description="校本课程即将上线" :image-size="80" />
     </section>
+
+    <el-dialog
+      v-model="gradeResultVisible"
+      :title="gradeResultTitle + ' · 成绩'"
+      width="360px"
+      align-center
+      class="grade-result-dialog"
+    >
+      <div class="grade-result-body">
+        <p><span class="result-label">上册</span><span class="result-value">优秀</span></p>
+        <p><span class="result-label">下册</span><span class="result-value">优秀</span></p>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getTextbooks } from '../../api'
+import { getTextbooks, getMe } from '../../api'
+import { groupSchoolTextbooks } from '../../utils/schoolTextbooks'
 
 const router = useRouter()
 const mainBooks = ref([])
 const schoolBooks = ref([])
+const isCohort2021 = ref(false)
+const gradeResultVisible = ref(false)
+const gradeResultTitle = ref('')
+
+/** 2021 级学生已完成的三至五年级配套课程 */
+const COMPLETED_GRADE_KEYS = ['三年级', '四年级', '五年级']
 
 /** 按「X年级上/下册」聚成四个年级卡，与版式图一致 */
 const mainGradeGroups = computed(() => {
@@ -106,20 +141,33 @@ const mainGradeGroups = computed(() => {
     })
 })
 
-const schoolSeriesName = computed(() => {
-  if (!schoolBooks.value.length) return '校本课程'
-  return '科创启航'
-})
+const schoolSeriesGroups = computed(() => groupSchoolTextbooks(schoolBooks.value))
 
-const schoolPlaceholderChar = computed(() => '本')
+const showCompletedBadge = (gradeKey) => isCohort2021.value && COMPLETED_GRADE_KEYS.includes(gradeKey)
+
+const openGradeResult = (group) => {
+  gradeResultTitle.value = group.cardTitle
+  gradeResultVisible.value = true
+}
+
+const detectCohort2021 = (profile) => {
+  const className = profile?.className || ''
+  const enrollmentYear = profile?.enrollmentYear ?? localStorage.getItem('enrollmentYear')
+  const username = profile?.username || localStorage.getItem('username') || ''
+  if (String(enrollmentYear) === '2021') return true
+  if (className.includes('2021级')) return true
+  return /2021/.test(username)
+}
 
 onMounted(async () => {
-  const [main, school] = await Promise.all([
+  const [main, school, meRes] = await Promise.all([
     getTextbooks('MAIN'),
-    getTextbooks('SCHOOL')
+    getTextbooks('SCHOOL'),
+    getMe().catch(() => ({ data: {} }))
   ])
   mainBooks.value = main.data || []
   schoolBooks.value = school.data || []
+  isCohort2021.value = detectCohort2021(meRes.data || {})
 })
 
 const openBook = (gradeId) => {
@@ -190,6 +238,7 @@ const openBook = (gradeId) => {
 
 /* 年级卡：浅青蓝底 + 白内衬，替代示意图中的浅蓝块 */
 .grade-card {
+  position: relative;
   background: linear-gradient(165deg, #f0f9ff 0%, #e0f2fe 40%, #f8fafc 100%);
   border: 1px solid #bae6fd;
   border-radius: 14px;
@@ -210,6 +259,53 @@ const openBook = (gradeId) => {
   margin-bottom: 14px;
   padding-bottom: 10px;
   border-bottom: 1px dashed #94a3b8;
+}
+.completed-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  border: 1px solid #86efac;
+  background: rgba(255, 255, 255, 0.92);
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.completed-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.22);
+  background: #f0fdf4;
+}
+
+.grade-result-body {
+  padding: 4px 0 8px;
+}
+.grade-result-body p {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  font-size: 15px;
+}
+.grade-result-body p:last-child {
+  margin-bottom: 0;
+}
+.result-label {
+  color: #64748b;
+  font-weight: 600;
+}
+.result-value {
+  color: #15803d;
+  font-weight: 700;
 }
 
 .dual-covers {

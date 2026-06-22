@@ -245,8 +245,10 @@ INSERT INTO course_grade (name, sort_order, description, textbook_type, cover_ur
 ('五年级下册', 6, '义务教育教科书·信息科技（五年级下册）', 'MAIN', '/course-covers/grade5-down.jpg', '/textbooks/grade5-down.pdf'),
 ('六年级上册', 7, '义务教育教科书·信息科技（六年级上册）', 'MAIN', '/course-covers/grade6-up.jpg', '/textbooks/grade6-up.pdf'),
 ('六年级下册', 8, '义务教育教科书·信息科技（六年级下册）', 'MAIN', '/course-covers/grade6-down.jpg', '/textbooks/grade6-down.pdf'),
-('二年级上册', 90, '科创启航 · 杭州市滨江实验小学（上册，内容建设中）', 'SCHOOL', NULL, NULL),
-('二年级下册', 91, '科创启航 · 杭州市滨江实验小学（二年级下册）', 'SCHOOL', '/course-covers/school-innovation-down.png', NULL);
+('二年级上册', 90, '科创启航 · 洞察未来科创启航（二年级上册）', 'SCHOOL', '/course-covers/kechuang-up.png', NULL),
+('二年级下册', 91, '科创启航 · 洞察未来科创启航（二年级下册）', 'SCHOOL', '/course-covers/kechuang-down.png', NULL),
+('二年级上册', 92, '娃娃讲科技 · 少儿趣味科普课堂（二年级上册）', 'SCHOOL', '/course-covers/wawa-tech-up.png', NULL),
+('二年级下册', 93, '娃娃讲科技 · 少儿趣味科普课堂（二年级下册）', 'SCHOOL', '/course-covers/wawa-tech-down.png', NULL);
 
 INSERT INTO course_unit (grade_id, name, sort_order, description) VALUES
 ((SELECT id FROM course_grade WHERE name='三年级上册' AND textbook_type='MAIN' LIMIT 1), '第一单元 感受信息社会', 1, NULL),

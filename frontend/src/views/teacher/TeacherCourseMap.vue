@@ -30,15 +30,21 @@
       </el-row>
     </section>
 
-    <section class="panel panel-school" v-if="schoolBooks.length">
+    <section class="panel panel-school" v-if="schoolSeriesGroups.length">
       <h2 class="panel-title">校本课程</h2>
       <el-row :gutter="18" class="grade-row">
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col
+          v-for="series in schoolSeriesGroups"
+          :key="series.key"
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
           <div class="grade-card grade-card-school">
-            <div class="grade-card-head">科创启航</div>
+            <div class="grade-card-head">{{ series.cardTitle }}</div>
             <div class="dual-covers">
               <div
-                v-for="book in schoolBooks"
+                v-for="book in series.books"
                 :key="book.id"
                 class="book-slot"
                 @click="openGrade(book.id)"
@@ -61,6 +67,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { teacherGetTextbooks } from '../../api'
+import { groupSchoolTextbooks } from '../../utils/schoolTextbooks'
 
 const router = useRouter()
 const mainBooks = ref([])
@@ -92,6 +99,8 @@ const mainGradeGroups = computed(() => {
       return { key: g, cardTitle: row.cardTitle, slots }
     })
 })
+
+const schoolSeriesGroups = computed(() => groupSchoolTextbooks(schoolBooks.value))
 
 const openGrade = (gradeId) => {
   router.push(`/teacher/course-map/grade/${gradeId}`)
