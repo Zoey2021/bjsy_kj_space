@@ -16,15 +16,23 @@
           :sm="12"
           :md="6"
         >
-          <div class="grade-card">
+          <div
+            class="grade-card"
+            :class="{
+              'grade-card-active': gradeAccess(g.key) === 'active',
+              'grade-card-completed': gradeAccess(g.key) === 'completed',
+              'grade-card-locked': gradeAccess(g.key) === 'not_started'
+            }"
+          >
             <button
-              v-if="showCompletedBadge(g.key)"
+              v-if="gradeBadge(g.key)"
               type="button"
-              class="completed-badge"
-              title="查看成绩"
-              @click.stop="openGradeResult(g)"
+              class="grade-badge"
+              :class="'grade-badge-' + gradeBadge(g.key).type"
+              :title="gradeBadge(g.key).type === 'completed' ? '查看成绩' : ''"
+              @click.stop="onBadgeClick(g)"
             >
-              ✅已完成
+              {{ gradeBadge(g.key).label }}
             </button>
             <div class="grade-card-head">{{ g.cardTitle }}</div>
             <div class="dual-covers">
@@ -32,7 +40,8 @@
                 v-for="slot in g.slots"
                 :key="slot.book.id"
                 class="book-slot"
-                @click="openBook(slot.book.id)"
+                :class="{ 'book-slot-locked': !canOpenBook(g.key) }"
+                @click="openBook(g.key, slot.book.id)"
               >
                 <div class="book-thumb">
                   <img v-if="slot.book.coverUrl" :src="slot.book.coverUrl" :alt="slot.book.name" />
@@ -64,7 +73,7 @@
                 v-for="book in series.books"
                 :key="book.id"
                 class="book-slot"
-                @click="openBook(book.id)"
+                @click="openSchoolBook(book.id)"
               >
                 <div class="book-thumb school-thumb">
                   <img v-if="book.coverUrl" :src="book.coverUrl" :alt="book.name" />
@@ -90,8 +99,8 @@
       class="grade-result-dialog"
     >
       <div class="grade-result-body">
-        <p><span class="result-label">上册</span><span class="result-value">优秀</span></p>
-        <p><span class="result-label">下册</span><span class="result-value">优秀</span></p>
+        <p><span class="result-label">上册</span><span class="result-value">{{ gradeResultUp }}</span></p>
+        <p><span class="result-label">下册</span><span class="result-value">{{ gradeResultDown }}</span></p>
       </div>
     </el-dialog>
   </div>
@@ -100,18 +109,26 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { getTextbooks, getMe } from '../../api'
 import { groupSchoolTextbooks } from '../../utils/schoolTextbooks'
+import {
+  detectEnrollmentYear,
+  getGradeAccess,
+  getGradeBadge,
+  canEnterGrade,
+  getDefaultGradeScores,
+  GRADE_ACCESS
+} from '../../utils/cohortGradeAccess'
 
 const router = useRouter()
 const mainBooks = ref([])
 const schoolBooks = ref([])
-const isCohort2021 = ref(false)
+const enrollmentYear = ref(null)
 const gradeResultVisible = ref(false)
 const gradeResultTitle = ref('')
-
-/** 2021 级学生已完成的三至五年级配套课程 */
-const COMPLETED_GRADE_KEYS = ['三年级', '四年级', '五年级']
+const gradeResultUp = ref('优秀')
+const gradeResultDown = ref('优秀')
 
 /** 按「X年级上/下册」聚成四个年级卡，与版式图一致 */
 const mainGradeGroups = computed(() => {
@@ -143,20 +160,23 @@ const mainGradeGroups = computed(() => {
 
 const schoolSeriesGroups = computed(() => groupSchoolTextbooks(schoolBooks.value))
 
-const showCompletedBadge = (gradeKey) => isCohort2021.value && COMPLETED_GRADE_KEYS.includes(gradeKey)
+const gradeAccess = (gradeKey) => getGradeAccess(enrollmentYear.value, gradeKey)
 
-const openGradeResult = (group) => {
-  gradeResultTitle.value = group.cardTitle
-  gradeResultVisible.value = true
+const gradeBadge = (gradeKey) => getGradeBadge(enrollmentYear.value, gradeKey)
+
+const canOpenBook = (gradeKey) => canEnterGrade(enrollmentYear.value, gradeKey)
+
+const onBadgeClick = (group) => {
+  if (gradeAccess(group.key) !== GRADE_ACCESS.COMPLETED) return
+  openGradeResult(group)
 }
 
-const detectCohort2021 = (profile) => {
-  const className = profile?.className || ''
-  const enrollmentYear = profile?.enrollmentYear ?? localStorage.getItem('enrollmentYear')
-  const username = profile?.username || localStorage.getItem('username') || ''
-  if (String(enrollmentYear) === '2021') return true
-  if (className.includes('2021级')) return true
-  return /2021/.test(username)
+const openGradeResult = (group) => {
+  const scores = getDefaultGradeScores(group.key)
+  gradeResultTitle.value = group.cardTitle
+  gradeResultUp.value = scores.up
+  gradeResultDown.value = scores.down
+  gradeResultVisible.value = true
 }
 
 onMounted(async () => {
@@ -167,10 +187,28 @@ onMounted(async () => {
   ])
   mainBooks.value = main.data || []
   schoolBooks.value = school.data || []
-  isCohort2021.value = detectCohort2021(meRes.data || {})
+  const profile = meRes.data || {}
+  enrollmentYear.value = detectEnrollmentYear(profile)
+  if (profile.className) localStorage.setItem('className', profile.className)
+  if (enrollmentYear.value) {
+    localStorage.setItem('enrollmentYear', enrollmentYear.value)
+  }
 })
 
-const openBook = (gradeId) => {
+const openBook = (gradeKey, gradeId) => {
+  const access = gradeAccess(gradeKey)
+  if (access === GRADE_ACCESS.COMPLETED) {
+    ElMessage.info('该年级课程已完成，点击右上角「已完成」查看成绩')
+    return
+  }
+  if (access === GRADE_ACCESS.NOT_STARTED) {
+    ElMessage.info('该年级课程尚未开始')
+    return
+  }
+  router.push(`/student/textbook/${gradeId}`)
+}
+
+const openSchoolBook = (gradeId) => {
   router.push(`/student/textbook/${gradeId}`)
 }
 </script>
@@ -201,7 +239,6 @@ const openBook = (gradeId) => {
   color: #64748b;
 }
 
-/* 大区块：白底圆角 + 轻边框，替代黄框 */
 .panel {
   background: #fafbfc;
   border: 1px solid #e2e8f0;
@@ -236,7 +273,6 @@ const openBook = (gradeId) => {
   align-items: stretch;
 }
 
-/* 年级卡：浅青蓝底 + 白内衬，替代示意图中的浅蓝块 */
 .grade-card {
   position: relative;
   background: linear-gradient(165deg, #f0f9ff 0%, #e0f2fe 40%, #f8fafc 100%);
@@ -251,6 +287,22 @@ const openBook = (gradeId) => {
   box-shadow: 0 8px 28px rgba(37, 99, 235, 0.12);
   transform: translateY(-2px);
 }
+.grade-card-active {
+  border-color: #60a5fa;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+}
+.grade-card-completed {
+  border-color: #86efac;
+}
+.grade-card-locked {
+  opacity: 0.82;
+  background: linear-gradient(165deg, #f8fafc 0%, #f1f5f9 100%);
+  border-color: #e2e8f0;
+}
+.grade-card-locked:hover {
+  transform: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
 .grade-card-head {
   text-align: center;
   font-size: 16px;
@@ -260,26 +312,39 @@ const openBook = (gradeId) => {
   padding-bottom: 10px;
   border-bottom: 1px dashed #94a3b8;
 }
-.completed-badge {
+.grade-card-locked .grade-card-head {
+  color: #64748b;
+}
+
+.grade-badge {
   position: absolute;
   top: 10px;
   right: 10px;
   z-index: 2;
-  border: 1px solid #86efac;
-  background: rgba(255, 255, 255, 0.92);
-  color: #15803d;
   font-size: 11px;
   font-weight: 700;
   padding: 4px 8px;
   border-radius: 999px;
+  border: 1px solid transparent;
+}
+.grade-badge-completed {
+  border-color: #86efac;
+  background: rgba(255, 255, 255, 0.92);
+  color: #15803d;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(22, 163, 74, 0.15);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.completed-badge:hover {
+.grade-badge-completed:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.22);
   background: #f0fdf4;
+}
+.grade-badge-not_started {
+  border-color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.92);
+  color: #64748b;
+  cursor: default;
 }
 
 .grade-result-body {
@@ -324,6 +389,13 @@ const openBook = (gradeId) => {
 }
 .book-slot:hover {
   background: rgba(255, 255, 255, 0.65);
+}
+.book-slot-locked {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.book-slot-locked:hover {
+  background: transparent;
 }
 
 .book-thumb {
@@ -375,7 +447,6 @@ const openBook = (gradeId) => {
   word-break: break-all;
 }
 
-/* 校本卡：复用年级卡尺寸，仅配色不同 */
 .grade-card-school {
   background: linear-gradient(165deg, #ecfdf5 0%, #d1fae5 40%, #f8fafc 100%);
   border-color: #99f6e4;

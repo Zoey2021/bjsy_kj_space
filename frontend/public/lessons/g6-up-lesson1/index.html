@@ -44,14 +44,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC
 /* ===== STEP 1: Flowchart Builder ===== */
 .fc-layout{display:flex;gap:16px;height:calc(100vh - 200px);min-height:540px}
 /* Left info panel — 题目 + Logo */
-.fc-info-panel{width:270px;min-width:270px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.fc-info-panel{width:270px;min-width:270px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
 .fc-info-title{font-size:15px;font-weight:700;color:var(--p);display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:2px solid rgba(42,157,143,.2)}
 .fc-info-desc{font-size:13px;color:var(--tx);line-height:1.75}
-.fc-logos{display:flex;flex-direction:column;gap:10px;margin-top:4px}
-.fc-logo-item{background:#F8F9FA;border:1.5px solid var(--bd);border-radius:var(--rs);padding:10px;text-align:center}
-.fc-logo-item img{max-width:100%;height:auto;border-radius:6px;margin-bottom:6px}
-.fc-logo-label{font-size:13px;font-weight:700;color:var(--s)}
-.fc-logo-sub{font-size:11px;color:var(--tx2);margin-top:2px}
+.fc-logos-wrap{margin-top:auto;padding-top:6px;border-top:1px dashed rgba(42,157,143,.25)}
+.fc-logos-wrap .fc-logos{margin-top:6px}
+.fc-logos{display:flex;flex-direction:row;gap:8px;flex-shrink:0}
+.fc-logos-label{width:100%;font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:-4px}
+.fc-logo-item{flex:1;min-width:0;background:#F8F9FA;border:1.5px solid var(--bd);border-radius:var(--rs);padding:6px 8px;text-align:center}
+.fc-logo-item img{max-width:100%;max-height:56px;width:auto;height:auto;object-fit:contain;border-radius:4px;margin-bottom:4px;display:block;margin-left:auto;margin-right:auto}
+.fc-logo-label{font-size:11px;font-weight:700;color:var(--s)}
+.fc-logo-sub,.logo-sub{font-size:10px;color:var(--tx2);margin-top:1px;line-height:1.3}
 
 /* Right workspace — 素材面板 + 工具栏 + 画布 */
 .fc-workspace{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
@@ -63,9 +66,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC
 .pal-item:hover{border-color:var(--s);background:rgba(42,157,143,.04);transform:translateY(-2px);box-shadow:var(--sh)}
 .pal-item:active{cursor:grabbing}
 .pal-item .pal-shape{pointer-events:none}
-.pal-preview-s{width:70px;height:28px;border-radius:14px;background:var(--p)}
-.pal-preview-p{width:80px;height:30px;border-radius:6px;background:#E8F4F2;border:2px solid var(--s)}
-.pal-preview-d{width:44px;height:44px;background:#FEF9E7;border:2px solid var(--a);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.pal-preview-term{width:70px;height:28px;border-radius:14px;background:var(--p)}
+.pal-preview-io{width:76px;height:28px;background:#E3F2FD;border:2px solid #64B5F6;transform:skewX(-12deg);border-radius:2px}
+.pal-preview-proc{width:80px;height:30px;border-radius:4px;background:#E8F4F2;border:2px solid var(--s)}
+.pal-preview-dec{width:44px;height:44px;background:#FEF9E7;border:2px solid var(--a);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
 
 .fc-main{flex:1;display:flex;flex-direction:column;gap:10px}
 .fc-toolbar{display:flex;gap:8px;flex-wrap:wrap}
@@ -92,34 +96,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC
 .fc-canvas-inner{position:relative;width:1100px;height:850px}
 .fc-conn-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}
 
-/* Nodes */
+/* Nodes — 四种标准流程图形状 */
 .fc-node{position:absolute;cursor:move;user-select:none;z-index:10;transition:box-shadow .15s}
 .fc-node:hover{z-index:20}
 .fc-node.dragging{z-index:30;opacity:.85}
-.fc-node .n-body{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:600;line-height:1.25;transition:var(--tr)}
-.fc-node .n-text{position:relative;z-index:2;padding:4px 8px;word-break:break-word;pointer-events:none}
-/* Types */
-.fc-node.type-start .n-body,.fc-node.type-end .n-body{width:125px;height:46px;border-radius:23px;background:var(--p);color:#FFF}
+.fc-node .n-body{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;font-weight:600;line-height:1.3;transition:var(--tr)}
+.fc-node .n-text{position:relative;z-index:2;padding:4px 8px;word-break:break-word;pointer-events:none;max-width:100%}
+/* 开始/结束：圆角矩形 */
+.fc-node.type-start .n-body,.fc-node.type-end .n-body{width:125px;height:46px;border-radius:23px;background:var(--p);color:#FFF;border:2px solid var(--p)}
 .fc-node.type-start .n-text,.fc-node.type-end .n-text{color:#FFF}
-.fc-node.type-process .n-body{width:150px;height:52px;border-radius:8px;background:#E8F4F2;border:2px solid var(--s);color:var(--p)}
-.fc-node.type-process .n-text{color:var(--p)}
+/* 处理：长方形 */
+.fc-node.type-process .n-body{width:150px;height:52px;border-radius:4px;background:#E8F4F2;border:2px solid var(--s);color:var(--p)}
+/* 输入/输出：平行四边形 */
+.fc-node.type-io .n-body{width:150px;height:48px;background:#E3F2FD;border:2px solid #64B5F6;color:#1565C0;transform:skewX(-12deg);border-radius:2px}
+.fc-node.type-io .n-text{transform:skewX(12deg);display:block;width:100%}
+/* 判断：菱形 */
 .fc-node.type-decision .n-body{width:120px;height:80px;background:#FEF9E7;border:2px solid var(--a);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);color:var(--p)}
-.fc-node.type-decision .n-text{color:var(--p)}
 
-/* Ports */
-.port{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--card);border:2px solid var(--s);z-index:40;cursor:crosshair;transition:var(--tr);opacity:0}
+/* 四向连接点（上下左右） */
+.port{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--card);border:2px solid var(--s);z-index:40;cursor:crosshair;transition:opacity .15s,transform .15s,background .15s;opacity:0}
 .fc-node:hover .port,.fc-node .port.port-active{opacity:1}
-.port:hover,.port.port-active{background:var(--a);border-color:var(--a);transform:scale(1.4)}
-.port-in{top:-6px;left:50%;transform:translateX(-50%)}
-.port-in:hover,.port-in.port-active{transform:translateX(-50%) scale(1.4)}
-.port-out{left:50%;transform:translateX(-50%)}
-.port-out:hover,.port-out.port-active{transform:translateX(-50%) scale(1.4)}
-.node-start .port-out,.node-end .port-out,.node-process .port-out{bottom:-6px}
-.node-decision .port-out-yes{bottom:-6px;left:28%}
-.node-decision .port-out-no{bottom:-6px;left:72%}
-.pl-yes,.pl-no{position:absolute;font-size:10px;font-weight:700;color:var(--s);pointer-events:none;z-index:41}
-.pl-yes{bottom:-20px;left:28%;transform:translateX(-50%)}
-.pl-no{bottom:-20px;left:72%;transform:translateX(-50%)}
+.port:hover,.port.port-active{background:var(--a);border-color:var(--a)}
+.port-top{top:-6px;left:50%;transform:translateX(-50%)}
+.port-top:hover,.port-top.port-active{transform:translateX(-50%) scale(1.35)}
+.port-bottom{bottom:-6px;left:50%;transform:translateX(-50%)}
+.port-bottom:hover,.port-bottom.port-active{transform:translateX(-50%) scale(1.35)}
+.port-left{left:-6px;top:50%;transform:translateY(-50%)}
+.port-left:hover,.port-left.port-active{transform:translateY(-50%) scale(1.35)}
+.port-right{right:-6px;top:50%;transform:translateY(-50%)}
+.port-right:hover,.port-right.port-active{transform:translateY(-50%) scale(1.35)}
+.pl-yes,.pl-no{position:absolute;font-size:10px;font-weight:700;color:var(--s);pointer-events:none;z-index:41;opacity:0}
+.fc-node.type-decision:hover .pl-yes,.fc-node.type-decision:hover .pl-no{opacity:1}
+.pl-yes{left:-14px;top:50%;transform:translateY(-50%)}
+.pl-no{right:-14px;top:50%;transform:translateY(-50%)}
 /* Delete btn */
 .n-del{position:absolute;top:-10px;right:-10px;width:20px;height:20px;border-radius:50%;background:var(--coral);color:#FFF;border:none;cursor:pointer;font-size:11px;display:none;align-items:center;justify-content:center;z-index:50;line-height:1}
 .fc-node:hover .n-del{display:flex}
@@ -252,38 +261,41 @@ body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
   <div class="fc-info-panel">
     <div class="fc-info-title">📋 探究活动一：绘制流程图</div>
 
-    <!-- Logo候选展示 -->
-    <div class="fc-logos">
-      <div class="fc-logo-item">
-        <img src="logo_a.jpg" alt="Logo方案A" onerror="this.style.display='none';this.nextSibling.style.display='block'">
-        <span style="display:none;color:var(--coral);font-size:11px">图片加载中...</span>
-        <div class="fc-logo-label">方案 A</div>
-        <div class="logo-sub">科技感 · 六边形设计</div>
-      </div>
-      <div class="fc-logo-item">
-        <img src="logo_b.jpg" alt="Logo方案B" onerror="this.style.display='none';this.nextSibling.style.display='block'">
-        <span style="display:none;color:var(--coral);font-size:11px">图片加载中...</span>
-        <div class="fc-logo-label">方案 B</div>
-        <div class="logo-sub">书香风 · 知识之窗</div>
-      </div>
-    </div>
-
     <!-- 任务说明 -->
     <div class="fc-task-card">
       <div class="fc-task-desc">
-        学校信息中心要从以上两个候选 logo 中选出一个最合适的方案，邀请了<b>1000名师生</b>参与投票（投 A 或 B）。请拖动右侧图块到画布上，用流程图表示计算机统计投票结果的完整过程。
+        学校信息中心要从以下两个候选 logo 中选出一个最合适的方案，邀请了<b>1000名师生</b>参与投票（投 A 或 B）。请拖动右侧图块到画布上，用流程图表示计算机统计投票结果的完整过程。
       </div>
     </div>
 
     <!-- 操作步骤 -->
     <div class="fc-task-steps">
-      <div class="fc-step"><span class="fc-step-num">1</span>从上方拖动「开始/结束」「处理步骤」「条件判断」到画布</div>
+      <div class="fc-step"><span class="fc-step-num">1</span>拖动四种图块：<b>圆角矩形</b>（开始/结束）、<b>平行四边形</b>（输入/输出）、<b>长方形</b>（处理）、<b>菱形</b>（判断）</div>
       <div class="fc-step"><span class="fc-step-num">2</span><b>移动模式</b>下双击图块修改文字</div>
-      <div class="fc-step"><span class="fc-step-num">3</span>切换<b>连线模式</b>，点击端口完成连线</div>
-      <div class="fc-step"><span class="fc-step-num">4</span>点击「✅ 检查流程图」验证完整性</div>
+      <div class="fc-step"><span class="fc-step-num">3</span>切换<b>连线模式</b>，从任一连线点连到另一图块（菱形：<b>左=是，右=否</b>）</div>
+      <div class="fc-step"><span class="fc-step-num">4</span>补全<b>循环回连</b>和「否→输出→结束」后，点「✅ 检查流程图」</div>
     </div>
 
-    <div class="fc-task-tip">💡 不知道怎么画？先点「📋 加载模板」观察结构，再清空自己画！</div>
+    <!-- Logo候选展示（题目与要求下方，缩略图） -->
+    <div class="fc-logos-wrap">
+      <div class="fc-logos-label">候选 Logo 方案</div>
+      <div class="fc-logos">
+        <div class="fc-logo-item">
+          <img src="logo_a.jpg" alt="Logo方案A" onerror="this.style.display='none';this.nextSibling.style.display='block'">
+          <span style="display:none;color:var(--coral);font-size:11px">图片加载中...</span>
+          <div class="fc-logo-label">方案 A</div>
+          <div class="logo-sub">科技感 · 六边形</div>
+        </div>
+        <div class="fc-logo-item">
+          <img src="logo_b.jpg" alt="Logo方案B" onerror="this.style.display='none';this.nextSibling.style.display='block'">
+          <span style="display:none;color:var(--coral);font-size:11px">图片加载中...</span>
+          <div class="fc-logo-label">方案 B</div>
+          <div class="logo-sub">书香风 · 知识之窗</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fc-task-tip">💡 可先「加载模板」看参考骨架，但必须自己补全连线（含循环）才能通过检查，不能直接提交模板。</div>
   </div>
 
   <!-- 右侧：素材面板 + 工具栏 + 画布 -->
@@ -292,16 +304,20 @@ body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
     <div class="fc-palette-bar">
       <span class="pal-label">📦 拖动到画布：</span>
       <div class="pal-item" draggable="true" data-type="start">
-        <div class="pal-shape pal-preview-s"></div>
+        <div class="pal-shape pal-preview-term"></div>
         <span>开始/结束</span>
       </div>
+      <div class="pal-item" draggable="true" data-type="io">
+        <div class="pal-shape pal-preview-io"></div>
+        <span>输入/输出</span>
+      </div>
       <div class="pal-item" draggable="true" data-type="process">
-        <div class="pal-shape pal-preview-p"></div>
-        <span>处理步骤</span>
+        <div class="pal-shape pal-preview-proc"></div>
+        <span>处理</span>
       </div>
       <div class="pal-item" draggable="true" data-type="decision">
-        <div class="pal-shape pal-preview-d"></div>
-        <span>条件判断</span>
+        <div class="pal-shape pal-preview-dec"></div>
+        <span>判断</span>
       </div>
     </div>
 
@@ -422,6 +438,28 @@ let connectSource = null; // {nodeId, port}
 let dragTarget = null;
 let dragOffset = {x:0, y:0};
 let ghostEl = null;
+/** 加载模板时的画布指纹，用于防止未修改直接提交 */
+let loadedTemplateFingerprint = null;
+
+function canvasFingerprint() {
+  const idToKey = {};
+  nodes.forEach((n) => { idToKey[n.id] = `${n.type}:${n.text}`; });
+  return JSON.stringify({
+    nodes: nodes.map((n) => ({ type: n.type, text: n.text }))
+      .sort((a, b) => (a.type + a.text).localeCompare(b.type + b.text)),
+    conn: connections.map((c) => ({
+      from: idToKey[c.fromId] || String(c.fromId),
+      fromPort: normPort(c.fromPort),
+      to: idToKey[c.toId] || String(c.toId),
+      toPort: normPort(c.toPort || 'top'),
+      label: c.label || ''
+    })).sort((a, b) => (a.from + a.to).localeCompare(b.from + b.to))
+  });
+}
+
+function markCanvasEdited() {
+  loadedTemplateFingerprint = null;
+}
 
 // ==================== STEP NAVIGATION ====================
 const urlParams = new URLSearchParams(location.search);
@@ -486,50 +524,87 @@ function setMode(mode) {
   document.getElementById('btnConnect').classList.toggle('active-mode', mode === 'connect');
   const hint = document.getElementById('modeHint');
   if (mode === 'move') hint.innerHTML = '当前：<span class="mh-move">移动模式</span> — 拖动图块调整位置';
-  else hint.innerHTML = '当前：<span class="mh-connect">连线模式</span> — 点击起点端口，再点击终点端口';
+  else hint.innerHTML = '当前：<span class="mh-connect">连线模式</span> — 点击起点连接点，再点击终点连接点（菱形左=是，右=否）';
   connectSource = null;
   document.querySelectorAll('.port-active').forEach(p => p.classList.remove('port-active'));
 }
 
 function getNodeEl(id) { return document.getElementById('node-' + id); }
 
-function getPortPos(nodeId, portType) {
-  const el = getNodeEl(nodeId);
-  if (!el) return {x:0, y:0};
-  const inner = document.getElementById('canvasInner');
-  const ir = inner.getBoundingClientRect();
-  const er = el.getBoundingClientRect();
-  const n = nodes.find(n => n.id === nodeId);
-  if (!n) return {x:0, y:0};
-  const relX = er.left + er.width/2 - ir.left;
-  let relY;
-  if (portType === 'in') relY = er.top - ir.top;
-  else if (portType === 'out-yes') relY = er.bottom - ir.top;
-  else if (portType === 'out-no') relY = er.bottom - ir.top;
-  else relY = er.bottom - ir.top;
-  // Adjust for decision side ports
-  if (portType === 'out-yes') return {x: relX - er.width * 0.22, y: relY};
-  if (portType === 'out-no') return {x: relX + er.width * 0.22, y: relY};
-  return {x: relX, y: relY};
+function getNodeSize(node) {
+  const map = {
+    start: { w: 125, h: 46 },
+    end: { w: 125, h: 46 },
+    process: { w: 150, h: 52 },
+    io: { w: 150, h: 48 },
+    decision: { w: 120, h: 80 }
+  };
+  return map[node.type] || map.process;
+}
+
+/** 统一端口名：top/right/bottom/left */
+function normPort(port) {
+  if (port === 'in') return 'top';
+  if (port === 'out') return 'bottom';
+  if (port === 'out-yes') return 'left';
+  if (port === 'out-no') return 'right';
+  return port;
+}
+
+function getPortPos(nodeId, portSide) {
+  const n = nodes.find((nd) => nd.id === nodeId);
+  if (!n) return { x: 0, y: 0 };
+  const side = normPort(portSide);
+  const { w, h } = getNodeSize(n);
+  const cx = n.x + w / 2;
+  const cy = n.y + h / 2;
+  switch (side) {
+    case 'top': return { x: cx, y: n.y };
+    case 'bottom': return { x: cx, y: n.y + h };
+    case 'left': return { x: n.x, y: cy };
+    case 'right': return { x: n.x + w, y: cy };
+    default: return { x: cx, y: cy };
+  }
+}
+
+function portOffsetPoint(p, side, dist) {
+  switch (normPort(side)) {
+    case 'top': return { x: p.x, y: p.y - dist };
+    case 'bottom': return { x: p.x, y: p.y + dist };
+    case 'left': return { x: p.x - dist, y: p.y };
+    case 'right': return { x: p.x + dist, y: p.y };
+    default: return p;
+  }
+}
+
+function getConnLabel(fromNodeId, fromPort) {
+  const n = nodes.find((nd) => nd.id === fromNodeId);
+  if (n && n.type === 'decision') {
+    if (normPort(fromPort) === 'left') return '是';
+    if (normPort(fromPort) === 'right') return '否';
+  }
+  return '';
 }
 
 function redrawConnections() {
   const svg = document.getElementById('connSvg');
-  const inner = document.getElementById('canvasInner');
-  if (!svg || !inner) return;
+  if (!svg) return;
   let html = '<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#264653"/></marker></defs>';
-  connections.forEach(conn => {
-    const from = getPortPos(conn.fromId, conn.fromPort);
-    const to = getPortPos(conn.toId, 'in');
-    if (!from || !to) return;
-    const midY = (from.y + to.y) / 2;
-    const d = `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`;
+  connections.forEach((conn) => {
+    const fromPort = normPort(conn.fromPort);
+    const toPort = normPort(conn.toPort || 'top');
+    const from = getPortPos(conn.fromId, fromPort);
+    const to = getPortPos(conn.toId, toPort);
+    const bend = Math.max(Math.abs(to.x - from.x), Math.abs(to.y - from.y)) * 0.45 + 24;
+    const c1 = portOffsetPoint(from, fromPort, bend);
+    const c2 = portOffsetPoint(to, toPort, bend);
+    const d = `M ${from.x} ${from.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${to.x} ${to.y}`;
     html += `<path d="${d}" fill="none" stroke="#264653" stroke-width="2.5" marker-end="url(#arrowhead)"/>`;
-    // Label for decision branches
-    if (conn.label) {
+    const label = conn.label || getConnLabel(conn.fromId, conn.fromPort);
+    if (label) {
       const lx = (from.x + to.x) / 2;
-      const ly = midY - 10;
-      html += `<text x="${lx}" y="${ly}" text-anchor="middle" font-size="11" fill="#2A9D8F" font-weight="700">${conn.label}</text>`;
+      const ly = (from.y + to.y) / 2 - 8;
+      html += `<text x="${lx}" y="${ly}" text-anchor="middle" font-size="11" fill="#2A9D8F" font-weight="700">${label}</text>`;
     }
   });
   svg.innerHTML = html;
@@ -537,60 +612,62 @@ function redrawConnections() {
 
 function createNode(type, x, y, text) {
   const id = nextId++;
-  const defaultTexts = { start: '开始', end: '结束', process: '处理步骤', decision: '条件判断？' };
+  const defaultTexts = {
+    start: '开始',
+    end: '结束',
+    io: '输入/输出',
+    process: '处理步骤',
+    decision: '条件判断？'
+  };
+  const { w, h } = getNodeSize({ type });
   const node = {
-    id, type,
-    x: Math.max(10, x - 60),
-    y: Math.max(10, y - 20),
-    text: text || defaultTexts[type] || '',
+    id,
+    type,
+    x: Math.max(10, x - w / 2),
+    y: Math.max(10, y - h / 2),
+    text: text || defaultTexts[type] || ''
   };
   nodes.push(node);
   renderNode(node);
+  markCanvasEdited();
   return node;
+}
+
+function renderNodePorts(node) {
+  const ports = ['top', 'right', 'bottom', 'left'];
+  let html = ports.map((p) =>
+    `<span class="port port-${p}" data-port="${p}" data-nid="${node.id}" title="连接点"></span>`
+  ).join('');
+  if (node.type === 'decision') {
+    html += '<span class="pl-yes">是</span><span class="pl-no">否</span>';
+  }
+  html += `<button class="n-del" data-nid="${node.id}" title="删除">✕</button>`;
+  return html;
 }
 
 function renderNode(node) {
   const inner = document.getElementById('canvasInner');
-  // Remove existing
   const old = document.getElementById('node-' + node.id);
   if (old) old.remove();
 
   const el = document.createElement('div');
   el.id = 'node-' + node.id;
   el.className = 'fc-node type-' + node.type;
+  const { w, h } = getNodeSize(node);
   el.style.left = node.x + 'px';
   el.style.top = node.y + 'px';
+  el.style.width = w + 'px';
+  el.style.height = h + 'px';
   el.setAttribute('data-id', node.id);
   el.setAttribute('data-type', node.type);
 
-  let bodyH = '';
-  if (node.type === 'start' || node.type === 'end') {
-    bodyH = `<div class="n-body"><span class="n-text">${escHtml(node.text)}</span></div>`;
-  } else if (node.type === 'process') {
-    bodyH = `<div class="n-body"><span class="n-text">${escHtml(node.text)}</span></div>`;
-  } else if (node.type === 'decision') {
-    bodyH = `<div class="n-body"><span class="n-text">${escHtml(node.text)}</span></div>`;
-  }
-
-  // Ports
-  let portsH = '<span class="port port-in" data-port="in" data-nid="'+node.id+'" title="输入"></span>';
-  if (node.type === 'decision') {
-    portsH += '<span class="port port-out-yes" data-port="out-yes" data-nid="'+node.id+'" title="是/真"></span>';
-    portsH += '<span class="port port-out-no" data-port="out-no" data-nid="'+node.id+'" title="否/假"></span>';
-    portsH += '<span class="pl-yes">是</span><span class="pl-no">否</span>';
-  } else {
-    portsH += '<span class="port port-out" data-port="out" data-nid="'+node.id+'" title="输出"></span>';
-  }
-  portsH += '<button class="n-del" data-nid="'+node.id+'" title="删除">✕</button>';
-
-  el.innerHTML = bodyH + portsH;
+  el.innerHTML = `<div class="n-body"><span class="n-text">${escHtml(node.text)}</span></div>${renderNodePorts(node)}`;
   inner.appendChild(el);
 
-  // Events
   el.addEventListener('mousedown', (e) => onNodeMouseDown(e, node));
   el.addEventListener('dblclick', (e) => { e.stopPropagation(); editNodeText(node); });
   el.querySelector('.n-del').addEventListener('click', (e) => { e.stopPropagation(); deleteNode(node.id); });
-  el.querySelectorAll('.port').forEach(p => {
+  el.querySelectorAll('.port').forEach((p) => {
     p.addEventListener('mousedown', (e) => { e.stopPropagation(); onPortClick(e, node.id, p.dataset.port); });
   });
 }
@@ -611,23 +688,41 @@ function onNodeMouseDown(e, node) {
 function onPortClick(e, nodeId, portType) {
   e.preventDefault();
   if (fcMode === 'move') return;
-  // Connect mode
+  const side = normPort(portType);
   if (!connectSource) {
-    connectSource = { nodeId, port: portType };
-    document.querySelectorAll('.port-active').forEach(p => p.classList.remove('port-active'));
-    const portEl = document.querySelector(`.port[data-nid="${nodeId}"][data-port="${portType}"]`);
+    connectSource = { nodeId, port: side };
+    document.querySelectorAll('.port-active').forEach((p) => p.classList.remove('port-active'));
+    const portEl = document.querySelector(`.port[data-nid="${nodeId}"][data-port="${side}"]`);
     if (portEl) portEl.classList.add('port-active');
-    showToast('已选择起点，请点击目标图块的输入端口（上方圆点）');
+    showToast('已选起点，请点击目标图块的任意连接点（上/下/左/右）');
   } else {
-    // Complete connection
-    if (connectSource.nodeId === nodeId) { showToast('不能连接到自身！'); connectSource = null; document.querySelectorAll('.port-active').forEach(p => p.classList.remove('port-active')); return; }
-    // Remove existing connection from same source+port
-    connections = connections.filter(c => !(c.fromId === connectSource.nodeId && c.fromPort === connectSource.port));
-    const label = connectSource.port === 'out-yes' ? '是' : connectSource.port === 'out-no' ? '否' : '';
-    connections.push({ fromId: connectSource.nodeId, fromPort: connectSource.port, toId: nodeId, label });
+    if (connectSource.nodeId === nodeId && connectSource.port === side) {
+      showToast('不能连接到同一点！');
+      connectSource = null;
+      document.querySelectorAll('.port-active').forEach((p) => p.classList.remove('port-active'));
+      return;
+    }
+    if (connectSource.nodeId === nodeId) {
+      showToast('不能连接到自身！');
+      connectSource = null;
+      document.querySelectorAll('.port-active').forEach((p) => p.classList.remove('port-active'));
+      return;
+    }
+    connections = connections.filter(
+      (c) => !(c.fromId === connectSource.nodeId && normPort(c.fromPort) === connectSource.port)
+    );
+    const label = getConnLabel(connectSource.nodeId, connectSource.port);
+    connections.push({
+      fromId: connectSource.nodeId,
+      fromPort: connectSource.port,
+      toId: nodeId,
+      toPort: side,
+      label
+    });
     connectSource = null;
-    document.querySelectorAll('.port-active').forEach(p => p.classList.remove('port-active'));
+    document.querySelectorAll('.port-active').forEach((p) => p.classList.remove('port-active'));
     redrawConnections();
+    markCanvasEdited();
     showToast('连线成功！');
   }
 }
@@ -636,8 +731,11 @@ function editNodeText(node) {
   const newText = prompt('修改文字内容：', node.text);
   if (newText !== null) {
     node.text = newText.trim() || node.text;
+    if (/^结束$/.test(node.text)) node.type = 'end';
+    else if (/^开始$/.test(node.text)) node.type = 'start';
     renderNode(node);
     redrawConnections();
+    markCanvasEdited();
   }
 }
 
@@ -647,68 +745,140 @@ function deleteNode(id) {
   const el = getNodeEl(id);
   if (el) el.remove();
   redrawConnections();
+  markCanvasEdited();
 }
 
 function clearCanvas() {
   nodes = [];
   connections = [];
   nextId = 1;
+  loadedTemplateFingerprint = null;
   document.getElementById('canvasInner').innerHTML = '<svg class="fc-conn-svg" id="connSvg"></svg>';
 }
 
 function loadTemplate() {
   clearCanvas();
-  // Simplified template — 投票算法基本流程（不含循环回连）
   const template = [
-    {type:'start', x:440, y:20, text:'开始'},
-    {type:'process', x:440, y:105, text:'a=0, b=0'},
-    {type:'process', x:440, y:195, text:'获取投票 → tp'},
-    {type:'decision', x:440, y:295, text:'tp="a"?'},
-    {type:'process', x:250, y:430, text:'a = a + 1'},
-    {type:'process', x:620, y:430, text:'b = b + 1'},
-    {type:'process', x:440, y:555, text:'输出 a, b'},
-    {type:'end', x:440, y:655, text:'结束'},
+    { type: 'start', x: 440, y: 30, text: '开始' },
+    { type: 'process', x: 440, y: 115, text: 'a=0，b=0（初始化计票）' },
+    { type: 'decision', x: 440, y: 220, text: '还有票要统计吗？' },
+    { type: 'io', x: 440, y: 340, text: '读入一张投票' },
+    { type: 'decision', x: 440, y: 460, text: '这票是投 A 吗？' },
+    { type: 'process', x: 260, y: 590, text: 'a = a + 1' },
+    { type: 'process', x: 620, y: 590, text: 'b = b + 1' },
+    { type: 'io', x: 680, y: 220, text: '输出 a 和 b' },
+    { type: 'end', x: 680, y: 330, text: '结束' }
   ];
-  template.forEach(t => createNode(t.type, t.x, t.y, t.text));
-  // Auto-connect template (简化版，无循环)
-  const getNid = (i) => nodes[i].id;
-  if (nodes.length === 8) {
+  template.forEach((t) => createNode(t.type, t.x, t.y, t.text));
+  markCanvasEdited();
+  if (nodes.length >= 9) {
+    const g = (i) => nodes[i].id;
     connections = [
-      {fromId:getNid(0), fromPort:'out', toId:getNid(1), label:''},
-      {fromId:getNid(1), fromPort:'out', toId:getNid(2), label:''},
-      {fromId:getNid(2), fromPort:'out', toId:getNid(3), label:''},
-      {fromId:getNid(3), fromPort:'out-yes', toId:getNid(4), label:'是'},
-      {fromId:getNid(3), fromPort:'out-no', toId:getNid(5), label:'否'},
-      {fromId:getNid(4), fromPort:'out', toId:getNid(6), label:''},
-      {fromId:getNid(5), fromPort:'out', toId:getNid(6), label:''},
-      {fromId:getNid(6), fromPort:'out', toId:getNid(7), label:''},
+      { fromId: g(0), fromPort: 'bottom', toId: g(1), toPort: 'top', label: '' },
+      { fromId: g(1), fromPort: 'bottom', toId: g(2), toPort: 'top', label: '' },
+      { fromId: g(2), fromPort: 'left', toId: g(3), toPort: 'top', label: '是' },
+      { fromId: g(3), fromPort: 'bottom', toId: g(4), toPort: 'top', label: '' },
+      { fromId: g(4), fromPort: 'left', toId: g(5), toPort: 'top', label: '是' },
+      { fromId: g(4), fromPort: 'right', toId: g(6), toPort: 'top', label: '否' }
     ];
   }
   redrawConnections();
-  showToast('简化模板已加载！先观察结构，清空后自己动手画一遍');
+  loadedTemplateFingerprint = canvasFingerprint();
+  showToast('参考骨架已加载：请补全循环回连和「否→输出→结束」后再检查');
+}
+
+function normText(s) {
+  return String(s || '').replace(/\s/g, '').toLowerCase();
+}
+
+function hasLoopBack() {
+  const loopNode = nodes.find((n) => n.type === 'decision' && /还有票|1000|统计/.test(n.text));
+  return connections.some((c) => {
+    const from = nodes.find((n) => n.id === c.fromId);
+    const to = nodes.find((n) => n.id === c.toId);
+    if (!from || !to) return false;
+    if (loopNode && to.id === loopNode.id && from.id !== loopNode.id) return true;
+    return to.y < from.y - 20;
+  });
 }
 
 function checkFlowchart() {
   const issues = [];
-  if (nodes.length < 5) issues.push('图块数量不足，建议至少包含开始、结束和关键处理步骤');
-  const hasStart = nodes.some(n => n.type === 'start');
-  const hasEnd = nodes.some(n => n.type === 'end');
-  const hasDecision = nodes.some(n => n.type === 'decision');
+
+  if (loadedTemplateFingerprint && canvasFingerprint() === loadedTemplateFingerprint) {
+    issues.push('加载模板后请补全连线（含循环回到「还有票要统计吗」和「否→输出→结束」），不能直接提交模板');
+  }
+
+  if (nodes.length < 7) issues.push('图块偏少，请包含：开始、初始化、两次判断、计票、输出、结束');
+
+  const hasStart = nodes.some((n) => n.type === 'start');
+  const hasEnd = nodes.some((n) => n.type === 'end');
+  const decisions = nodes.filter((n) => n.type === 'decision');
   if (!hasStart) issues.push('缺少「开始」图块');
   if (!hasEnd) issues.push('缺少「结束」图块');
-  if (!hasDecision) issues.push('缺少「条件判断」菱形图块');
-  if (connections.length < 2) issues.push('连线太少，请连接各个图块');
-  // Check for orphan nodes
+  if (decisions.length < 2) issues.push('需要两个「条件判断」：①是否还有票 ②是否投给 A');
+
+  if (!nodes.some((n) => n.type === 'process' && /a\s*=\s*0|初始化|计票/.test(n.text))) {
+    issues.push('缺少初始化步骤（如 a=0，b=0）');
+  }
+  const loopDecision = decisions.find((n) => /还有票|1000|统计/.test(n.text));
+  if (!loopDecision) issues.push('缺少循环判断（如「还有票要统计吗？」）');
+
+  const voteDecision = decisions.find((n) => /投.*a|a\s*吗|tp.*a/i.test(n.text));
+  if (!voteDecision) issues.push('缺少投票判断（如「这票是投 A 吗？」）');
+
+  if (!nodes.some((n) => /a\s*=\s*a\s*\+\s*1|a\+1/i.test(normText(n.text)))) {
+    issues.push('缺少「a = a + 1」的处理步骤');
+  }
+  if (!nodes.some((n) => /b\s*=\s*b\s*\+\s*1|b\+1/i.test(normText(n.text)))) {
+    issues.push('缺少「b = b + 1」的处理步骤');
+  }
+  const outputNode = nodes.find((n) => /输出/.test(n.text));
+  if (!outputNode) issues.push('缺少「输出 a、b」步骤（请用平行四边形表示）');
+
+  if (!nodes.some((n) => n.type === 'io' && /读|输入|投票/.test(n.text))) {
+    issues.push('请用平行四边形图块表示「读入投票」');
+  }
+
+  if (!hasLoopBack()) {
+    issues.push('缺少循环回连线：「a+1」和「b+1」之后应连回「还有票要统计吗」');
+  }
+
+  if (voteDecision) {
+    const yesConn = connections.some((c) => c.fromId === voteDecision.id && normPort(c.fromPort) === 'left');
+    const noConn = connections.some((c) => c.fromId === voteDecision.id && normPort(c.fromPort) === 'right');
+    if (!yesConn || !noConn) issues.push('「是否投 A」请从菱形左侧连「是」、右侧连「否」');
+  }
+
+  if (loopDecision) {
+    const noConn = connections.some((c) => c.fromId === loopDecision.id && normPort(c.fromPort) === 'right');
+    if (!noConn) issues.push('「还有票吗」的「否」请从菱形右侧连到「输出」');
+    else if (outputNode) {
+      const reachesOutput = connections.some(
+        (c) => c.fromId === loopDecision.id && normPort(c.fromPort) === 'right' && c.toId === outputNode.id
+      );
+      if (!reachesOutput) issues.push('「还有票吗→否」建议从右侧直接连到「输出 a 和 b」');
+    }
+  }
+
+  if (outputNode && hasEnd) {
+    const endNode = nodes.find((n) => n.type === 'end');
+    const outToEnd = connections.some((c) => c.fromId === outputNode.id && c.toId === endNode.id);
+    if (!outToEnd) issues.push('「输出」之后应连接到「结束」');
+  }
+
+  if (connections.length < 8) issues.push('连线不完整，请检查循环、分支与输出路径');
+
   const connectedIds = new Set();
-  connections.forEach(c => { connectedIds.add(c.fromId); connectedIds.add(c.toId); });
-  const orphans = nodes.filter(n => !connectedIds.has(n.id) && nodes.length > 1);
-  if (orphans.length > 0) issues.push(`有 ${orphans.length} 个图块没有被连线`);
+  connections.forEach((c) => { connectedIds.add(c.fromId); connectedIds.add(c.toId); });
+  const orphans = nodes.filter((n) => !connectedIds.has(n.id) && nodes.length > 1);
+  if (orphans.length > 0) issues.push(`有 ${orphans.length} 个图块还没有连线`);
 
   if (issues.length === 0) {
-    showToast('✅ 流程图检查通过！干得漂亮！');
+    showToast('✅ 流程图检查通过！你已画出完整的投票统计流程！');
     markStepDone(1);
   } else {
-    alert('⚠️ 检查发现问题：\n\n' + issues.map((s,i) => (i+1)+'. '+s).join('\n'));
+    alert('⚠️ 检查发现问题：\n\n' + issues.map((s, i) => (i + 1) + '. ' + s).join('\n'));
   }
 }
 

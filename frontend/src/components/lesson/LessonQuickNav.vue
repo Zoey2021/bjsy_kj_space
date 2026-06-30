@@ -22,7 +22,8 @@ defineProps({
     default: () => ([
       { key: 'intro', label: '课程介绍', icon: '📖', tone: 'purple' },
       { key: 'records', label: '学习记录', icon: '📋', tone: 'blue' },
-      { key: 'ranking', label: '积分榜', icon: '🏆', tone: 'orange' }
+      { key: 'ranking', label: '积分榜', icon: '🏆', tone: 'orange' },
+      { key: 'profile', label: '个人中心', icon: '👤', tone: 'teal' }
     ])
   }
 })
@@ -71,6 +72,10 @@ defineEmits(['select'])
 .nav-chip.green {
   background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
   color: #16a34a;
+}
+.nav-chip.teal {
+  background: linear-gradient(180deg, #f0fdfa 0%, #ccfbf1 100%);
+  color: #0f766e;
 }
 .nav-chip.active {
   outline: 2px solid currentColor;

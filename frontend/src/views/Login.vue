@@ -131,6 +131,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login, getClassCodeStudents, classCodeLogin } from '../api'
+import { detectEnrollmentYear } from '../utils/cohortGradeAccess'
 
 const router = useRouter()
 const loading = ref(false)
@@ -148,7 +149,7 @@ const pickerLoading = ref(false)
 const pendingCode = ref('')
 
 const clearAuthStorage = () => {
-  ;['token', 'role', 'realName', 'userId', 'username', 'classId', 'enrollmentYear'].forEach((key) => {
+  ;['token', 'role', 'realName', 'userId', 'username', 'classId', 'className', 'enrollmentYear'].forEach((key) => {
     localStorage.removeItem(key)
   })
 }
@@ -174,8 +175,18 @@ const saveLoginAndRedirect = (data) => {
   localStorage.setItem('userId', data.userId)
   localStorage.setItem('username', data.username || '')
   localStorage.setItem('classId', data.classId || '')
-  if (data.enrollmentYear != null) {
-    localStorage.setItem('enrollmentYear', String(data.enrollmentYear))
+  if (data.className) {
+    localStorage.setItem('className', data.className)
+  } else {
+    localStorage.removeItem('className')
+  }
+  const cohortYear = detectEnrollmentYear({
+    className: data.className,
+    username: data.username,
+    enrollmentYear: data.enrollmentYear
+  })
+  if (cohortYear) {
+    localStorage.setItem('enrollmentYear', cohortYear)
   } else {
     localStorage.removeItem('enrollmentYear')
   }

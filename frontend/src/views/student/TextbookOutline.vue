@@ -24,10 +24,17 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import PdfViewer from '../../components/PdfViewer.vue'
 import TextbookDirectory from '../../components/textbook/TextbookDirectory.vue'
-import { getGradeOutline } from '../../api'
+import { getGradeOutline, getMe } from '../../api'
 import { resolveTextbookPdfUrl } from '../../utils/textbookPdf'
+import {
+  detectEnrollmentYear,
+  getGradeAccess,
+  parseGradeKeyFromBookName,
+  GRADE_ACCESS
+} from '../../utils/cohortGradeAccess'
 
 const route = useRoute()
 const router = useRouter()
@@ -40,6 +47,25 @@ const load = async () => {
   const res = await getGradeOutline(id)
   tree.value = res.data
   pdfUrl.value = resolveTextbookPdfUrl(res.data)
+  await guardGradeAccess()
+}
+
+const guardGradeAccess = async () => {
+  if (!tree.value || tree.value.textbookType === 'SCHOOL') return
+  const gradeKey = parseGradeKeyFromBookName(tree.value.name)
+  if (!gradeKey) return
+  const meRes = await getMe().catch(() => ({ data: {} }))
+  const profile = meRes.data || {}
+  if (profile.className) localStorage.setItem('className', profile.className)
+  const year = detectEnrollmentYear(profile)
+  const access = getGradeAccess(year, gradeKey)
+  if (access === GRADE_ACCESS.NOT_STARTED) {
+    ElMessage.warning('该年级课程尚未开始')
+    router.replace('/student/map')
+  } else if (access === GRADE_ACCESS.COMPLETED) {
+    ElMessage.info('该年级课程已完成，请在课程地图点击「已完成」查看成绩')
+    router.replace('/student/map')
+  }
 }
 
 onMounted(load)

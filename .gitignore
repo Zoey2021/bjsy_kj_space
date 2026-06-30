@@ -5,6 +5,10 @@ frontend/dist/
 backend/target/
 private_files/
 deploy/dify/
+Dify材料/
+database/id_cache.db
+database/id_cache.db-shm
+database/id_cache.db-wal
 *.log
 .env
 .env.local

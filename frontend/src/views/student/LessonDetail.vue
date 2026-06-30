@@ -61,9 +61,7 @@
 
     <main class="studio-right">
       <section v-show="activePanel === 'intro'" class="content-panel intro-panel">
-        <h2>课程介绍</h2>
-        <div v-if="lesson?.content" class="rich-body" v-html="lesson.content"></div>
-        <p v-if="workspacePlan.objectives" class="objectives"><strong>学习目标</strong><br>{{ workspacePlan.objectives }}</p>
+        <LessonIntroMindMap v-if="introMindMap" :map="introMindMap" />
       </section>
       <section
         v-show="activePanel.startsWith('act-')"
@@ -86,6 +84,9 @@
           :lesson-id="Number(route.params.id)"
           @go-activity="goActivityFromRecords"
         />
+      </section>
+      <section v-show="activePanel === 'profile'" class="content-panel profile-panel">
+        <el-empty description="正在开发" :image-size="96" />
       </section>
       <section v-show="activePanel === 'evaluation'" class="content-panel eval-panel">
         <LessonSelfEvaluation
@@ -186,6 +187,8 @@ import LessonClassQuiz from '../../components/student/LessonClassQuiz.vue'
 import LessonSelfEvaluation from '../../components/student/LessonSelfEvaluation.vue'
 import LessonQuickNav from '../../components/lesson/LessonQuickNav.vue'
 import LessonRecordsPanel from '../../components/student/LessonRecordsPanel.vue'
+import LessonIntroMindMap from '../../components/student/LessonIntroMindMap.vue'
+import { buildLessonIntroMap } from '../../utils/buildLessonIntroMap'
 
 const route = useRoute()
 const router = useRouter()
@@ -240,6 +243,18 @@ const sidebarPlan = computed(() => {
     if (cfg.layout === 'sidebar' && cfg.activities?.length) return cfg
   } catch { /* ignore */ }
   return null
+})
+
+const introMindMap = computed(() => {
+  if (!workspacePlan.value) return null
+  return buildLessonIntroMap({
+    lessonTitle: workspacePlan.value.lessonTitle || lesson.value?.title,
+    contentHtml: lesson.value?.content,
+    objectives: workspacePlan.value.objectives,
+    activities: workspacePlan.value.activities,
+    introMap: workspacePlan.value.introMap,
+    hasQuiz: !!workspacePlan.value.quiz
+  })
 })
 
 const unlockedActivities = computed(() =>
@@ -330,6 +345,7 @@ const selectActivity = (act) => {
 const quickNavKey = computed(() => {
   if (activePanel.value === 'intro') return 'intro'
   if (activePanel.value === 'records') return 'records'
+  if (activePanel.value === 'profile') return 'profile'
   if (showRanking.value) return 'ranking'
   return ''
 })
@@ -340,7 +356,8 @@ const onQuickNav = (key) => {
   else if (key === 'records') {
     activePanel.value = 'records'
     recordsPanelRef.value?.reload?.()
-  } else if (key === 'ranking') showRanking.value = true
+  } else if (key === 'profile') activePanel.value = 'profile'
+  else if (key === 'ranking') showRanking.value = true
 }
 
 const goActivityFromRecords = (act) => {
@@ -649,10 +666,7 @@ onUnmounted(() => {
   min-height: 0;
   overflow: auto;
 }
-.intro-panel { padding: 24px 28px; }
-.intro-panel h2 { margin: 0 0 14px; color: #1e40af; font-size: 18px; }
-.rich-body :deep(p) { line-height: 1.75; color: #334155; }
-.objectives { white-space: pre-wrap; line-height: 1.75; color: #334155; }
+.intro-panel { padding: 20px 24px; }
 .iframe-panel {
   padding: 0;
   overflow: hidden;
