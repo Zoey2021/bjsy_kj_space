@@ -1,0 +1,50 @@
+-- 六年级上册 第2课 抽象与建模：绑定学生工作台 + 探究互动页
+-- 已有数据库执行一次即可（幂等：先删后插）
+
+USE learn_space;
+
+DELETE ct FROM course_task ct
+INNER JOIN course_lesson cl ON ct.lesson_id = cl.id
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册'
+  AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现'
+  AND cl.title = '第2课 抽象与建模';
+
+DELETE cr FROM course_resource cr
+INNER JOIN course_lesson cl ON cr.lesson_id = cl.id
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册'
+  AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现'
+  AND cl.title = '第2课 抽象与建模';
+
+INSERT INTO course_resource (lesson_id, title, res_type, content_url, sort_order)
+SELECT cl.id, '抽象与建模探究活动', 'WEB', '/lessons/g6-up-lesson2/index.html', 1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册'
+  AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现'
+  AND cl.title = '第2课 抽象与建模'
+LIMIT 1;
+
+INSERT INTO course_task (lesson_id, title, description, task_type, config_json, max_score, sort_order)
+SELECT cl.id,
+  '抽象与建模探究',
+  '六年级上第2课学生工作台：鸡兔同笼表格、百钱买百鸡、抽象建模挑战',
+  'EXTERNAL',
+  '{"layout":"student_workspace","lessonTitle":"第2课 抽象与建模","objectives":"我能写出清晰的问题描述，用表格整理对象、数量与关系，并从表格列出方程完成抽象建模。","evaluationHint":"完成三个探究活动后，请如实填写元认知自评，帮助自己和教师了解学习状态。","introMap":{"title":"抽象与建模","branches":[{"label":"3 本课学习目标","nodes":[{"text":"写出问题描述（对象、已知、求）"},{"text":"用表格整理对象、数量、关系"},{"text":"从表格列出方程完成建模"}]},{"label":"1. 核心学习内容","nodes":[{"text":"问题描述 → 抽象（表格）→ 建模（方程）"},{"text":"鸡兔同笼、百钱买百鸡等经典案例"}]},{"label":"2. 课堂完成顺序","nodes":[{"text":"左侧依次完成活动一、活动二、活动三"},{"text":"（对应网页探究一、探究二、探究三）"},{"text":"全部活动完成后作答课堂小测"}]}]},"evaluationForm":{"title":"学习评价","intro":"以下题目没有标准答案，请根据本课真实学习感受选择最符合的一项。","questions":[{"id":"e1","aspect":"学习兴趣","stem":"本课「抽象与建模」的内容，你的学习兴趣如何？","options":["非常感兴趣，还想挑战更多建模问题","比较感兴趣，愿意主动完成表格练习","一般，能跟着完成要求","不太感兴趣，觉得和数学课差不多"]},{"id":"e2","aspect":"难度感知","stem":"你觉得本课哪个环节最有挑战性？","options":["写出完整的问题描述","设计并填写抽象表格","从合计行读出方程/算式","百钱买百鸡的自由建表","我觉得都不难，掌握较好"]},{"id":"e3","aspect":"学习信心","stem":"完成三个探究活动后，你对自己「用表格做抽象建模」的信心如何？","options":["非常有信心，能独立分析新问题","比较有信心，偶尔需要提示","信心一般，还需要更多练习","还不太有信心，希望获得更多帮助"]}]},"activities":[{"index":1,"title":"鸡兔同笼表格","step":1,"path":"/lessons/g6-up-lesson2/index.html","unlocked":true},{"index":2,"title":"百钱买百鸡建表","step":2,"path":"/lessons/g6-up-lesson2/index.html","unlocked":false},{"index":3,"title":"抽象建模挑战","step":3,"path":"/lessons/g6-up-lesson2/index.html","unlocked":false}],"quiz":{"title":"课堂小测","unlockAfterActivity":3,"questions":[{"id":"k1","dimension":"知识掌握","stem":"在计算机科学中，「抽象」是指：","options":["把问题变得更复杂","抓住问题的关键信息，忽略不重要的细节","用各种颜色标记步骤","在问题中加入许多细节"],"answer":1,"explanation":"抽象是从问题中提取对象、数量、关系等关键要素，忽略无关细节。"},{"id":"k2","dimension":"知识掌握","stem":"「建模」是指：","options":["制作一个真实大小的模型","用不同字体排版文字","把抽象出的数据和关系，用算式或方程表达出来","画一幅示意图"],"answer":2,"explanation":"建模是根据表格中的关系，列出算式或方程，形成可计算模型。"},{"id":"a1","dimension":"能力提升","stem":"抽象建模时，我们用什么工具来整理「对象、数量、关系」？","options":["思维导图","表格","日记本","手机备忘录"],"answer":1,"explanation":"本课强调表格是程序员整理信息的常用工具。"},{"id":"a2","dimension":"能力提升","stem":"鸡兔同笼表格的「合计行」主要用来做什么？","options":["装饰表格使其美观","汇总数据并读出方程/算式","记录同学的姓名","代替问题描述"],"answer":1,"explanation":"合计行体现总量关系，是读出方程的关键。"},{"id":"l1","dimension":"素养变化","stem":"把具体数字换成字母，让模型适用于更多问题，这体现了：","options":["模型可以通用化，建一次反复用","字母比数字更难，应该避免","建模完成后不能再修改","表格只是数学课的工具"],"answer":0,"explanation":"模型通用化是计算思维的重要体现。"},{"id":"l2","dimension":"素养变化","stem":"「模型不等于现实，但模型能帮我们高效解决问题」说明：","options":["可以忽略所有现实条件","抽象建模是为了更好地用计算机求解","表格填错也没关系","信息科技课与数学课完全无关"],"answer":1,"explanation":"模型是对现实的简化，目的是高效、清晰地解决问题。"}]}}',
+  100,
+  1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册'
+  AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现'
+  AND cl.title = '第2课 抽象与建模'
+LIMIT 1;

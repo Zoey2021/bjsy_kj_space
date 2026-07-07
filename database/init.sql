@@ -215,6 +215,42 @@ CREATE TABLE sys_config (
   UNIQUE KEY uk_config_key (config_key)
 ) ENGINE=InnoDB COMMENT='系统配置';
 
+-- ------------------------------------------------------------
+-- 14. 教师发布活动记录（按班级）
+-- ------------------------------------------------------------
+CREATE TABLE course_activity_publish (
+  id            BIGINT   NOT NULL AUTO_INCREMENT,
+  lesson_id     BIGINT   NOT NULL,
+  class_id      BIGINT   NOT NULL,
+  resource_id   BIGINT   NULL,
+  task_id       BIGINT   NULL,
+  html_path     VARCHAR(500) NULL,
+  published_by  BIGINT   NULL,
+  published_at  DATETIME NULL,
+  plan_json     TEXT     NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_lesson_class (lesson_id, class_id)
+) ENGINE=InnoDB COMMENT='课时活动发布记录';
+
+-- ------------------------------------------------------------
+-- 15. 学生活动提交明细日志
+-- ------------------------------------------------------------
+CREATE TABLE learn_submission_log (
+  id              BIGINT   NOT NULL AUTO_INCREMENT,
+  student_id      BIGINT   NOT NULL,
+  lesson_id       BIGINT   NOT NULL,
+  task_id         BIGINT   NOT NULL,
+  content_json    TEXT     NOT NULL,
+  score           INT      NULL,
+  study_seconds   INT      NOT NULL DEFAULT 0,
+  activity_key    VARCHAR(50) NULL,
+  activity_index  INT      NULL,
+  created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_student_lesson (student_id, lesson_id),
+  KEY idx_student_created (student_id, created_at)
+) ENGINE=InnoDB COMMENT='活动提交明细';
+
 -- ============================================================
 -- 表关系说明：
 -- course_grade 1:N course_unit 1:N course_lesson 1:N (course_resource, course_task)
@@ -422,4 +458,29 @@ FROM course_lesson cl
 INNER JOIN course_unit cu ON cl.unit_id = cu.id
 INNER JOIN course_grade cg ON cu.grade_id = cg.id
 WHERE cg.name = '五年级下册' AND cu.name = '第二单元 控制系统' AND cl.title = '第8课 体验控制系统'
+LIMIT 1;
+
+-- 六年级上册第2课：抽象与建模学生工作台
+INSERT INTO course_resource (lesson_id, title, res_type, content_url, sort_order)
+SELECT cl.id, '抽象与建模探究活动', 'WEB', '/lessons/g6-up-lesson2/index.html', 1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现' AND cl.title = '第2课 抽象与建模'
+LIMIT 1;
+
+INSERT INTO course_task (lesson_id, title, description, task_type, config_json, max_score, sort_order)
+SELECT cl.id,
+  '抽象与建模探究',
+  '六年级上第2课学生工作台',
+  'EXTERNAL',
+  '{"layout":"student_workspace","lessonTitle":"第2课 抽象与建模","objectives":"我能写出清晰的问题描述，用表格整理对象、数量与关系，并从表格列出方程完成抽象建模。","activities":[{"index":1,"title":"鸡兔同笼表格","step":1,"path":"/lessons/g6-up-lesson2/index.html","unlocked":true},{"index":2,"title":"百钱买百鸡建表","step":2,"path":"/lessons/g6-up-lesson2/index.html","unlocked":false},{"index":3,"title":"抽象建模挑战","step":3,"path":"/lessons/g6-up-lesson2/index.html","unlocked":false}],"quiz":{"title":"课堂小测","unlockAfterActivity":3,"questions":[]}}',
+  100,
+  1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现' AND cl.title = '第2课 抽象与建模'
 LIMIT 1;

@@ -55,8 +55,8 @@
       </el-row>
     </section>
 
-    <!-- 校本课程：按系列分组展示 -->
-    <section class="panel panel-school" v-if="schoolSeriesGroups.length">
+    <!-- 校本课程：按系列分组展示 + 融合探究课程 -->
+    <section class="panel panel-school">
       <h2 class="panel-title">校本课程</h2>
       <el-row :gutter="18" class="grade-row">
         <el-col
@@ -84,11 +84,25 @@
             </div>
           </div>
         </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <div class="grade-card grade-card-school">
+            <div class="grade-card-head">{{ integratedInquiry.cardTitle }}</div>
+            <div class="dual-covers">
+              <div
+                v-for="slot in integratedInquiry.slots"
+                :key="slot.key"
+                class="book-slot"
+                @click="openInquirySlot(slot)"
+              >
+                <div class="book-thumb school-thumb">
+                  <img :src="slot.coverUrl" :alt="slot.label" />
+                </div>
+                <div class="book-label">{{ slot.label }}</div>
+              </div>
+            </div>
+          </div>
+        </el-col>
       </el-row>
-    </section>
-    <section class="panel panel-school panel-school-empty" v-else>
-      <h2 class="panel-title">校本课程</h2>
-      <el-empty description="校本课程即将上线" :image-size="80" />
     </section>
 
     <el-dialog
@@ -112,6 +126,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getTextbooks, getMe } from '../../api'
 import { groupSchoolTextbooks } from '../../utils/schoolTextbooks'
+import { INTEGRATED_INQUIRY_COURSE } from '../../constants/pblModule'
 import {
   detectEnrollmentYear,
   getGradeAccess,
@@ -159,6 +174,7 @@ const mainGradeGroups = computed(() => {
 })
 
 const schoolSeriesGroups = computed(() => groupSchoolTextbooks(schoolBooks.value))
+const integratedInquiry = INTEGRATED_INQUIRY_COURSE
 
 const gradeAccess = (gradeKey) => getGradeAccess(enrollmentYear.value, gradeKey)
 
@@ -210,6 +226,10 @@ const openBook = (gradeKey, gradeId) => {
 
 const openSchoolBook = (gradeId) => {
   router.push(`/student/textbook/${gradeId}`)
+}
+
+const openInquirySlot = (slot) => {
+  router.push(slot.studentRoute)
 }
 </script>
 

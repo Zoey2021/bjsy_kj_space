@@ -90,8 +90,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC
 .fc-task-body{display:flex;flex-direction:column;gap:10px}
 .fc-task-desc{font-size:12.5px;color:var(--tx);line-height:1.7}
 .fc-task-steps{display:flex;flex-direction:column;gap:5px}
-.fc-step{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--tx2);line-height:1.5}
-.fc-step-num{width:22px;height:22px;border-radius:50%;background:var(--s);color:#FFF;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.fc-step{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;font-size:12.5px;color:var(--tx2);line-height:1.6}
+.fc-step-num{width:22px;height:22px;border-radius:50%;background:var(--s);color:#FFF;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
+.fc-step-text{min-width:0;word-break:normal;white-space:normal}
 .fc-task-tip{width:100%;margin-top:8px;padding:8px 12px;background:rgba(233,196,106,.18);border:1px solid rgba(233,196,106,.35);border-radius:var(--rs);font-size:12.5px;color:#8B6E00;line-height:1.5}
 .fc-canvas-inner{position:relative;width:1100px;height:850px}
 .fc-conn-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}
@@ -270,10 +271,10 @@ body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
 
     <!-- 操作步骤 -->
     <div class="fc-task-steps">
-      <div class="fc-step"><span class="fc-step-num">1</span>拖动四种图块：<b>圆角矩形</b>（开始/结束）、<b>平行四边形</b>（输入/输出）、<b>长方形</b>（处理）、<b>菱形</b>（判断）</div>
-      <div class="fc-step"><span class="fc-step-num">2</span><b>移动模式</b>下双击图块修改文字</div>
-      <div class="fc-step"><span class="fc-step-num">3</span>切换<b>连线模式</b>，从任一连线点连到另一图块（菱形：<b>左=是，右=否</b>）</div>
-      <div class="fc-step"><span class="fc-step-num">4</span>补全<b>循环回连</b>和「否→输出→结束」后，点「✅ 检查流程图」</div>
+      <div class="fc-step"><span class="fc-step-num">1</span><span class="fc-step-text">拖动流程图图块到画布</span></div>
+      <div class="fc-step"><span class="fc-step-num">2</span><span class="fc-step-text">移动模式-双击图块修改文字</span></div>
+      <div class="fc-step"><span class="fc-step-num">3</span><span class="fc-step-text">连线模式-放好图块再连线</span></div>
+      <div class="fc-step"><span class="fc-step-num">4</span><span class="fc-step-text">点击检测流程图提交</span></div>
     </div>
 
     <!-- Logo候选展示（题目与要求下方，缩略图） -->

@@ -8,6 +8,8 @@ const routes = [
     meta: { role: 'STUDENT' },
     children: [
       { path: 'map', component: () => import('../views/student/CourseMap.vue') },
+      { path: 'pbl', component: () => import('../views/student/PblStudentWorkspace.vue') },
+      { path: 'interdisciplinary', component: () => import('../views/student/InterdisciplinaryStudentWorkspace.vue') },
       { path: 'textbook/:gradeId', component: () => import('../views/student/TextbookOutline.vue') },
       { path: 'lesson/:id', component: () => import('../views/student/LessonDetail.vue') },
       { path: 'records', component: () => import('../views/student/MyRecords.vue') },
@@ -21,6 +23,8 @@ const routes = [
     children: [
       { path: '', redirect: '/teacher/course-map' },
       { path: 'course-map', component: () => import('../views/teacher/TeacherCourseMap.vue') },
+      { path: 'pbl', component: () => import('../views/teacher/PblTeacherWorkspace.vue') },
+      { path: 'interdisciplinary', component: () => import('../views/teacher/InterdisciplinaryTeacherWorkspace.vue') },
       { path: 'course-map/grade/:gradeId', component: () => import('../views/teacher/TeacherTextbookHub.vue') },
       { path: 'activity-editor', component: () => import('../views/teacher/ActivityEditorShelved.vue') },
       { path: 'dashboard', component: () => import('../views/teacher/ClassDashboard.vue') },

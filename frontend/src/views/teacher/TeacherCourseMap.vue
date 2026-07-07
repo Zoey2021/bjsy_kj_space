@@ -30,7 +30,7 @@
       </el-row>
     </section>
 
-    <section class="panel panel-school" v-if="schoolSeriesGroups.length">
+    <section class="panel panel-school">
       <h2 class="panel-title">校本课程</h2>
       <el-row :gutter="18" class="grade-row">
         <el-col
@@ -58,6 +58,24 @@
             </div>
           </div>
         </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <div class="grade-card grade-card-school">
+            <div class="grade-card-head">{{ integratedInquiry.cardTitle }}</div>
+            <div class="dual-covers">
+              <div
+                v-for="slot in integratedInquiry.slots"
+                :key="slot.key"
+                class="book-slot"
+                @click="openInquirySlot(slot)"
+              >
+                <div class="book-thumb school-thumb">
+                  <img :src="slot.coverUrl" :alt="slot.label" />
+                </div>
+                <div class="book-label">{{ slot.label }}</div>
+              </div>
+            </div>
+          </div>
+        </el-col>
       </el-row>
     </section>
   </div>
@@ -68,6 +86,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { teacherGetTextbooks } from '../../api'
 import { groupSchoolTextbooks } from '../../utils/schoolTextbooks'
+import { INTEGRATED_INQUIRY_COURSE } from '../../constants/pblModule'
 
 const router = useRouter()
 const mainBooks = ref([])
@@ -101,9 +120,14 @@ const mainGradeGroups = computed(() => {
 })
 
 const schoolSeriesGroups = computed(() => groupSchoolTextbooks(schoolBooks.value))
+const integratedInquiry = INTEGRATED_INQUIRY_COURSE
 
 const openGrade = (gradeId) => {
   router.push(`/teacher/course-map/grade/${gradeId}`)
+}
+
+const openInquirySlot = (slot) => {
+  router.push(slot.teacherRoute)
 }
 
 onMounted(async () => {

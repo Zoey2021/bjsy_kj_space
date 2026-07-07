@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>抽象与建模 — 探究活动</title>
+<style>
+:root{
+  --p:#264653;--s:#2a9d8f;--a:#e9c46a;--l:#f4a261;--b:#e76f51;
+  --bg:#F8F9FA;--card:#fff;--bd:#dee2e6;--tx:#333;--tx2:#6c757d;
+  --r:12px;--rs:8px;--sh:0 2px 12px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:var(--bg);min-height:100vh;color:var(--tx)}
+/* ── Header + Tabs ── */
+.top-bar{background:var(--p);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.top-bar h2{font-size:17px;font-weight:700;white-space:nowrap}
+.tab-nav{display:flex;gap:4px;flex-wrap:wrap}
+.tab-nav button{background:rgba(255,255,255,.12);color:#fff;border:none;padding:7px 16px;border-radius:20px;cursor:pointer;font-size:13px;transition:.2s;font-family:inherit}
+.tab-nav button:hover{background:rgba(255,255,255,.22)}
+.tab-nav button.active{background:var(--a);color:var(--p);font-weight:700}
+/* ── Panels ── */
+.panel{display:none;padding:16px 20px;max-width:1100px;margin:0 auto}
+.panel.active{display:block}
+/* ── Cards ── */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px 20px;margin-bottom:14px}
+.card h3{font-size:15px;color:var(--p);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+/* ── Step indicator ── */
+.steps{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.step-item{flex:1;min-width:150px;padding:10px 14px;border-radius:var(--rs);text-align:center;font-size:13px;font-weight:700;background:#fff;border:2px solid var(--bd);color:var(--tx2);transition:.3s}
+.step-item.active{background:var(--p);color:#fff;border-color:var(--p)}
+.step-item.done{background:#d4edda;border-color:#28a745;color:#155724}
+.step-num{font-size:20px;display:block}
+/* ── Problem card ── */
+.problem-card{background:linear-gradient(135deg,#E8F4F2,#F0FAF8);border:1.5px solid rgba(42,157,143,.3);border-radius:var(--r);padding:14px 18px;margin-bottom:14px;font-size:14px;line-height:1.8}
+.problem-card .highlight{color:var(--s);font-weight:700}
+/* ── Tables ── */
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+th,td{border:1.5px solid var(--bd);padding:8px 10px;text-align:center;min-width:60px}
+th{background:var(--p);color:#fff;font-weight:700;font-size:12px}
+td input{width:100%;border:1.5px dashed var(--bd);padding:5px 6px;text-align:center;font-size:13px;border-radius:4px;font-family:inherit;background:#FFFBEB;transition:.2s}
+td input:focus{outline:none;border-color:var(--s);background:#fff;box-shadow:0 0 0 3px rgba(42,157,143,.12)}
+td input.correct{border-color:#28a745!important;background:#d4edda!important}
+td input.wrong{border-color:#dc3545!important;background:#f8d7da!important}
+td.total{background:rgba(233,196,106,.2);font-weight:700}
+td.gray{background:#f1f3f5;color:var(--tx2)}
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600;transition:.2s}
+.btn-p{background:var(--p);color:#fff}
+.btn-p:hover{opacity:.9}
+.btn-s{background:var(--s);color:#fff}
+.btn-a{background:var(--a);color:var(--p)}
+.btn-o{background:#fff;color:var(--p);border:2px solid var(--p)}
+.btn-sm{padding:5px 12px;font-size:12px}
+/* ── Feedback ── */
+.feedback{padding:12px 16px;border-radius:var(--rs);font-size:13px;margin-top:10px;display:none}
+.feedback.show{display:block}
+.feedback.success{background:#d4edda;border:1px solid #28a745;color:#155724}
+.feedback.error{background:#f8d7da;border:1px solid #dc3545;color:#721c24}
+.feedback.info{background:#d1ecf1;border:1px solid #17a2b8;color:#0c5460}
+/* ── Column editor (Activity 2) ── */
+.col-manager{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.col-chip{background:var(--p);color:#fff;padding:4px 12px;border-radius:14px;font-size:12px;display:flex;align-items:center;gap:6px}
+.col-chip .del{background:rgba(255,255,255,.3);border:none;color:#fff;width:18px;height:18px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+.col-add input{padding:5px 10px;border:1.5px dashed var(--bd);border-radius:14px;font-size:12px;width:100px;font-family:inherit}
+/* ── Equation display ── */
+.eq-box{background:#fff;border:2px solid var(--s);border-radius:var(--rs);padding:10px 16px;font-size:16px;font-weight:700;color:var(--p);margin:8px 0;font-family:"Courier New",monospace;display:inline-block}
+/* ── Two column layout ── */
+.col2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:768px){.col2{grid-template-columns:1fr}}
+/* ── Code block ── */
+.code-block{background:#1E1E1E;color:#d4d4d4;border-radius:var(--rs);padding:12px 16px;font-family:"Courier New",monospace;font-size:12px;line-height:1.7;overflow-x:auto;white-space:pre}
+/* ── Mode toggle ── */
+.mode-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700}
+.tag-easy{background:#d4edda;color:#155724}
+.tag-hard{background:#f8d7da;color:#721c24}
+.tag-med{background:#fff3cd;color:#856404}
+.inline-flex{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+/* ── Hint ── */
+.hint{background:#fff3cd;border-left:3px solid var(--a);padding:8px 12px;border-radius:0 var(--rs) var(--rs) 0;font-size:12px;color:#856404;margin:8px 0}
+/* ── Animation ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ani{animation:fadeIn .4s ease}
+body.embedded-mode{background:#fff}
+body.embedded-mode .top-bar .tab-nav{display:none!important}
+body.embedded-mode .top-bar{padding:10px 16px}
+body.embedded-mode .panel{max-width:none;padding:12px 16px}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h2>📐 抽象与建模 — 探究活动</h2>
+  <div class="tab-nav">
+    <button class="active" onclick="switchTab(1)">📋 活动一：鸡兔同笼表格填空</button>
+    <button onclick="switchTab(2)">🛠️ 活动二：百钱买百鸡自由建表</button>
+    <button onclick="switchTab(3)">🏆 活动三：抽象建模挑战</button>
+  </div>
+</div>
+
+<!-- ═══════ PANEL 1: 鸡兔同笼表格填空 ═══════ -->
+<div class="panel active" id="panel1">
+  <div class="card">
+    <h3>📋 活动一：鸡兔同笼 — 用表格来整理信息</h3>
+
+    <div class="mode-row">
+      <span style="font-weight:700;font-size:13px">选择难度：</span>
+      <button class="btn btn-p active" id="mode1Easy" onclick="setMode1('easy')">📖 跟老师做（35头94脚）</button>
+      <button class="btn btn-o" id="mode1Hard" onclick="setMode1('hard')">✏️ 自己来（20头56脚）</button>
+    </div>
+
+    <!-- Step indicator -->
+    <div class="steps" id="steps1">
+      <div class="step-item active" id="step1-1"><span class="step-num">①</span>问题描述</div>
+      <div class="step-item" id="step1-2"><span class="step-num">②</span>抽象 — 画表格</div>
+      <div class="step-item" id="step1-3"><span class="step-num">③</span>建模 — 列方程</div>
+    </div>
+
+    <!-- Step 1: 问题描述 -->
+    <div id="s1-step1">
+      <div class="problem-card" id="prob1Text"></div>
+      <label style="font-size:13px;font-weight:700;color:var(--p)">📝 请写出问题描述：</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+        <input id="s1-object" placeholder="对象有哪些？" style="font-family:inherit;padding:8px 10px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px">
+        <input id="s1-known" placeholder="已知条件是什么？" style="font-family:inherit;padding:8px 10px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px">
+      </div>
+      <input id="s1-find" placeholder="要求什么？" style="font-family:inherit;padding:8px 10px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;width:100%;margin-top:8px">
+      <button class="btn btn-p" onclick="step1Next()" style="margin-top:10px">下一步 → 画表格</button>
+      <div class="feedback" id="s1-fb1"></div>
+    </div>
+
+    <!-- Step 2: 画表格 -->
+    <div id="s1-step2" style="display:none">
+      <div class="hint">💡 逐问逐填 — 不知道的数据用字母代替（如 ji, tu）</div>
+      <div style="overflow-x:auto">
+        <table id="tbl1">
+          <thead id="tbl1Head"></thead>
+          <tbody id="tbl1Body"></tbody>
+        </table>
+      </div>
+      <div class="inline-flex" style="margin-top:8px">
+        <button class="btn btn-o" onclick="step2Back()">← 返回</button>
+        <button class="btn btn-p" onclick="step2Next()">下一步 → 读方程</button>
+      </div>
+      <div class="feedback" id="s1-fb2"></div>
+    </div>
+
+    <!-- Step 3: 读方程 -->
+    <div id="s1-step3" style="display:none">
+      <label style="font-size:13px;font-weight:700;color:var(--p)">📐 从合计行读出两个方程：</label>
+      <div style="display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap">
+        <span style="font-weight:700">方程1：</span><input id="s1-eq1" placeholder="例如 ji + tu = 35" style="font-family:inherit;padding:8px 10px;border:1.5px solid var(--bd);border-radius:6px;font-size:14px;width:220px">
+        <span style="font-weight:700">方程2：</span><input id="s1-eq2" placeholder="例如 2×ji + 4×tu = 94" style="font-family:inherit;padding:8px 10px;border:1.5px solid var(--bd);border-radius:6px;font-size:14px;width:240px">
+      </div>
+      <div class="inline-flex" style="margin-top:10px">
+        <button class="btn btn-o" onclick="step3Back()">← 返回修改</button>
+        <button class="btn btn-p" onclick="check1()">✅ 提交检查</button>
+      </div>
+      <div class="feedback" id="s1-fb3"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ PANEL 2: 百钱买百鸡 ═══════ -->
+<div class="panel" id="panel2">
+  <div class="card">
+    <h3>🛠️ 活动二：百钱买百鸡 — 自己设计表格！</h3>
+    <div class="problem-card">
+      🐔 公鸡一只 <span class="highlight">5文钱</span>，母鸡一只 <span class="highlight">3文钱</span>，小鸡三只 <span class="highlight">1文钱</span>。<br>
+      用 <span class="highlight">100文钱</span> 买 <span class="highlight">100只鸡</span>。<br>
+      问：公鸡、母鸡、小鸡各几只？
+    </div>
+
+    <!-- Step 1: 问题描述 -->
+    <div class="steps" id="steps2">
+      <div class="step-item active" id="step2-1"><span class="step-num">①</span>问题描述</div>
+      <div class="step-item" id="step2-2"><span class="step-num">②</span>抽象 — 自己定表头</div>
+      <div class="step-item" id="step2-3"><span class="step-num">③</span>建模 — 读方程</div>
+    </div>
+
+    <!-- Describe -->
+    <div id="s2-step1">
+      <label style="font-size:13px;font-weight:700;color:var(--p)">📝 问题描述：</label>
+      <input id="s2-obj" placeholder="对象：公鸡、母鸡、小鸡" style="font-family:inherit;padding:8px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;width:100%;margin:6px 0">
+      <input id="s2-known" placeholder="已知：5文×公鸡 + 3文×母鸡 + ⅓文×小鸡 = 100文，共100只" style="font-family:inherit;padding:8px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;width:100%;margin:6px 0">
+      <input id="s2-find" placeholder="求：各几只？" style="font-family:inherit;padding:8px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;width:100%;margin:6px 0">
+      <button class="btn btn-p" onclick="s2GoToTable()">下一步 → 设计表格</button>
+    </div>
+
+    <!-- Build table -->
+    <div id="s2-step2" style="display:none">
+      <div class="hint">💡 自己决定表头！点击"＋ 添加列"来加列。提示：需要"对象"列、"单价"列、"只数"列、"总价"列。</div>
+      <div class="col-manager" id="colManager2">
+        <span style="font-size:12px;color:var(--tx2)">表头列：</span>
+      </div>
+      <div class="inline-flex" style="margin:6px 0">
+        <div class="col-add"><input id="colInput2" placeholder="输入列名" onkeydown="if(event.key==='Enter')addCol2()"></div>
+        <button class="btn btn-sm btn-s" onclick="addCol2()">＋ 添加列</button>
+        <button class="btn btn-sm btn-o" onclick="resetCols2()">🔄 重置表头</button>
+      </div>
+      <div class="inline-flex" style="margin:6px 0">
+        <label style="font-size:12px">变量命名：</label>
+        <input id="varGong" placeholder="公鸡变量" style="width:80px;font-family:inherit;padding:4px 8px;border:1.5px solid var(--bd);border-radius:6px;font-size:12px" value="gong">
+        <input id="varMu" placeholder="母鸡变量" style="width:80px;font-family:inherit;padding:4px 8px;border:1.5px solid var(--bd);border-radius:6px;font-size:12px" value="mu">
+        <input id="varXiao" placeholder="小鸡变量" style="width:80px;font-family:inherit;padding:4px 8px;border:1.5px solid var(--bd);border-radius:6px;font-size:12px" value="xiao">
+      </div>
+      <div style="overflow-x:auto">
+        <table id="tbl2"><thead id="tbl2Head"></thead><tbody id="tbl2Body"></tbody></table>
+      </div>
+      <div class="inline-flex" style="margin-top:8px">
+        <button class="btn btn-o" onclick="s2Back()">← 返回</button>
+        <button class="btn btn-p" onclick="s2GoToEq()">下一步 → 读方程</button>
+      </div>
+      <div class="feedback" id="s2-fb2"></div>
+    </div>
+
+    <!-- Read equations -->
+    <div id="s2-step3" style="display:none">
+      <label style="font-size:13px;font-weight:700;color:var(--p)">📐 从你的表格合计行读出方程：</label>
+      <div style="margin:8px 0">
+        <span style="font-weight:700">方程1（只数合计）：</span>
+        <input id="s2-eq1" placeholder="例如 gong+mu+xiao=100" style="font-family:inherit;padding:8px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;width:350px;max-width:100%">
+      </div>
+      <div style="margin:8px 0">
+        <span style="font-weight:700">方程2（钱数合计）：</span>
+        <input id="s2-eq2" placeholder="例如 5×gong+3×mu+xiao/3=100" style="font-family:inherit;padding:8px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;width:350px;max-width:100%">
+      </div>
+      <div class="inline-flex" style="margin-top:10px">
+        <button class="btn btn-o" onclick="s2EqBack()">← 返回修改</button>
+        <button class="btn btn-p" onclick="check2()">✅ 提交检查</button>
+        <button class="btn btn-a" onclick="toggleRef2()">💡 看参考答案</button>
+      </div>
+      <div class="feedback" id="s2-fb3"></div>
+      <div id="ref2Table" style="display:none;margin-top:10px" class="ani">
+        <div class="card" style="background:#F0FAF8;border:1.5px solid var(--s)">
+          <h4 style="color:var(--s)">📖 参考表格（没有标准答案！你的表头可以不一样）</h4>
+          <table id="refTbl2"></table>
+          <div class="eq-box" style="margin-top:8px">gong + mu + xiao = 100</div>
+          <div class="eq-box" style="margin-top:4px">5×gong + 3×mu + xiao/3 = 100</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ PANEL 3: 抽象建模挑战 ═══════ -->
+<div class="panel" id="panel3">
+  <div class="card">
+    <h3>🏆 活动三：抽象建模挑战 — 独立完成！</h3>
+
+    <div class="mode-row">
+      <span style="font-weight:700;font-size:13px">选择挑战：</span>
+      <button class="btn btn-p active" id="challenge1Btn" onclick="setChallenge(1)">🪙 硬币问题</button>
+      <button class="btn btn-o" id="challenge2Btn" onclick="setChallenge(2)">🦒 长颈鹿和鸵鸟</button>
+      <button class="btn btn-o" id="challenge3Btn" onclick="setChallenge(3)">🎫 电影票</button>
+    </div>
+
+    <div class="problem-card" id="challengeProb"></div>
+
+    <div class="steps" id="steps3">
+      <div class="step-item active" id="step3-1"><span class="step-num">①</span>问题描述</div>
+      <div class="step-item" id="step3-2"><span class="step-num">②</span>抽象 — 画表格</div>
+      <div class="step-item" id="step3-3"><span class="step-num">③</span>建模 — 列方程</div>
+    </div>
+
+    <!-- Step 1 -->
+    <div id="s3-step1">
+      <label style="font-size:13px;font-weight:700;color:var(--p)">📝 你的问题描述：</label>
+      <input id="s3-obj" placeholder="对象有哪些？" style="font-family:inherit;padding:8px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;width:100%;margin:6px 0">
+      <input id="s3-known" placeholder="已知条件？" style="font-family:inherit;padding:8px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;width:100%;margin:6px 0">
+      <input id="s3-find" placeholder="求什么？" style="font-family:inherit;padding:8px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;width:100%;margin:6px 0">
+      <button class="btn btn-p" onclick="s3GoToTable()">下一步 → 画表格</button>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="s3-step2" style="display:none">
+      <div class="hint">💡 自己决定表头！需要几列？点击"添加列"来加。</div>
+      <div class="col-manager" id="colManager3"><span style="font-size:12px;color:var(--tx2)">表头列：</span></div>
+      <div class="inline-flex" style="margin:6px 0">
+        <div class="col-add"><input id="colInput3" placeholder="输入列名" onkeydown="if(event.key==='Enter')addCol3()"></div>
+        <button class="btn btn-sm btn-s" onclick="addCol3()">＋ 添加列</button>
+        <button class="btn btn-sm btn-o" onclick="resetCols3()">🔄 重置表头</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="tbl3"><thead id="tbl3Head"></thead><tbody id="tbl3Body"></tbody></table>
+      </div>
+      <div class="inline-flex" style="margin-top:8px">
+        <button class="btn btn-o" onclick="s3Back()">← 返回</button>
+        <button class="btn btn-p" onclick="s3GoToEq()">下一步 → 读方程</button>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div id="s3-step3" style="display:none">
+      <label style="font-size:13px;font-weight:700;color:var(--p)">📐 从合计行读出方程：</label>
+      <div style="margin:8px 0">
+        <span style="font-weight:700">方程1：</span><input id="s3-eq1" style="font-family:inherit;padding:8px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;width:300px;max-width:100%">
+      </div>
+      <div style="margin:8px 0">
+        <span style="font-weight:700">方程2：</span><input id="s3-eq2" style="font-family:inherit;padding:8px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;width:300px;max-width:100%">
+      </div>
+      <div class="inline-flex" style="margin-top:10px">
+        <button class="btn btn-o" onclick="s3EqBack()">← 返回修改</button>
+        <button class="btn btn-p" onclick="check3()">✅ 提交检查</button>
+      </div>
+      <div class="feedback" id="s3-fb"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   GLOBALS
+   ══════════════════════════════════════════════════════ */
+let mode1='easy', challenge=1, cols2=[], cols3=[];
+const challenges=[
+  {title:'🪙 硬币问题',text:'小明有 5元硬币和 1元硬币共 <span class="highlight">20枚</span>，总金额 <span class="highlight">48元</span>。问两种硬币各几枚？',v1:'x',v2:'y',obj:'5元硬币、1元硬币',known:'共20枚，总金额48元',find:'5元硬币几枚？1元硬币几枚？',eq1:'x + y = 20',eq2:'5×x + 1×y = 48'},
+  {title:'🦒 长颈鹿和鸵鸟',text:'动物园有长颈鹿和鸵鸟共 <span class="highlight">15只</span>，<span class="highlight">44条腿</span>。问各几只？',v1:'x',v2:'y',obj:'长颈鹿、鸵鸟',known:'共15只，44条腿。长颈鹿4腿，鸵鸟2腿',find:'各几只？',eq1:'x + y = 15',eq2:'4×x + 2×y = 44'},
+  {title:'🎫 电影票',text:'学校买了 <span class="highlight">50张</span>电影票，成人票 <span class="highlight">30元/张</span>，学生票 <span class="highlight">15元/张</span>，一共花了 <span class="highlight">1050元</span>。问成人票和学生票各几张？',v1:'x',v2:'y',obj:'成人票、学生票',known:'共50张，总价1050元。成人30元/张，学生15元/张',find:'各几张？',eq1:'x + y = 50',eq2:'30×x + 15×y = 1050'}
+];
+
+function normEq(s){
+  return String(s).trim().replace(/\s/g,'').replace(/×/g,'*');
+}
+
+/* ══════════════════════════════════════════════════════
+   TAB SWITCH
+   ══════════════════════════════════════════════════════ */
+function switchTab(n){
+  document.querySelectorAll('.tab-nav button').forEach((b,i)=>b.classList.toggle('active',i+1===n));
+  document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',i+1===n));
+}
+
+const urlParams = new URLSearchParams(location.search);
+const IS_EMBEDDED = urlParams.get('embedded') === '1';
+const learnSpaceNotifiedSteps = new Set();
+
+function notifyLearnSpaceComplete(step) {
+  if (!window.parent || window.parent === window) return;
+  if (learnSpaceNotifiedSteps.has(step)) return;
+  learnSpaceNotifiedSteps.add(step);
+  const params = new URLSearchParams(location.search);
+  const idx = parseInt(params.get('activityIndex') || params.get('step') || String(step), 10);
+  window.parent.postMessage({
+    type: 'LEARN_SPACE_SUBMIT',
+    payload: {
+      activityIndex: Number.isFinite(idx) ? idx : step,
+      step,
+      stepCompleted: true,
+      source: 'g6-up-lesson2'
+    }
+  }, '*');
+}
+
+/* ══════════════════════════════════════════════════════
+   ACTIVITY 1: 鸡兔同笼
+   ══════════════════════════════════════════════════════ */
+function setMode1(m){
+  mode1=m;
+  document.getElementById('mode1Easy').classList.toggle('active',m==='easy');
+  document.getElementById('mode1Easy').classList.toggle('btn-p',m==='easy');
+  document.getElementById('mode1Easy').classList.toggle('btn-o',m!='easy');
+  document.getElementById('mode1Hard').classList.toggle('active',m==='hard');
+  document.getElementById('mode1Hard').classList.toggle('btn-p',m==='hard');
+  document.getElementById('mode1Hard').classList.toggle('btn-o',m!='hard');
+  buildTable1();resetActivity1();
+}
+
+function resetActivity1(){
+  document.getElementById('s1-step1').style.display='block';
+  document.getElementById('s1-step2').style.display='none';
+  document.getElementById('s1-step3').style.display='none';
+  ['s1-object','s1-known','s1-find','s1-eq1','s1-eq2'].forEach(id=>document.getElementById(id).value='');
+  ['s1-fb1','s1-fb2','s1-fb3'].forEach(id=>{const e=document.getElementById(id);e.textContent='';e.className='feedback'});
+  updateSteps1(1);
+  const h=document.getElementById('prob1Text');
+  h.innerHTML=mode1==='easy'?
+    '🐔 今有雉兔同笼，上有<span class="highlight">三十五头</span>，下有<span class="highlight">九十四足</span>，问雉兔各几何？<br>（鸡和兔共 <b>35个头</b>、<b>94只脚</b>，求鸡兔各几只）' :
+    '🐔 农场有鸡和兔共 <span class="highlight">20个头</span>、<span class="highlight">56只脚</span>，问鸡和兔各几只？';
+  buildTable1();
+}
+
+function updateSteps1(n){
+  for(let i=1;i<=3;i++){
+    const el=document.getElementById('step1-'+i);
+    el.classList.remove('active','done');
+    if(i<n)el.classList.add('done');
+    if(i===n)el.classList.add('active');
+  }
+}
+
+function step1Next(){
+  const o=document.getElementById('s1-object').value.trim();
+  const k=document.getElementById('s1-known').value.trim();
+  const f=document.getElementById('s1-find').value.trim();
+  if(!o||!k||!f){showFb('s1-fb1','⚠️ 请填写完整的问题描述：对象、已知、求。','error');return}
+  showFb('s1-fb1','✅ 描述清楚！进入下一步。','success');
+  document.getElementById('s1-step1').style.display='none';
+  document.getElementById('s1-step2').style.display='block';
+  updateSteps1(2);
+}
+
+function step2Back(){
+  document.getElementById('s1-step2').style.display='none';
+  document.getElementById('s1-step1').style.display='block';
+  updateSteps1(1);
+}
+
+function step2Next(){
+  const tbl=document.getElementById('tbl1Body');
+  const rows=tbl.querySelectorAll('tr');
+  let allFilled=true;
+  rows.forEach(r=>r.querySelectorAll('input').forEach(inp=>{if(!inp.value.trim())allFilled=false}));
+  if(!allFilled){showFb('s1-fb2','⚠️ 请把表格中所有空白格填完。','error');return}
+  showFb('s1-fb2','✅ 表格填写完整！','success');
+  document.getElementById('s1-step2').style.display='none';
+  document.getElementById('s1-step3').style.display='block';
+  updateSteps1(3);
+}
+
+function step3Back(){
+  document.getElementById('s1-step3').style.display='none';
+  document.getElementById('s1-step2').style.display='block';
+  updateSteps1(2);
+}
+
+function check1(){
+  const eq1=normEq(document.getElementById('s1-eq1').value);
+  const eq2=normEq(document.getElementById('s1-eq2').value);
+  let e1, e2;
+  if(mode1==='easy'){e1='ji+tu=35';e2='2×ji+4×tu=94'}
+  else{e1='ji+tu=20';e2='2×ji+4×tu=56'}
+  e1=normEq(e1);
+  e2=normEq(e2);
+  const ok1=eq1===e1||eq1.replace(/ji/g,'x').replace(/tu/g,'y')===e1.replace(/ji/g,'x').replace(/tu/g,'y');
+  const ok2=eq2===e2||eq2.replace(/ji/g,'x').replace(/tu/g,'y')===e2.replace(/ji/g,'x').replace(/tu/g,'y');
+  if(ok1&&ok2){
+    showFb('s1-fb3','🎉 完全正确！你成功完成了鸡兔同笼的抽象建模！鸡12只，兔8只（35头94脚的答案为鸡23只兔12只）。','success');
+    updateSteps1(3);document.getElementById('step1-3').classList.add('done');
+    notifyLearnSpaceComplete(1);
+  }else{
+    let msg='⚠️ ';
+    if(!ok1)msg+='方程1不对（应为 '+e1+'） ';
+    if(!ok2)msg+='方程2不对（应为 '+e2+'）';
+    showFb('s1-fb3',msg,'error');
+  }
+}
+
+function buildTable1(){
+  const head=document.getElementById('tbl1Head');
+  const body=document.getElementById('tbl1Body');
+  head.innerHTML='<tr><th>对象</th><th>每只头数</th><th>每只脚数</th><th>只数</th><th>总头数</th><th>总脚数</th></tr>';
+  const h=mode1==='easy'?35:20;
+  const f=mode1==='easy'?94:56;
+  body.innerHTML=
+    '<tr>'+
+      '<td>鸡</td><td>1</td><td>2</td>'+
+      '<td><input id="c01" placeholder="设字母"></td>'+
+      '<td><input id="c02" placeholder="计算"></td>'+
+      '<td><input id="c03" placeholder="计算"></td>'+
+    '</tr>'+
+    '<tr>'+
+      '<td>兔</td><td>1</td><td>4</td>'+
+      '<td><input id="c11" placeholder="设字母"></td>'+
+      '<td><input id="c12" placeholder="计算"></td>'+
+      '<td><input id="c13" placeholder="计算"></td>'+
+    '</tr>'+
+    '<tr class="total">'+
+      '<td><b>合计</b></td><td class="gray">—</td><td class="gray">—</td>'+
+      '<td class="gray">—</td>'+
+      '<td><input id="c22" placeholder="'+h+'"></td>'+
+      '<td><input id="c23" placeholder="'+f+'"></td>'+
+    '</tr>';
+}
+
+/* ══════════════════════════════════════════════════════
+   ACTIVITY 2: 百钱买百鸡
+   ══════════════════════════════════════════════════════ */
+function buildCols2(){cols2=['对象','单价（文/只）','只数','总价（文）']}
+buildCols2();
+
+function updateSteps2(n){
+  for(let i=1;i<=3;i++){
+    const el=document.getElementById('step2-'+i);
+    el.classList.remove('active','done');
+    if(i<n)el.classList.add('done');
+    if(i===n)el.classList.add('active');
+  }
+}
+
+function renderColManager2(){
+  const mgr=document.getElementById('colManager2');
+  mgr.innerHTML='<span style="font-size:12px;color:var(--tx2)">表头列：</span>';
+  cols2.forEach((c,i)=>{
+    const chip=document.createElement('span');
+    chip.className='col-chip';
+    chip.innerHTML=c+'<button class="del" onclick="removeCol2('+i+')">×</button>';
+    mgr.appendChild(chip);
+  });
+}
+
+function addCol2(){
+  const inp=document.getElementById('colInput2');
+  const v=inp.value.trim();
+  if(!v)return;
+  if(cols2.includes(v)){alert('列名重复！');return}
+  cols2.push(v);inp.value='';renderColManager2();buildTable2();
+}
+
+function removeCol2(i){cols2.splice(i,1);renderColManager2();buildTable2()}
+function resetCols2(){buildCols2();renderColManager2();buildTable2()}
+
+function buildTable2(){
+  const head=document.getElementById('tbl2Head');
+  const body=document.getElementById('tbl2Body');
+  head.innerHTML='<tr>'+cols2.map(c=>'<th>'+c+'</th>').join('')+'</tr>';
+  const vg=document.getElementById('varGong').value||'gong';
+  const vm=document.getElementById('varMu').value||'mu';
+  const vx=document.getElementById('varXiao').value||'xiao';
+  body.innerHTML=
+    '<tr>'+cols2.map(c=>'<td><input placeholder="'+default2('公鸡',c,vg,vm,vx)+'"></td>').join('')+'</tr>'+
+    '<tr>'+cols2.map(c=>'<td><input placeholder="'+default2('母鸡',c,vg,vm,vx)+'"></td>').join('')+'</tr>'+
+    '<tr>'+cols2.map(c=>'<td><input placeholder="'+default2('小鸡',c,vg,vm,vx)+'"></td>').join('')+'</tr>'+
+    '<tr class="total">'+cols2.map(c=>'<td><input placeholder="合计"></td>').join('')+'</tr>';
+}
+
+function default2(row,col,vg,vm,vx){
+  if(col==='对象')return row;
+  if(row==='公鸡'&&col.includes('价'))return '5';
+  if(row==='母鸡'&&col.includes('价'))return '3';
+  if(row==='小鸡'&&col.includes('价'))return '1/3';
+  if(col.includes('只数')||col.includes('数量'))return row==='公鸡'?vg:row==='母鸡'?vm:vx;
+  if(col.includes('总价')||col.includes('金额'))return row==='公鸡'?'5×'+vg:row==='母鸡'?'3×'+vm:vx+'÷3';
+  if(col.includes('合计'))return row==='公鸡'?'100':row==='母鸡'?'—':'100';
+  return '';
+}
+
+function s2GoToTable(){
+  document.getElementById('s2-step1').style.display='none';
+  document.getElementById('s2-step2').style.display='block';
+  updateSteps2(2);renderColManager2();buildTable2();
+}
+function s2Back(){document.getElementById('s2-step2').style.display='none';document.getElementById('s2-step1').style.display='block';updateSteps2(1)}
+function s2GoToEq(){document.getElementById('s2-step2').style.display='none';document.getElementById('s2-step3').style.display='block';updateSteps2(3)}
+function s2EqBack(){document.getElementById('s2-step3').style.display='none';document.getElementById('s2-step2').style.display='block';updateSteps2(2)}
+function check2(){
+  const eq1=document.getElementById('s2-eq1').value.trim().replace(/\s/g,'');
+  const eq2=document.getElementById('s2-eq2').value.trim().replace(/\s/g,'');
+  const vg=document.getElementById('varGong').value||'gong';
+  const vm=document.getElementById('varMu').value||'mu';
+  const vx=document.getElementById('varXiao').value||'xiao';
+  const ok1=eq1.includes('100')&&(eq1.includes('+'))&&eq1.includes(vg);
+  const ok2=eq2.includes('100')&&(eq2.includes(vg)||eq2.includes('5'));
+  if(ok1&&ok2){
+    showFb('s2-fb3','🎉 很好！你从表格中成功读出了方程。三个未知数，两个方程——下节课我们学"设计算法"，让计算机来帮我们试出答案！','success');
+    document.getElementById('step2-3').classList.add('done');
+    notifyLearnSpaceComplete(2);
+  }else{
+    showFb('s2-fb3','⚠️ 请检查：方程1应该是只数之和=100，方程2应该是钱数之和=100。','error');
+  }
+}
+function toggleRef2(){
+  const el=document.getElementById('ref2Table');
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(el.style.display==='block'){
+    const h=document.getElementById('refTbl2');
+    h.innerHTML='<tr><th>对象</th><th>单价（文/只）</th><th>只数</th><th>总价（文）</th></tr>'+
+      '<tr><td>公鸡</td><td>5</td><td>gong</td><td>5×gong</td></tr>'+
+      '<tr><td>母鸡</td><td>3</td><td>mu</td><td>3×mu</td></tr>'+
+      '<tr><td>小鸡</td><td>1/3</td><td>xiao</td><td>xiao÷3</td></tr>'+
+      '<tr class="total"><td><b>合计</b></td><td>—</td><td><b>100</b></td><td><b>100</b></td></tr>';
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   ACTIVITY 3: 抽象建模挑战
+   ══════════════════════════════════════════════════════ */
+function setChallenge(n){
+  challenge=n;
+  ['challenge1Btn','challenge2Btn','challenge3Btn'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.classList.toggle('active',i+1===n);
+    el.classList.toggle('btn-p',i+1===n);
+    el.classList.toggle('btn-o',i+1!==n);
+  });
+  const c=challenges[n-1];
+  document.getElementById('challengeProb').innerHTML='<b>'+c.title+'</b><br>'+c.text;
+  document.getElementById('s3-obj').value='';
+  document.getElementById('s3-known').value='';
+  document.getElementById('s3-find').value='';
+  document.getElementById('s3-eq1').value='';
+  document.getElementById('s3-eq2').value='';
+  document.getElementById('s3-fb').textContent='';
+  document.getElementById('s3-fb').className='feedback';
+  document.getElementById('s3-step1').style.display='block';
+  document.getElementById('s3-step2').style.display='none';
+  document.getElementById('s3-step3').style.display='none';
+  updateSteps3(1);
+  cols3=['对象','属性1','属性2','数量变量','关系1','关系2'];
+  renderColManager3();buildTable3();
+}
+
+function updateSteps3(n){
+  for(let i=1;i<=3;i++){
+    const el=document.getElementById('step3-'+i);
+    el.classList.remove('active','done');
+    if(i<n)el.classList.add('done');
+    if(i===n)el.classList.add('active');
+  }
+}
+
+function renderColManager3(){
+  const mgr=document.getElementById('colManager3');
+  mgr.innerHTML='<span style="font-size:12px;color:var(--tx2)">表头列：</span>';
+  cols3.forEach((c,i)=>{
+    const chip=document.createElement('span');
+    chip.className='col-chip';
+    chip.innerHTML=c+'<button class="del" onclick="removeCol3('+i+')">×</button>';
+    mgr.appendChild(chip);
+  });
+}
+function addCol3(){
+  const inp=document.getElementById('colInput3');const v=inp.value.trim();
+  if(!v)return;
+  if(cols3.includes(v)){alert('列名重复！');return}
+  cols3.push(v);inp.value='';renderColManager3();buildTable3();
+}
+function removeCol3(i){cols3.splice(i,1);renderColManager3();buildTable3()}
+function resetCols3(){
+  cols3=['对象','属性1','属性2','数量变量','关系1','关系2'];
+  renderColManager3();buildTable3();
+}
+function buildTable3(){
+  const head=document.getElementById('tbl3Head');
+  const body=document.getElementById('tbl3Body');
+  head.innerHTML='<tr>'+cols3.map(c=>'<th>'+c+'</th>').join('')+'</tr>';
+  const c=challenges[challenge-1];
+  const objLabels=c.obj.split('、');
+  body.innerHTML=
+    '<tr>'+cols3.map((_,i)=>'<td><input placeholder="'+(i===0?objLabels[0]:'')+'"></td>').join('')+'</tr>'+
+    '<tr>'+cols3.map((_,i)=>'<td><input placeholder="'+(i===0?objLabels[1]||objLabels[0]:'')+'"></td>').join('')+'</tr>'+
+    '<tr class="total">'+cols3.map(()=>'<td><input placeholder="合计"></td>').join('')+'</tr>';
+}
+
+function s3GoToTable(){
+  document.getElementById('s3-step1').style.display='none';
+  document.getElementById('s3-step2').style.display='block';
+  updateSteps3(2);renderColManager3();buildTable3();
+}
+function s3Back(){document.getElementById('s3-step2').style.display='none';document.getElementById('s3-step1').style.display='block';updateSteps3(1)}
+function s3GoToEq(){document.getElementById('s3-step2').style.display='none';document.getElementById('s3-step3').style.display='block';updateSteps3(3)}
+function s3EqBack(){document.getElementById('s3-step3').style.display='none';document.getElementById('s3-step2').style.display='block';updateSteps3(2)}
+function check3(){
+  const eq1=normEq(document.getElementById('s3-eq1').value);
+  const eq2=normEq(document.getElementById('s3-eq2').value);
+  const c=challenges[challenge-1];
+  const e1=normEq(c.eq1);
+  const e2=normEq(c.eq2);
+  const ok1=eq1===e1||eq1===e1.replace(/x/g,'X').replace(/y/g,'Y');
+  const ok2=eq2===e2||eq2===e2.replace(/x/g,'X').replace(/y/g,'Y');
+  if(ok1&&ok2){
+    showFb('s3-fb','🎉 太棒了！你独立完成了完整的抽象建模！你已经掌握了程序员分析问题的方法。','success');
+    document.getElementById('step3-3').classList.add('done');
+    notifyLearnSpaceComplete(3);
+  }else{
+    let msg='⚠️ ';
+    if(!ok1)msg+='方程1需要修正 ';
+    if(!ok2)msg+='方程2需要修正';
+    showFb('s3-fb',msg,'error');
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════ */
+function showFb(id,msg,type){
+  const el=document.getElementById(id);
+  el.textContent=msg;el.className='feedback show '+type;
+}
+
+/* ══════════════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════════════ */
+resetActivity1();
+renderColManager2();buildTable2();
+setChallenge(1);
+
+(function initFromQuery() {
+  if (!IS_EMBEDDED) return;
+  document.body.classList.add('embedded-mode');
+  const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+  switchTab(Number.isFinite(step) && step >= 1 && step <= 3 ? step : 1);
+})();
+</script>
+</body>
+</html>

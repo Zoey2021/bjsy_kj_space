@@ -42,3 +42,7 @@ dify:
   recommend-app-mode: workflow
   interactive-api-key: ${DIFY_INTERACTIVE_API_KEY:}
   interactive-app-mode: workflow
+
+learn-space:
+  activity:
+    html-output-dir: ./lesson-generated
