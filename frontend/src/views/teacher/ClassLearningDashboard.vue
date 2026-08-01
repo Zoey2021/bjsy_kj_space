@@ -63,6 +63,18 @@
         </div>
       </div>
       <div class="header-actions">
+        <button
+          v-if="classId && lessonId"
+          type="button"
+          class="action-btn indigo"
+          @click="markCurrentLesson"
+        >📍 设为当前课时</button>
+        <button
+          v-if="classId"
+          type="button"
+          class="action-btn teal"
+          @click="broadcastCountdown"
+        >⏱ 倒计时提醒</button>
         <button type="button" class="action-btn orange" @click="$router.push('/teacher/points')">🏆 班级积分榜单</button>
         <button type="button" class="action-btn pink" @click="$router.push('/teacher/ai-evaluation')">🤖 AI 课程评价</button>
         <button type="button" class="icon-btn" title="刷新" @click="loadData">↻</button>
@@ -214,7 +226,7 @@
       <el-empty description="请先选择年级与课程" :image-size="88" />
     </div>
 
-    <el-dialog v-model="detailVisible" :title="detailTitle" width="480px">
+    <el-dialog v-model="detailVisible" :title="detailTitle" width="520px">
       <el-table :data="detailRows" stripe max-height="360" size="small">
         <el-table-column prop="realName" label="姓名" width="100" />
         <el-table-column prop="username" label="学号" width="100" />
@@ -223,6 +235,24 @@
         </el-table-column>
         <el-table-column v-if="detailMode === 'submitted'" label="提交时间" min-width="140">
           <template #default="{ row }">{{ formatTime(row.submittedAt) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              v-if="detailMode === 'unsubmitted'"
+              link
+              type="warning"
+              size="small"
+              @click="remindStudent(row)"
+            >提醒完成</el-button>
+            <el-button
+              v-else-if="isLowScore(row)"
+              link
+              type="primary"
+              size="small"
+              @click="guideStudent(row)"
+            >学习建议</el-button>
+          </template>
         </el-table-column>
       </el-table>
       <p v-if="!detailRows.length" class="empty-hint">暂无记录</p>
@@ -249,7 +279,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js'
-import { getClasses, getLessonActivityDashboard, teacherGetTextbooks, teacherGetOutline, getClassLoginCode, refreshClassLoginCode } from '../../api'
+import { getClasses, getLessonActivityDashboard, teacherGetTextbooks, teacherGetOutline, getClassLoginCode, refreshClassLoginCode, teacherIntervene, setClassCurrentLesson } from '../../api'
 
 Chart.register(
   BarController, BarElement, LineController, LineElement, PointElement,
@@ -444,6 +474,74 @@ const openDetail = (act, mode) => {
   detailAct.value = act
   detailMode.value = mode
   detailVisible.value = true
+}
+
+const isLowScore = (row) => {
+  if (row.score == null) return false
+  const act = detailAct.value
+  if (act?.type === 'QUIZ') return row.score < 4
+  return row.score < 60
+}
+
+const remindStudent = async (row) => {
+  if (!classId.value || !lessonId.value || !detailAct.value) return
+  const act = detailAct.value
+  const actIndex = act.type === 'QUIZ' || act.type === 'EVALUATION' ? act.index : act.index
+  const label = activityLabel(act)
+  try {
+    await teacherIntervene({
+      type: 'remind',
+      classId: classId.value,
+      targetStudentId: row.studentId,
+      lessonId: lessonId.value,
+      activityIndex: actIndex,
+      message: `请尽快完成${label}`
+    })
+    ElMessage.success(`已向 ${row.realName} 发送提醒`)
+  } catch {
+    ElMessage.error('发送失败')
+  }
+}
+
+const guideStudent = async (row) => {
+  if (!classId.value) return
+  try {
+    await teacherIntervene({
+      type: 'guide',
+      classId: classId.value,
+      targetStudentId: row.studentId,
+      lessonId: lessonId.value,
+      content: '建议回顾本课内容与教材，巩固薄弱知识点后再继续练习'
+    })
+    ElMessage.success(`已向 ${row.realName} 发送学习建议`)
+  } catch {
+    ElMessage.error('发送失败')
+  }
+}
+
+const broadcastCountdown = async () => {
+  if (!classId.value) return
+  try {
+    await teacherIntervene({
+      type: 'broadcast',
+      classId: classId.value,
+      lessonId: lessonId.value || undefined,
+      message: '还有5分钟，请抓紧提交'
+    })
+    ElMessage.success('全班倒计时提醒已发送')
+  } catch {
+    ElMessage.error('发送失败')
+  }
+}
+
+const markCurrentLesson = async () => {
+  if (!classId.value || !lessonId.value) return
+  try {
+    await setClassCurrentLesson(classId.value, lessonId.value)
+    ElMessage.success('已设为班级当前课时，学生登录后将自动进入')
+  } catch {
+    ElMessage.error('设置失败')
+  }
 }
 
 const syncQuery = () => {
@@ -854,6 +952,8 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
 }
 .action-btn.orange { background: linear-gradient(135deg, #f97316, #fb923c); }
 .action-btn.pink { background: linear-gradient(135deg, #ec4899, #f472b6); }
+.action-btn.indigo { background: linear-gradient(135deg, #4338ca, #6366f1); }
+.action-btn.teal { background: linear-gradient(135deg, #0d9488, #14b8a6); }
 .icon-btn {
   width: 36px; height: 36px;
   border: 1px solid rgba(255,255,255,0.4);

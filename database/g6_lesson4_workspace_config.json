@@ -1,0 +1,172 @@
+{
+  "layout": "student_workspace",
+  "lessonTitle": "第4课 用程序设计语言描述算法",
+  "objectives": "我能把枚举法流程图逐框翻译成 Python 代码，理解 while、if、print 等语句，并体验嵌套循环解决百钱买百鸡问题。",
+  "evaluationHint": "完成三个探究活动后，请如实填写元认知自评，帮助自己和教师了解学习状态。",
+  "introMap": {
+    "title": "用程序设计语言描述算法",
+    "branches": [
+      {
+        "label": "3 本课学习目标",
+        "nodes": [
+          { "text": "把流程图翻译成 Python 代码" },
+          { "text": "掌握赋值、while、if、print 等语句" },
+          { "text": "用嵌套循环解决百钱买百鸡" }
+        ]
+      },
+      {
+        "label": "1. 核心学习内容",
+        "nodes": [
+          { "text": "流程图 → Python 程序" },
+          { "text": "鸡兔同笼代码填空与改数" },
+          { "text": "嵌套循环（双层 while）" }
+        ]
+      },
+      {
+        "label": "2. 课堂完成顺序",
+        "nodes": [
+          { "text": "左侧依次完成活动一、活动二、活动三" },
+          { "text": "（对应网页活动一、活动二、活动三）" },
+          { "text": "全部活动完成后作答课堂小测" }
+        ]
+      }
+    ]
+  },
+  "evaluationForm": {
+    "title": "学习评价",
+    "intro": "以下题目没有标准答案，请根据本课真实学习感受选择最符合的一项。",
+    "questions": [
+      {
+        "id": "e1",
+        "aspect": "学习兴趣",
+        "stem": "本课「把流程图写成 Python 代码」的内容，你的学习兴趣如何？",
+        "options": [
+          "非常感兴趣，还想自己写更多程序",
+          "比较感兴趣，愿意跟着完成代码练习",
+          "一般，能跟着完成要求",
+          "不太感兴趣，觉得代码太难"
+        ]
+      },
+      {
+        "id": "e2",
+        "aspect": "难度感知",
+        "stem": "你觉得本课哪个环节最有挑战性？",
+        "options": [
+          "活动一：对照流程图填空",
+          "活动二：只改三个数字并运行",
+          "活动三：嵌套循环填空",
+          "Python 英文单词和缩进格式",
+          "我觉得都不难，掌握较好"
+        ]
+      },
+      {
+        "id": "e3",
+        "aspect": "学习信心",
+        "stem": "完成三个探究活动后，你对自己「把算法写成程序」的信心如何？",
+        "options": [
+          "非常有信心，能独立翻译简单流程图",
+          "比较有信心，偶尔需要提示",
+          "信心一般，还需要更多练习",
+          "还不太有信心，希望获得更多帮助"
+        ]
+      }
+    ]
+  },
+  "activities": [
+    {
+      "index": 1,
+      "title": "Python代码填空",
+      "step": 1,
+      "path": "/lessons/g6-up-lesson4/index.html",
+      "unlocked": true
+    },
+    {
+      "index": 2,
+      "title": "改数字运行",
+      "step": 2,
+      "path": "/lessons/g6-up-lesson4/index.html",
+      "unlocked": false
+    },
+    {
+      "index": 3,
+      "title": "嵌套循环填空",
+      "step": 3,
+      "path": "/lessons/g6-up-lesson4/index.html",
+      "unlocked": false
+    }
+  ],
+  "quiz": {
+    "title": "课堂小测",
+    "unlockAfterActivity": 3,
+    "questions": [
+      {
+        "id": "k1",
+        "dimension": "知识掌握",
+        "stem": "算法与程序的关系，最恰当的说法是：",
+        "options": [
+          "程序就是算法，算法就是程序",
+          "算法是思想，程序是用某种语言把算法写出来",
+          "只有 Python 才能写算法",
+          "流程图不能变成程序"
+        ],
+        "answer": 1,
+        "explanation": "算法是解决问题的步骤思想，程序是算法的具体实现。"
+      },
+      {
+        "id": "k2",
+        "dimension": "知识掌握",
+        "stem": "流程图中「ji≤35?」这样的判断框，在 Python 中常用：",
+        "options": ["print()", "while 或 if 条件", "只有注释", "import"],
+        "answer": 1,
+        "explanation": "判断框对应条件语句，循环判断常用 while，单次判断常用 if。"
+      },
+      {
+        "id": "a1",
+        "dimension": "能力提升",
+        "stem": "鸡兔同笼枚举代码 `ji = ji + 1` 对应流程图中的：",
+        "options": ["开始框", "输出框", "步进/让枚举变量加1", "结束框"],
+        "answer": 2,
+        "explanation": "每次循环让 ji 加 1，继续尝试下一个可能。"
+      },
+      {
+        "id": "a2",
+        "dimension": "能力提升",
+        "stem": "把「35头94脚」改成「20头56脚」，主要需要修改代码中的：",
+        "options": [
+          "变量名 ji、tu",
+          "与总头数、总脚数相关的数字",
+          "print 这个单词",
+          "while 这个关键字"
+        ],
+        "answer": 1,
+        "explanation": "枚举结构不变，改题目数据即改相关数字。"
+      },
+      {
+        "id": "l1",
+        "dimension": "素养变化",
+        "stem": "百钱买百鸡用「外层循环公鸡、内层循环母鸡」，体现了：",
+        "options": [
+          "嵌套循环（循环里再循环）",
+          "只需要一个 print",
+          "不需要判断条件",
+          "Python 不能算数学题"
+        ],
+        "answer": 0,
+        "explanation": "两个枚举对象组合时，常用嵌套 while 结构。"
+      },
+      {
+        "id": "l2",
+        "dimension": "素养变化",
+        "stem": "程序报错时，读报错信息并修改代码，这体现了：",
+        "options": [
+          "调试与修正也是编程学习的重要部分",
+          "报错说明不适合学编程",
+          "应该直接放弃",
+          "报错与算法无关"
+        ],
+        "answer": 0,
+        "explanation": "根据报错定位问题并修改，是程序体验的重要环节。"
+      }
+    ]
+  }
+}

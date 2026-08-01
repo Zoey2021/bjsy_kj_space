@@ -28,7 +28,9 @@
     <el-dialog v-model="showDialog" title="新增账号" width="400px">
       <el-form :model="form" label-width="80px">
         <el-form-item label="账号"><el-input v-model="form.username" /></el-form-item>
-        <el-form-item label="密码"><el-input v-model="form.password" placeholder="默认123456" /></el-form-item>
+        <el-form-item label="密码">
+          <el-input v-model="form.password" placeholder="留空则自动生成6位随机密码" />
+        </el-form-item>
         <el-form-item label="姓名"><el-input v-model="form.realName" /></el-form-item>
         <el-form-item label="角色">
           <el-select v-model="form.role">
@@ -66,9 +68,17 @@ async function load() {
 }
 
 async function create() {
-  await createUser(form.value)
-  ElMessage.success('创建成功')
+  const payload = { ...form.value }
+  if (!payload.password) delete payload.password
+  const res = await createUser(payload)
+  const pwd = res.data?.initialPassword
+  if (pwd) {
+    ElMessage.success(`创建成功，初始密码：${pwd}（请妥善保存）`)
+  } else {
+    ElMessage.success('创建成功')
+  }
   showDialog.value = false
+  form.value = { username: '', password: '', realName: '', role: 'STUDENT', classId: 1 }
   load()
 }
 

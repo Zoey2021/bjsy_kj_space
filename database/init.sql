@@ -279,7 +279,7 @@ INSERT INTO course_grade (name, sort_order, description, textbook_type, cover_ur
 ('四年级下册', 4, '义务教育教科书·信息科技（四年级下册）', 'MAIN', '/course-covers/grade4-down.jpg', '/textbooks/grade4-down.pdf'),
 ('五年级上册', 5, '义务教育教科书·信息科技（五年级上册）', 'MAIN', '/course-covers/grade5-up.jpg', '/textbooks/grade5-up.pdf'),
 ('五年级下册', 6, '义务教育教科书·信息科技（五年级下册）', 'MAIN', '/course-covers/grade5-down.jpg', '/textbooks/grade5-down.pdf'),
-('六年级上册', 7, '义务教育教科书·信息科技（六年级上册）', 'MAIN', '/course-covers/grade6-up.jpg', '/textbooks/grade6-up.pdf'),
+('六年级上册', 7, '义务教育教科书·信息科技（六年级上册·2026版）', 'MAIN', '/course-covers/grade6-up.jpg', '/textbooks/grade6-up.pdf'),
 ('六年级下册', 8, '义务教育教科书·信息科技（六年级下册）', 'MAIN', '/course-covers/grade6-down.jpg', '/textbooks/grade6-down.pdf'),
 ('二年级上册', 90, '科创启航 · 洞察未来科创启航（二年级上册）', 'SCHOOL', '/course-covers/kechuang-up.png', NULL),
 ('二年级下册', 91, '科创启航 · 洞察未来科创启航（二年级下册）', 'SCHOOL', '/course-covers/kechuang-down.png', NULL),
@@ -404,21 +404,24 @@ INSERT INTO course_lesson (unit_id, title, sort_order, content, duration_min) VA
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='五年级下册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 控制系统中的计算' LIMIT 1), '第13课 循环结构（一）', 5, '<p>本课属于《五年级下册》《第三单元 控制系统中的计算》。</p><p>教材页码约第 51 页。请按教师课堂安排完成学习。</p>', 40),
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='五年级下册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 控制系统中的计算' LIMIT 1), '第14课 循环结构（二）', 6, '<p>本课属于《五年级下册》《第三单元 控制系统中的计算》。</p><p>教材页码约第 55 页。请按教师课堂安排完成学习。</p>', 40),
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='五年级下册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 控制系统中的计算' LIMIT 1), '第15课 恒温箱实验', 7, '<p>本课属于《五年级下册》《第三单元 控制系统中的计算》。</p><p>教材页码约第 59 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第1课 算法与问题解决', 1, '<p>本课属于《六年级上册》《第一单元 算法的实现》。</p><p>教材页码约第 2 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第2课 抽象与建模', 2, '<p>本课属于《六年级上册》《第一单元 算法的实现》。</p><p>教材页码约第 7 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第3课 算法设计', 3, '<p>本课属于《六年级上册》《第一单元 算法的实现》。</p><p>教材页码约第 10 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第4课 算法的程序体验', 4, '<p>本课属于《六年级上册》《第一单元 算法的实现》。</p><p>教材页码约第 14 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第5课 算法的执行', 5, '<p>本课属于《六年级上册》《第一单元 算法的实现》。</p><p>教材页码约第 18 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第6课 猜数字算法设计', 6, '<p>本课属于《六年级上册》《第一单元 算法的实现》。</p><p>教材页码约第 24 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第7课 猜数字算法验证', 7, '<p>本课属于《六年级上册》《第一单元 算法的实现》。</p><p>教材页码约第 28 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第二单元 算法的效率' LIMIT 1), '第8课 算法的多样性', 1, '<p>本课属于《六年级上册》《第二单元 算法的效率》。</p><p>教材页码约第 34 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第二单元 算法的效率' LIMIT 1), '第9课 算法的评价方法', 2, '<p>本课属于《六年级上册》《第二单元 算法的效率》。</p><p>教材页码约第 40 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第二单元 算法的效率' LIMIT 1), '第10课 “韩信点兵”枚举法的实现', 3, '<p>本课属于《六年级上册》《第二单元 算法的效率》。</p><p>教材页码约第 43 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第二单元 算法的效率' LIMIT 1), '第11课 “韩信点兵”筛选法的实现', 4, '<p>本课属于《六年级上册》《第二单元 算法的效率》。</p><p>教材页码约第 47 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第二单元 算法的效率' LIMIT 1), '第12课 “韩信点兵”同余法的实现', 5, '<p>本课属于《六年级上册》《第二单元 算法的效率》。</p><p>教材页码约第 51 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 算法的影响' LIMIT 1), '第13课 在线生活中的算法', 1, '<p>本课属于《六年级上册》《第三单元 算法的影响》。</p><p>教材页码约第 56 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 算法的影响' LIMIT 1), '第14课 算法对生活的影响', 2, '<p>本课属于《六年级上册》《第三单元 算法的影响》。</p><p>教材页码约第 60 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 算法的影响' LIMIT 1), '第15课 人机对话的实现', 3, '<p>本课属于《六年级上册》《第三单元 算法的影响》。</p><p>教材页码约第 63 页。请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第1课 算法与问题解决', 1, '<p>本课属于《六年级上册》（2026版）《第一单元 算法的实现》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第2课 抽象与建模', 2, '<p>本课属于《六年级上册》（2026版）《第一单元 算法的实现》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第3课 算法设计', 3, '<p>本课属于《六年级上册》（2026版）《第一单元 算法的实现》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第4课 用程序设计语言描述算法', 4, '<p>本课属于《六年级上册》（2026版）《第一单元 算法的实现》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第5课 算法执行', 5, '<p>本课属于《六年级上册》（2026版）《第一单元 算法的实现》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第6课 “猜数字”算法设计', 6, '<p>本课属于《六年级上册》（2026版）《第一单元 算法的实现》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 算法的实现' LIMIT 1), '第7课 用人工智能辅助算法实现', 7, '<p>本课属于《六年级上册》（2026版）《第一单元 算法的实现》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第二单元 算法的效率' LIMIT 1), '第8课 算法的多样性', 1, '<p>本课属于《六年级上册》（2026版）《第二单元 算法的效率》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第二单元 算法的效率' LIMIT 1), '第9课 算法的评价方法', 2, '<p>本课属于《六年级上册》（2026版）《第二单元 算法的效率》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第二单元 算法的效率' LIMIT 1), '第10课 “韩信点兵”枚举法的实现', 3, '<p>本课属于《六年级上册》（2026版）《第二单元 算法的效率》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第二单元 算法的效率' LIMIT 1), '第11课 “韩信点兵”筛选法的实现', 4, '<p>本课属于《六年级上册》（2026版）《第二单元 算法的效率》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第二单元 算法的效率' LIMIT 1), '第12课 用人工智能解决“韩信点兵”问题', 5, '<p>本课属于《六年级上册》（2026版）《第二单元 算法的效率》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 算法的影响' LIMIT 1), '第13课 在线生活中的算法', 1, '<p>本课属于《六年级上册》（2026版）《第三单元 算法的影响》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 算法的影响' LIMIT 1), '第14课 智能寻路中的搜索算法', 2, '<p>本课属于《六年级上册》（2026版）《第三单元 算法的影响》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 算法的影响' LIMIT 1), '第15课 在线购物中的推荐算法', 3, '<p>本课属于《六年级上册》（2026版）《第三单元 算法的影响》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 算法的影响' LIMIT 1), '第16课 算法对生活的影响', 4, '<p>本课属于《六年级上册》（2026版）《第三单元 算法的影响》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 算法的影响' LIMIT 1), '第17课 人机对话的实现', 5, '<p>本课属于《六年级上册》（2026版）《第三单元 算法的影响》。</p><p>请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 算法的影响' LIMIT 1), '第18课 对话机器人', 6, '<p>本课属于《六年级上册》（2026版）《第三单元 算法的影响》。</p><p>请按教师课堂安排完成学习。</p>', 40),
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级下册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 控制系统中的反馈' LIMIT 1), '第1课 自动控制系统', 1, '<p>本课属于《六年级下册》《第一单元 控制系统中的反馈》。</p><p>教材页码约第 2 页。请按教师课堂安排完成学习。</p>', 40),
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级下册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 控制系统中的反馈' LIMIT 1), '第2课 控制的形态', 2, '<p>本课属于《六年级下册》《第一单元 控制系统中的反馈》。</p><p>教材页码约第 6 页。请按教师课堂安排完成学习。</p>', 40),
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='六年级下册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 控制系统中的反馈' LIMIT 1), '第3课 反馈与控制', 3, '<p>本课属于《六年级下册》《第一单元 控制系统中的反馈》。</p><p>教材页码约第 10 页。请按教师课堂安排完成学习。</p>', 40),
@@ -483,4 +486,79 @@ INNER JOIN course_unit cu ON cl.unit_id = cu.id
 INNER JOIN course_grade cg ON cu.grade_id = cg.id
 WHERE cg.name = '六年级上册' AND cg.textbook_type = 'MAIN'
   AND cu.name = '第一单元 算法的实现' AND cl.title = '第2课 抽象与建模'
+LIMIT 1;
+
+-- 六年级上册第3课：算法设计学生工作台（完整配置见 migration_g6_up_lesson3.sql）
+INSERT INTO course_resource (lesson_id, title, res_type, content_url, sort_order)
+SELECT cl.id, '算法设计探究活动', 'WEB', '/lessons/g6-up-lesson3/index.html', 1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现' AND cl.title = '第3课 算法设计'
+LIMIT 1;
+
+INSERT INTO course_task (lesson_id, title, description, task_type, config_json, max_score, sort_order)
+SELECT cl.id,
+  '算法设计探究',
+  '六年级上第3课学生工作台',
+  'EXTERNAL',
+  '{"layout":"student_workspace","lessonTitle":"第3课 算法设计","objectives":"我能说出枚举法的思想，确定枚举范围与判断条件，并用流程图表示枚举算法。","activities":[{"index":1,"title":"手工枚举模拟器","step":1,"path":"/lessons/g6-up-lesson3/index.html","unlocked":true},{"index":2,"title":"流程图参数填空","step":2,"path":"/lessons/g6-up-lesson3/index.html","unlocked":false},{"index":3,"title":"百钱买百鸡双层枚举","step":3,"path":"/lessons/g6-up-lesson3/index.html","unlocked":false}],"quiz":{"title":"课堂小测","unlockAfterActivity":3,"questions":[]}}',
+  100,
+  1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现' AND cl.title = '第3课 算法设计'
+LIMIT 1;
+
+-- 六年级上册第4课：用程序设计语言描述算法学生工作台（完整配置见 migration_g6_up_lesson4.sql）
+INSERT INTO course_resource (lesson_id, title, res_type, content_url, sort_order)
+SELECT cl.id, '用程序设计语言描述算法探究活动', 'WEB', '/lessons/g6-up-lesson4/index.html', 1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现' AND cl.title = '第4课 用程序设计语言描述算法'
+LIMIT 1;
+
+INSERT INTO course_task (lesson_id, title, description, task_type, config_json, max_score, sort_order)
+SELECT cl.id,
+  '用程序设计语言描述算法探究',
+  '六年级上第4课学生工作台',
+  'EXTERNAL',
+  '{"layout":"student_workspace","lessonTitle":"第4课 用程序设计语言描述算法","objectives":"我能把枚举法流程图逐框翻译成 Python 代码。","activities":[{"index":1,"title":"Python代码填空","step":1,"path":"/lessons/g6-up-lesson4/index.html","unlocked":true},{"index":2,"title":"改数字运行","step":2,"path":"/lessons/g6-up-lesson4/index.html","unlocked":false},{"index":3,"title":"嵌套循环填空","step":3,"path":"/lessons/g6-up-lesson4/index.html","unlocked":false}],"quiz":{"title":"课堂小测","unlockAfterActivity":3,"questions":[]}}',
+  100,
+  1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现' AND cl.title = '第4课 用程序设计语言描述算法'
+LIMIT 1;
+
+-- 六年级上册第5课：算法执行学生工作台（完整配置见 migration_g6_up_lesson5.sql）
+INSERT INTO course_resource (lesson_id, title, res_type, content_url, sort_order)
+SELECT cl.id, '算法执行探究活动', 'WEB', '/lessons/g6-up-lesson5/index.html', 1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现' AND cl.title = '第5课 算法执行'
+LIMIT 1;
+
+INSERT INTO course_task (lesson_id, title, description, task_type, config_json, max_score, sort_order)
+SELECT cl.id,
+  '算法执行探究',
+  '六年级上第5课学生工作台',
+  'EXTERNAL',
+  '{"layout":"student_workspace","lessonTitle":"第5课 算法执行","objectives":"我能运行 Python 程序，读懂报错并调试，完善算法使程序更通用。","activities":[{"index":1,"title":"Bug猎人","step":1,"path":"/lessons/g6-up-lesson5/index.html","unlocked":true},{"index":2,"title":"完善算法","step":2,"path":"/lessons/g6-up-lesson5/index.html","unlocked":false},{"index":3,"title":"通用化改造","step":3,"path":"/lessons/g6-up-lesson5/index.html","unlocked":false}],"quiz":{"title":"课堂小测","unlockAfterActivity":3,"questions":[]}}',
+  100,
+  1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '六年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 算法的实现' AND cl.title = '第5课 算法执行'
 LIMIT 1;

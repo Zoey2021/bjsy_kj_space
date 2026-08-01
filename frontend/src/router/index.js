@@ -26,6 +26,7 @@ const routes = [
       { path: 'pbl', component: () => import('../views/teacher/PblTeacherWorkspace.vue') },
       { path: 'interdisciplinary', component: () => import('../views/teacher/InterdisciplinaryTeacherWorkspace.vue') },
       { path: 'course-map/grade/:gradeId', component: () => import('../views/teacher/TeacherTextbookHub.vue') },
+      { path: 'lesson/:id', component: () => import('../views/student/LessonDetail.vue'), meta: { teacherPreview: true } },
       { path: 'activity-editor', component: () => import('../views/teacher/ActivityEditorShelved.vue') },
       { path: 'dashboard', component: () => import('../views/teacher/ClassDashboard.vue') },
       { path: 'ai-evaluation', component: () => import('../views/teacher/AiEvaluation.vue') },

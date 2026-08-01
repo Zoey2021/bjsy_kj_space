@@ -8,8 +8,13 @@ import com.itech.learnspace.entity.SysUser;
 import com.itech.learnspace.exception.BusinessException;
 import com.itech.learnspace.service.AuthService;
 import com.itech.learnspace.service.LearnService;
+import com.itech.learnspace.service.NotificationService;
+import com.itech.learnspace.service.SseService;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,16 +23,17 @@ public class LearnController {
 
     private final LearnService learnService;
     private final AuthService authService;
+    private final NotificationService notificationService;
+    private final SseService sseService;
 
-    public LearnController(LearnService learnService, AuthService authService) {
+    public LearnController(LearnService learnService, AuthService authService,
+                           NotificationService notificationService, SseService sseService) {
         this.learnService = learnService;
         this.authService = authService;
+        this.notificationService = notificationService;
+        this.sseService = sseService;
     }
 
-    /**
-     * 学生提交学习任务
-     * 提交成功后后端会通过 SSE 推送，教师看板自动更新
-     */
     @PostMapping("/submit")
     public ApiResponse<LearnSubmission> submit(@RequestBody SubmitRequest request) {
         SysUser user = authService.currentUser();
@@ -60,5 +66,36 @@ public class LearnController {
             throw new BusinessException(403, "仅学生可查看");
         }
         return ApiResponse.ok(learnService.getLessonRecords(lessonId, user.getId()));
+    }
+
+    /** 学生登录后获取班级当前课时 */
+    @GetMapping("/current-lesson")
+    public ApiResponse<Map<String, Object>> currentLesson() {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可访问");
+        }
+        return ApiResponse.ok(notificationService.getCurrentLessonForStudent(user.getId()));
+    }
+
+    /** 学生端 SSE：接收教师干预消息 */
+    @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter studentSse() {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可连接");
+        }
+        return sseService.subscribeStudent(user.getId());
+    }
+
+    /** 拉取离线期间通知 */
+    @GetMapping("/notifications")
+    public ApiResponse<List<Map<String, Object>>> notifications(
+            @RequestParam(required = false) Long since) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可访问");
+        }
+        return ApiResponse.ok(notificationService.getNotificationsSince(user.getId(), since));
     }
 }

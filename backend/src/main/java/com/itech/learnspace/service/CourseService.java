@@ -127,6 +127,16 @@ public class CourseService {
                     .orElse(null);
             result.put("progress", progress);
         }
+
+        CourseUnit unit = unitRepository.findById(lesson.getUnitId()).orElse(null);
+        if (unit != null) {
+            CourseGrade grade = gradeRepository.findById(unit.getGradeId()).orElse(null);
+            if (grade != null) {
+                result.put("gradeId", grade.getId());
+                result.put("gradeName", grade.getName());
+                result.put("textbookPdfUrl", TextbookPdfHelper.resolvePdfUrl(grade));
+            }
+        }
         return result;
     }
 }

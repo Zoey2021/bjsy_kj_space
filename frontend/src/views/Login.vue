@@ -95,7 +95,7 @@
           </div>
         </div>
 
-        <p class="demo-tip">演示：student1 / teacher1 / admin，密码 123456</p>
+        <p v-if="isDev" class="demo-tip">演示：student1 / teacher1 / admin，密码 123456</p>
       </div>
     </main>
 
@@ -132,6 +132,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login, getClassCodeStudents, classCodeLogin } from '../api'
 import { detectEnrollmentYear } from '../utils/cohortGradeAccess'
+
+const isDev = import.meta.env.DEV
 
 const router = useRouter()
 const loading = ref(false)

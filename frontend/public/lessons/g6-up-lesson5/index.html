@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第5课 算法的执行 — 探究活动</title>
+<style>
+:root{
+  --p:#264653; --s:#2a9d8f; --a:#e9c46a; --l:#f4a261; --c:#e76f51;
+  --bg:#F8F9FA; --card:#fff; --tx:#333; --tx2:#666; --bd:#E0E0E0;
+  --r:12px; --rs:8px; --sh:0 2px 12px rgba(0,0,0,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:var(--bg);color:var(--tx);line-height:1.6}
+
+/* Header */
+.top-bar{background:linear-gradient(135deg,var(--p),var(--s));color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--sh)}
+.top-bar h1{font-size:22px;font-weight:700}
+.top-bar .subtitle{font-size:13px;opacity:.9;margin-top:4px}
+
+/* Tab nav */
+.tab-nav{display:flex;gap:8px;padding:16px 24px;background:#fff;border-bottom:2px solid var(--bd);position:sticky;top:0;z-index:10}
+.tab-btn{padding:10px 22px;border-radius:var(--rs);border:none;background:#F0F0F0;color:var(--tx2);cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+.tab-btn.active{background:var(--s);color:#fff;box-shadow:0 2px 8px rgba(42,157,143,.3)}
+.tab-btn:hover:not(.active){background:#E8E8E8}
+
+/* Content */
+.container{padding:20px 24px;max-width:1200px;margin:0 auto}
+.step-panel{display:none}
+.step-panel.active{display:block}
+
+/* Cards */
+.card{background:var(--card);border-radius:var(--r);padding:20px;box-shadow:var(--sh);margin-bottom:16px;border:1.5px solid var(--bd)}
+.card-title{font-size:16px;font-weight:700;color:var(--p);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+/* Code blocks */
+.code-box{background:#1E1E1E;border-radius:var(--rs);padding:16px;overflow-x:auto;font-family:"Courier New",monospace;font-size:13.5px;line-height:1.8;color:#D4D4D4}
+.code-box .kw{color:#569CD6}
+.code-box .str{color:#CE9178}
+.code-box .num{color:#B5CEA8}
+.code-box .cm{color:#6A9955}
+.code-box .err{background:rgba(231,111,81,.3);border-radius:3px;padding:0 2px}
+.code-box .ok{background:rgba(42,157,143,.3);border-radius:3px;padding:0 2px}
+.code-line{display:block;white-space:pre}
+.line-num{display:inline-block;width:28px;color:#858585;text-align:right;margin-right:12px;user-select:none}
+
+/* Input blanks */
+.blank{display:inline-block;min-width:80px;height:28px;border:2px dashed var(--s);border-radius:4px;background:#E8F4F2;text-align:center;vertical-align:middle;margin:0 4px;font-family:"Courier New",monospace;color:var(--p);font-weight:700}
+.blank.correct{border-color:var(--s);background:#E8F4F2;color:var(--s)}
+.blank.wrong{border-color:var(--c);background:#FDEDE8;color:var(--c)}
+
+/* Buttons */
+.btn{padding:10px 20px;border:none;border-radius:var(--rs);cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+.btn-primary{background:var(--s);color:#fff}
+.btn-primary:hover{background:#21867a}
+.btn-accent{background:var(--a);color:var(--p)}
+.btn-accent:hover{background:#d4a843}
+.btn-danger{background:var(--c);color:#fff}
+.btn-danger:hover{background:#c94a32}
+.btn-secondary{background:#E0E0E0;color:var(--tx)}
+
+/* Bug cards */
+.bug-card{background:#FFF5F5;border:2px solid #FFCCCC;border-radius:var(--r);padding:16px;margin-bottom:12px}
+.bug-card.fixed{background:#F0FAF8;border-color:var(--s)}
+.bug-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.bug-title{font-weight:700;color:var(--c);font-size:15px}
+.bug-card.fixed .bug-title{color:var(--s)}
+.bug-status{font-size:12px;padding:4px 10px;border-radius:20px;background:#FFEBEE;color:var(--c);font-weight:600}
+.bug-card.fixed .bug-status{background:#E8F4F2;color:var(--s)}
+
+/* Error console */
+.error-console{background:#1E1E1E;border-radius:var(--rs);padding:12px 16px;font-family:"Courier New",monospace;font-size:13px;color:#FF6B6B;margin:12px 0;line-height:1.6;display:none}
+.error-console.show{display:block}
+.error-console .err-type{color:#FF6B6B;font-weight:700}
+.error-console .err-line{color:#FFD93D}
+
+/* Success console */
+.success-console{background:#1E1E1E;border-radius:var(--rs);padding:12px 16px;font-family:"Courier New",monospace;font-size:13px;color:#6BCB77;margin:12px 0;line-height:1.6;display:none}
+.success-console.show{display:block}
+
+/* Quiz options */
+.quiz-options{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.quiz-option{padding:10px 14px;border:2px solid var(--bd);border-radius:var(--rs);cursor:pointer;transition:all .2s;font-size:13.5px}
+.quiz-option:hover{border-color:var(--s);background:#F8F9FA}
+.quiz-option.selected{border-color:var(--s);background:#E8F4F2}
+.quiz-option.correct{border-color:var(--s);background:#E8F4F2}
+.quiz-option.wrong{border-color:var(--c);background:#FFF5F5}
+
+/* Checklist */
+.checklist{display:flex;flex-direction:column;gap:8px}
+.check-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#F8F9FA;border-radius:var(--rs);font-size:13.5px}
+.check-item .check-box{width:18px;height:18px;border:2px solid var(--bd);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff}
+.check-item.checked .check-box{background:var(--s);border-color:var(--s)}
+
+/* Result area */
+.result-area{background:#F8F9FA;border-radius:var(--rs);padding:16px;margin-top:12px;display:none}
+.result-area.show{display:block}
+.result-title{font-weight:700;color:var(--p);margin-bottom:8px;font-size:14px}
+
+/* Input fields */
+.input-field{padding:8px 12px;border:2px solid var(--bd);border-radius:var(--rs);font-size:14px;outline:none;transition:border-color .2s}
+.input-field:focus{border-color:var(--s)}
+
+/* Hint box */
+.hint-box{background:linear-gradient(135deg,#FFF8E7,#FFF5E0);border:1.5px solid var(--a);border-radius:var(--r);padding:12px 16px;margin:12px 0;font-size:13px;color:var(--tx)}
+.hint-box strong{color:var(--p)}
+
+/* Step indicator */
+.step-flow{display:flex;align-items:center;gap:8px;margin:16px 0;flex-wrap:wrap}
+.step-item{padding:8px 16px;border-radius:var(--rs);font-size:13px;font-weight:600}
+.step-item.done{background:var(--s);color:#fff}
+.step-item.current{background:var(--a);color:var(--p)}
+.step-item.wait{background:#E0E0E0;color:var(--tx2)}
+.step-arrow{color:var(--tx2);font-size:16px}
+
+/* Two column layout */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+
+/* Table */
+.data-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.data-table th{background:var(--p);color:#fff;padding:10px;text-align:left}
+.data-table td{padding:10px;border-bottom:1px solid var(--bd)}
+.data-table tr:hover{background:#F8F9FA}
+
+/* Progress */
+.progress-bar{height:6px;background:#E0E0E0;border-radius:3px;overflow:hidden;margin:8px 0}
+.progress-fill{height:100%;background:var(--s);border-radius:3px;transition:width .3s}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .3s ease}
+
+/* Tips */
+.tip-box{background:linear-gradient(135deg,#E8F4F2,#F0FAF8);border-left:4px solid var(--s);border-radius:0 var(--rs) var(--rs) 0;padding:12px 16px;margin:12px 0;font-size:13px}
+body.embedded-mode{background:#fff}
+body.embedded-mode .top-bar{padding:12px 16px}
+body.embedded-mode .top-bar .subtitle{display:none}
+body.embedded-mode .tab-nav{display:none!important}
+body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="top-bar">
+  <div>
+    <h1>第5课 算法的执行</h1>
+    <div class="subtitle">探究活动 — 运行 · 调试 · 完善</div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab(1)">🔍 活动一：Bug猎人</button>
+  <button class="tab-btn" onclick="switchTab(2)">🔧 活动二：完善算法</button>
+  <button class="tab-btn" onclick="switchTab(3)">🚀 活动三：通用化改造</button>
+</div>
+
+<!-- ==================== ACTIVITY 1: Bug Hunter ==================== -->
+<div class="step-panel active" id="panel1">
+<div class="container">
+
+<div class="card">
+  <div class="card-title">🎯 任务说明</div>
+  <div class="tip-box">
+    <strong>调试四查：</strong>① 大小写 &nbsp; ② 标点符号 &nbsp; ③ 冒号 &nbsp; ④ 缩进<br>
+    下面三个程序都有Bug，点击<strong>"运行"</strong>查看报错信息，然后选择错误类型并修正！
+  </div>
+</div>
+
+<!-- Bug 1: NameError -->
+<div class="bug-card" id="bug1">
+  <div class="bug-header">
+    <div class="bug-title">🐛 Bug 程序 #1 — 大小写错误</div>
+    <div class="bug-status" id="bug1-status">待修复</div>
+  </div>
+  <div class="code-box">
+    <div class="code-line"><span class="line-num">1</span><span class="kw">Tu</span> = <span class="num">0</span></div>
+    <div class="code-line"><span class="line-num">2</span><span class="kw">while</span> tu <= <span class="num">35</span>:</div>
+    <div class="code-line"><span class="line-num">3</span>    tu = <span class="num">35</span> - ji</div>
+    <div class="code-line"><span class="line-num">4</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span>:</div>
+    <div class="code-line"><span class="line-num">5</span>        <span class="kw">print</span>(<span class="str">"鸡:"</span>, ji, <span class="str">"只"</span>)</div>
+    <div class="code-line"><span class="line-num">6</span>    ji = ji + <span class="num">1</span></div>
+  </div>
+  <div style="margin-top:12px">
+    <button class="btn btn-primary" onclick="runBug(1)" id="bug1-run">▶ 运行程序</button>
+  </div>
+  <div class="error-console" id="bug1-error">
+    <span class="err-type">NameError</span>: name 'tu' is not defined<br>
+    <span class="err-line">--&gt; Line 2: while tu &lt;= 35:</span>
+  </div>
+  <div class="success-console" id="bug1-success">
+    ✅ 运行成功！<br>
+    鸡: 23 只<br>
+    兔: 12 只
+  </div>
+  <div id="bug1-quiz" style="display:none;margin-top:12px">
+    <div style="font-weight:700;color:var(--p);margin-bottom:8px">这是什么错误？</div>
+    <div class="quiz-options">
+      <div class="quiz-option" onclick="selectBugOption(1, 'A')" data-val="A">A. 缺少冒号</div>
+      <div class="quiz-option" onclick="selectBugOption(1, 'B')" data-val="B">B. 大小写不一致（Tu ≠ tu）</div>
+      <div class="quiz-option" onclick="selectBugOption(1, 'C')" data-val="C">C. 缩进错误</div>
+      <div class="quiz-option" onclick="selectBugOption(1, 'D')" data-val="D">D. 中文标点</div>
+    </div>
+    <div id="bug1-fix" style="display:none;margin-top:12px">
+      <div class="hint-box">✅ 正确！第1行的 <span class="err">Tu</span> 应该改为 <span class="ok">tu</span></div>
+      <button class="btn btn-accent" onclick="fixBug(1)">🔧 修正并重新运行</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bug 2: SyntaxError (Chinese punctuation) -->
+<div class="bug-card" id="bug2">
+  <div class="bug-header">
+    <div class="bug-title">🐛 Bug 程序 #2 — 中文标点错误</div>
+    <div class="bug-status" id="bug2-status">待修复</div>
+  </div>
+  <div class="code-box">
+    <div class="code-line"><span class="line-num">1</span>ji = <span class="num">0</span></div>
+    <div class="code-line"><span class="line-num">2</span><span class="kw">while</span> ji <= <span class="num">35</span><span class="err">：</span></div>
+    <div class="code-line"><span class="line-num">3</span>    tu = <span class="num">35</span> - ji</div>
+    <div class="code-line"><span class="line-num">4</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span><span class="err">：</span></div>
+    <div class="code-line"><span class="line-num">5</span>        <span class="kw">print</span><span class="err">（</span><span class="str">"鸡:"</span>, ji<span class="err">）</span></div>
+    <div class="code-line"><span class="line-num">6</span>    ji = ji + <span class="num">1</span></div>
+  </div>
+  <div style="margin-top:12px">
+    <button class="btn btn-primary" onclick="runBug(2)" id="bug2-run">▶ 运行程序</button>
+  </div>
+  <div class="error-console" id="bug2-error">
+    <span class="err-type">SyntaxError</span>: invalid character in identifier<br>
+    <span class="err-line">--&gt; Line 2: while ji &lt;= 35：</span>
+  </div>
+  <div class="success-console" id="bug2-success">
+    ✅ 运行成功！<br>
+    鸡: 23 只<br>
+    兔: 12 只
+  </div>
+  <div id="bug2-quiz" style="display:none;margin-top:12px">
+    <div style="font-weight:700;color:var(--p);margin-bottom:8px">这是什么错误？</div>
+    <div class="quiz-options">
+      <div class="quiz-option" onclick="selectBugOption(2, 'A')" data-val="A">A. 大小写不一致</div>
+      <div class="quiz-option" onclick="selectBugOption(2, 'B')" data-val="B">B. 使用了中文标点（冒号、括号）</div>
+      <div class="quiz-option" onclick="selectBugOption(2, 'C')" data-val="C">C. 缩进错误</div>
+      <div class="quiz-option" onclick="selectBugOption(2, 'D')" data-val="D">D. 变量名错误</div>
+    </div>
+    <div id="bug2-fix" style="display:none;margin-top:12px">
+      <div class="hint-box">✅ 正确！中文冒号<span class="err">"："</span>应改为英文冒号<span class="ok">":"</span>，中文括号<span class="err">"（）"</span>应改为英文括号<span class="ok">"()"</span></div>
+      <button class="btn btn-accent" onclick="fixBug(2)">🔧 修正并重新运行</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bug 3: IndentationError -->
+<div class="bug-card" id="bug3">
+  <div class="bug-header">
+    <div class="bug-title">🐛 Bug 程序 #3 — 缩进错误</div>
+    <div class="bug-status" id="bug3-status">待修复</div>
+  </div>
+  <div class="code-box">
+    <div class="code-line"><span class="line-num">1</span>ji = <span class="num">0</span></div>
+    <div class="code-line"><span class="line-num">2</span><span class="kw">while</span> ji <= <span class="num">35</span>:</div>
+    <div class="code-line"><span class="line-num">3</span>tu = <span class="num">35</span> - ji</div>
+    <div class="code-line"><span class="line-num">4</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span>:</div>
+    <div class="code-line"><span class="line-num">5</span>        <span class="kw">print</span>(<span class="str">"鸡:"</span>, ji, <span class="str">"只"</span>)</div>
+    <div class="code-line"><span class="line-num">6</span>    ji = ji + <span class="num">1</span></div>
+  </div>
+  <div style="margin-top:12px">
+    <button class="btn btn-primary" onclick="runBug(3)" id="bug3-run">▶ 运行程序</button>
+  </div>
+  <div class="error-console" id="bug3-error">
+    <span class="err-type">IndentationError</span>: expected an indented block<br>
+    <span class="err-line">--&gt; Line 3: tu = 35 - ji</span>
+  </div>
+  <div class="success-console" id="bug3-success">
+    ✅ 运行成功！<br>
+    鸡: 23 只<br>
+    兔: 12 只
+  </div>
+  <div id="bug3-quiz" style="display:none;margin-top:12px">
+    <div style="font-weight:700;color:var(--p);margin-bottom:8px">这是什么错误？</div>
+    <div class="quiz-options">
+      <div class="quiz-option" onclick="selectBugOption(3, 'A')" data-val="A">A. 大小写不一致</div>
+      <div class="quiz-option" onclick="selectBugOption(3, 'B')" data-val="B">B. 中文标点</div>
+      <div class="quiz-option" onclick="selectBugOption(3, 'C')" data-val="C">C. 缩进错误（while/if后面没有缩进）</div>
+      <div class="quiz-option" onclick="selectBugOption(3, 'D')" data-val="D">D. 缺少冒号</div>
+    </div>
+    <div id="bug3-fix" style="display:none;margin-top:12px">
+      <div class="hint-box">✅ 正确！<span class="err">while</span> 和 <span class="err">if</span> 后面的代码必须缩进。第3行和第5行应该加4个空格缩进。</div>
+      <button class="btn btn-accent" onclick="fixBug(3)">🔧 修正并重新运行</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📋 调试成果</div>
+  <div class="checklist" id="bug-checklist">
+    <div class="check-item" id="check-b1"><div class="check-box">✓</div> 修复 Bug #1 — 大小写错误</div>
+    <div class="check-item" id="check-b2"><div class="check-box">✓</div> 修复 Bug #2 — 中文标点</div>
+    <div class="check-item" id="check-b3"><div class="check-box">✓</div> 修复 Bug #3 — 缩进错误</div>
+  </div>
+  <div class="result-area" id="bug-result">
+    <div class="result-title">🎉 恭喜！你已掌握调试三大利器：</div>
+    <div>① 读懂报错类型（NameError / SyntaxError / IndentationError）</div>
+    <div>② 根据行号定位错误</div>
+    <div>③ 对照四查清单修正错误</div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- ==================== ACTIVITY 2: Improve Algorithm ==================== -->
+<div class="step-panel" id="panel2">
+<div class="container">
+
+<div class="card">
+  <div class="card-title">🎯 任务说明</div>
+  <div class="tip-box">
+    <strong>问题：</strong>把代码里的35改成30，94改成80，运行后<strong>没有任何结果</strong>！<br>
+    不是程序坏了，是这道题<strong>无解</strong>。但程序什么都不说，用户会以为坏了。<br>
+    <strong>任务：</strong>添加一个 <span class="blank">jie</span> 变量，让程序能判断"有解"还是"无解"！
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📝 原始代码（35头94脚）</div>
+  <div class="code-box" id="code2-original">
+    <div class="code-line"><span class="line-num">1</span>ji = <span class="num">0</span></div>
+    <div class="code-line"><span class="line-num">2</span><span class="kw">while</span> ji <= <span class="num">35</span>:</div>
+    <div class="code-line"><span class="line-num">3</span>    tu = <span class="num">35</span> - ji</div>
+    <div class="code-line"><span class="line-num">4</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span>:</div>
+    <div class="code-line"><span class="line-num">5</span>        <span class="kw">print</span>(<span class="str">"鸡:"</span>, ji, <span class="str">"只"</span>)</div>
+    <div class="code-line"><span class="line-num">6</span>        <span class="kw">print</span>(<span class="str">"兔:"</span>, tu, <span class="str">"只"</span>)</div>
+    <div class="code-line"><span class="line-num">7</span>    ji = ji + <span class="num">1</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">✏️ 请完善代码（填空）</div>
+  <div class="hint-box">
+    <strong>思路：</strong>① 新增变量 <span class="blank">jie</span> 初始值为 <span class="blank">0</span>（表示"还没找到解"）<br>
+    ② 找到解时，把 <span class="blank">jie</span> 改为 <span class="blank">1</span>（表示"找到了"）<br>
+    ③ 循环结束后，如果 <span class="blank">jie</span> 还是 <span class="blank">0</span>，输出"此题无解"
+  </div>
+  <div class="code-box" id="code2-improved">
+    <div class="code-line"><span class="line-num">1</span><input type="text" class="input-field blank" id="f2-1" style="width:60px;height:24px;font-size:13px;padding:2px 6px"> = <span class="num">0</span>      <span class="cm"># 新增：记录是否有解</span></div>
+    <div class="code-line"><span class="line-num">2</span>ji = <span class="num">0</span></div>
+    <div class="code-line"><span class="line-num">3</span><span class="kw">while</span> ji <= <span class="num">35</span>:</div>
+    <div class="code-line"><span class="line-num">4</span>    tu = <span class="num">35</span> - ji</div>
+    <div class="code-line"><span class="line-num">5</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span>:</div>
+    <div class="code-line"><span class="line-num">6</span>        <span class="kw">print</span>(<span class="str">"鸡:"</span>, ji, <span class="str">"只"</span>)</div>
+    <div class="code-line"><span class="line-num">7</span>        <span class="kw">print</span>(<span class="str">"兔:"</span>, tu, <span class="str">"只"</span>)</div>
+    <div class="code-line"><span class="line-num">8</span>        <input type="text" class="input-field blank" id="f2-2" style="width:60px;height:24px;font-size:13px;padding:2px 6px"> = <span class="num">1</span>      <span class="cm"># 找到了，标记为有解</span></div>
+    <div class="code-line"><span class="line-num">9</span>    ji = ji + <span class="num">1</span></div>
+    <div class="code-line"><span class="line-num">10</span></div>
+    <div class="code-line"><span class="line-num">11</span><span class="kw">if</span> <input type="text" class="input-field blank" id="f2-3" style="width:60px;height:24px;font-size:13px;padding:2px 6px"> == <span class="num">0</span>:     <span class="cm"># 循环结束后检查</span></div>
+    <div class="code-line"><span class="line-num">12</span>    <span class="kw">print</span>(<span class="str">"此题无解"</span>)   <span class="cm"># 没找到解，提示用户</span></div>
+  </div>
+  <div style="margin-top:16px;display:flex;gap:10px">
+    <button class="btn btn-primary" onclick="checkFill2()">✅ 检查填空</button>
+    <button class="btn btn-secondary" onclick="showHint2()">💡 提示</button>
+  </div>
+  <div class="hint-box" id="hint2" style="display:none">
+    三个空都填 <strong>jie</strong>（变量名要保持一致）
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-title">🧪 测试：有解的情况（35头94脚）</div>
+    <button class="btn btn-primary" onclick="testSolve(35,94)" style="width:100%;margin-bottom:12px">▶ 运行测试</button>
+    <div class="result-area" id="result-solve-yes">
+      <div class="result-title">运行结果：</div>
+      <div id="output-yes" style="font-family:monospace"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🧪 测试：无解的情况（30头80脚）</div>
+    <button class="btn btn-danger" onclick="testSolve(30,80)" style="width:100%;margin-bottom:12px">▶ 运行测试</button>
+    <div class="result-area" id="result-solve-no">
+      <div class="result-title">运行结果：</div>
+      <div id="output-no" style="font-family:monospace"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">🧠 想一想</div>
+  <div class="quiz-options">
+    <div class="quiz-option" onclick="selectThink(this, false)">A. 去掉 jie 变量，程序也能正常工作</div>
+    <div class="quiz-option" onclick="selectThink(this, true)">B. jie 变量让程序能告诉用户"此题无解"，更友好</div>
+    <div class="quiz-option" onclick="selectThink(this, false)">C. jie 变量只是为了增加代码行数</div>
+  </div>
+  <div id="think-result" style="margin-top:10px;display:none"></div>
+</div>
+
+</div>
+</div>
+
+<!-- ==================== ACTIVITY 3: Generalization ==================== -->
+<div class="step-panel" id="panel3">
+<div class="container">
+
+<div class="card">
+  <div class="card-title">🎯 任务说明</div>
+  <div class="tip-box">
+    <strong>目标：</strong>把程序中的固定数字（35头94脚）改为<strong>用户输入</strong>，让程序能解<strong>任意</strong>鸡兔同笼问题！<br>
+    <strong>方法：</strong>使用 <span class="kw">input()</span> 函数，让用户运行时输入头数和脚数。
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">✏️ 请改造代码（填空）</div>
+  <div class="code-box" id="code3-general">
+    <div class="code-line"><span class="line-num">1</span><span class="cm"># 让用户输入头数和脚数</span></div>
+    <div class="code-line"><span class="line-num">2</span>jiao = <span class="kw">int</span>(<span class="kw">input</span>(<span class="str">"请输入总脚数："</span>))</div>
+    <div class="code-line"><span class="line-num">3</span>jie = <span class="num">0</span></div>
+    <div class="code-line"><span class="line-num">4</span>ji = <span class="num">0</span></div>
+    <div class="code-line"><span class="line-num">5</span><span class="kw">while</span> ji <= tou:        <span class="cm"># 改为变量 tou</span></div>
+    <div class="code-line"><span class="line-num">6</span>    tu = <input type="text" class="input-field blank" id="f3-1" style="width:80px;height:24px;font-size:13px;padding:2px 6px"> - ji   <span class="cm"># 填什么？</span></div>
+    <div class="code-line"><span class="line-num">7</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <input type="text" class="input-field blank" id="f3-2" style="width:80px;height:24px;font-size:13px;padding:2px 6px">:  <span class="cm"># 填什么？</span></div>
+    <div class="code-line"><span class="line-num">8</span>        <span class="kw">print</span>(<span class="str">"鸡:"</span>, ji, <span class="str">"只"</span>)</div>
+    <div class="code-line"><span class="line-num">9</span>        <span class="kw">print</span>(<span class="str">"兔:"</span>, tu, <span class="str">"只"</span>)</div>
+    <div class="code-line"><span class="line-num">10</span>        jie = <span class="num">1</span></div>
+    <div class="code-line"><span class="line-num">11</span>    ji = ji + <span class="num">1</span></div>
+    <div class="code-line"><span class="line-num">12</span><span class="kw">if</span> jie == <span class="num">0</span>:</div>
+    <div class="code-line"><span class="line-num">13</span>    <span class="kw">print</span>(<span class="str">"此题无解"</span>)</div>
+  </div>
+  <div style="margin-top:16px;display:flex;gap:10px">
+    <button class="btn btn-primary" onclick="checkFill3()">✅ 检查填空</button>
+    <button class="btn btn-secondary" onclick="showHint3()">💡 提示</button>
+  </div>
+  <div class="hint-box" id="hint3" style="display:none">
+    第6行填 <strong>tou</strong>（总头数变量），第7行填 <strong>jiao</strong>（总脚数变量）
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">🧪 测试你的通用程序</div>
+  <div class="two-col">
+    <div>
+      <div style="margin-bottom:8px;font-weight:700">输入测试数据：</div>
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <div>
+          <label style="font-size:13px;color:var(--tx2)">总头数：</label>
+          <input type="number" class="input-field" id="test-head" value="35" style="width:80px">
+        </div>
+        <div>
+          <label style="font-size:13px;color:var(--tx2)">总脚数：</label>
+          <input type="number" class="input-field" id="test-feet" value="94" style="width:80px">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="runGeneral()">▶ 运行通用程序</button>
+    </div>
+    <div>
+      <div style="margin-bottom:8px;font-weight:700">运行结果：</div>
+      <div class="code-box" id="general-output" style="min-height:100px">
+        <div style="color:#858585">点击"运行通用程序"查看结果...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">🏆 挑战测试</div>
+  <div class="hint-box">
+    试着输入不同的头数和脚数，看看你的通用程序能不能正确求解！<br>
+    <strong>推荐测试：</strong>① 20头56脚（有解） &nbsp; ② 30头80脚（无解） &nbsp; ③ 100头250脚（有解）
+  </div>
+  <div style="margin-top:12px">
+    <div style="font-weight:700;color:var(--p);margin-bottom:8px">快速测试：</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="setTest(20,56)">20头56脚</button>
+      <button class="btn btn-secondary" onclick="setTest(30,80)">30头80脚</button>
+      <button class="btn btn-secondary" onclick="setTest(100,250)">100头250脚</button>
+      <button class="btn btn-secondary" onclick="setTest(5,12)">5头12脚</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📚 知识总结</div>
+  <div class="step-flow">
+    <div class="step-item done">① 写代码</div>
+    <div class="step-arrow">→</div>
+    <div class="step-item done">② 运行程序</div>
+    <div class="step-arrow">→</div>
+    <div class="step-item done">③ 调试程序</div>
+    <div class="step-arrow">→</div>
+    <div class="step-item done">④ 完善算法</div>
+    <div class="step-arrow">→</div>
+    <div class="step-item current">⑤ 通用程序</div>
+  </div>
+  <div class="tip-box" style="margin-top:12px">
+    <strong>好的算法往往可以解决同一类问题，而不局限于某一个特定的问题。</strong><br>
+    从"固定数字"到"用户输入"，你的程序现在能解<strong>任意</strong>鸡兔同笼问题！
+  </div>
+</div>
+
+</div>
+</div>
+
+<script>
+// ==================== Tab Switching ====================
+function switchTab(n){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===n-1));
+  document.querySelectorAll('.step-panel').forEach((p,i)=>p.classList.toggle('active',i===n-1));
+}
+
+const urlParams = new URLSearchParams(location.search);
+const IS_EMBEDDED = urlParams.get('embedded') === '1';
+const learnSpaceNotifiedSteps = new Set();
+
+function notifyLearnSpaceComplete(step) {
+  if (!window.parent || window.parent === window) return;
+  if (learnSpaceNotifiedSteps.has(step)) return;
+  learnSpaceNotifiedSteps.add(step);
+  const params = new URLSearchParams(location.search);
+  const idx = parseInt(params.get('activityIndex') || params.get('step') || String(step), 10);
+  window.parent.postMessage({
+    type: 'LEARN_SPACE_SUBMIT',
+    payload: {
+      activityIndex: Number.isFinite(idx) ? idx : step,
+      step,
+      stepCompleted: true,
+      source: 'g6-up-lesson5'
+    }
+  }, '*');
+}
+
+// ==================== Activity 1: Bug Hunter ====================
+const bugStates = {1:false, 2:false, 3:false};
+
+function runBug(n){
+  document.getElementById('bug'+n+'-error').classList.add('show');
+  document.getElementById('bug'+n+'-quiz').style.display='block';
+  document.getElementById('bug'+n+'-run').style.display='none';
+}
+
+function selectBugOption(bugNum, choice){
+  const options = document.querySelectorAll('#bug'+bugNum+'-quiz .quiz-option');
+  options.forEach(o=>o.classList.remove('selected','correct','wrong'));
+  const selected = document.querySelector('#bug'+bugNum+'-quiz .quiz-option[data-val="'+choice+'"]');
+  selected.classList.add('selected');
+
+  const answers = {1:'B', 2:'B', 3:'C'};
+  if(choice === answers[bugNum]){
+    selected.classList.add('correct');
+    document.getElementById('bug'+bugNum+'-fix').style.display='block';
+  } else {
+    selected.classList.add('wrong');
+  }
+}
+
+function fixBug(n){
+  bugStates[n] = true;
+  document.getElementById('bug'+n).classList.add('fixed');
+  document.getElementById('bug'+n+'-status').textContent = '已修复 ✓';
+  document.getElementById('bug'+n+'-error').classList.remove('show');
+  document.getElementById('bug'+n+'-success').classList.add('show');
+  document.getElementById('bug'+n+'-quiz').style.display='none';
+
+  document.getElementById('check-b'+n).classList.add('checked');
+
+  if(bugStates[1] && bugStates[2] && bugStates[3]){
+    document.getElementById('bug-result').classList.add('show');
+    notifyLearnSpaceComplete(1);
+  }
+}
+
+// ==================== Activity 2: Improve Algorithm ====================
+function checkFill2(){
+  const v1 = document.getElementById('f2-1').value.trim();
+  const v2 = document.getElementById('f2-2').value.trim();
+  const v3 = document.getElementById('f2-3').value.trim();
+
+  const correct = v1 === 'jie' && v2 === 'jie' && v3 === 'jie';
+
+  ['f2-1','f2-2','f2-3'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    const val = [v1,v2,v3][i];
+    if(val === 'jie'){
+      el.classList.add('correct');
+      el.classList.remove('wrong');
+    } else {
+      el.classList.add('wrong');
+      el.classList.remove('correct');
+    }
+  });
+
+  if(correct){
+    alert('🎉 全部正确！现在测试有解和无解两种情况吧！');
+    notifyLearnSpaceComplete(2);
+  } else {
+    alert('❌ 有错误，请检查变量名是否一致（都是 jie）');
+  }
+}
+
+function showHint2(){
+  document.getElementById('hint2').style.display='block';
+}
+
+function testSolve(head, feet){
+  const resultDiv = head===35 ? 'result-solve-yes' : 'result-solve-no';
+  const outputDiv = head===35 ? 'output-yes' : 'output-no';
+  document.getElementById(resultDiv).classList.add('show');
+
+  // Simulate enumeration
+  let found = false;
+  let output = '';
+  for(let ji=0; ji<=head; ji++){
+    const tu = head - ji;
+    if(2*ji + 4*tu === feet){
+      output += `鸡: ${ji} 只\n`;
+      output += `兔: ${tu} 只\n`;
+      found = true;
+      break;
+    }
+  }
+  if(!found){
+    output = '此题无解';
+  }
+  document.getElementById(outputDiv).textContent = output;
+  document.getElementById(outputDiv).style.color = found ? '#2a9d8f' : '#e76f51';
+}
+
+function selectThink(el, isCorrect){
+  document.querySelectorAll('#panel2 .quiz-option').forEach(o=>o.classList.remove('selected','correct','wrong'));
+  el.classList.add('selected');
+  const result = document.getElementById('think-result');
+  result.style.display='block';
+  if(isCorrect){
+    el.classList.add('correct');
+    result.innerHTML = '<div style="color:var(--s);font-weight:700">✅ 正确！jie 变量让程序能判断"有解/无解"，对用户更友好！</div>';
+  } else {
+    el.classList.add('wrong');
+    result.innerHTML = '<div style="color:var(--c)">❌ 不对，再想想 jie 变量的作用是什么？</div>';
+  }
+}
+
+// ==================== Activity 3: Generalization ====================
+function checkFill3(){
+  const v1 = document.getElementById('f3-1').value.trim();
+  const v2 = document.getElementById('f3-2').value.trim();
+
+  const c1 = v1 === 'tou';
+  const c2 = v2 === 'jiao';
+
+  const el1 = document.getElementById('f3-1');
+  const el2 = document.getElementById('f3-2');
+
+  if(c1){ el1.classList.add('correct'); el1.classList.remove('wrong'); }
+  else { el1.classList.add('wrong'); el1.classList.remove('correct'); }
+
+  if(c2){ el2.classList.add('correct'); el2.classList.remove('wrong'); }
+  else { el2.classList.add('wrong'); el2.classList.remove('correct'); }
+
+  if(c1 && c2){
+    alert('🎉 正确！现在你的程序能解任意鸡兔同笼问题了！');
+    notifyLearnSpaceComplete(3);
+  } else {
+    alert('❌ 有错误，请再看提示！');
+  }
+}
+
+function showHint3(){
+  document.getElementById('hint3').style.display='block';
+}
+
+function setTest(head, feet){
+  document.getElementById('test-head').value = head;
+  document.getElementById('test-feet').value = feet;
+  runGeneral();
+}
+
+function runGeneral(){
+  const head = parseInt(document.getElementById('test-head').value);
+  const feet = parseInt(document.getElementById('test-feet').value);
+  const output = document.getElementById('general-output');
+
+  if(isNaN(head) || isNaN(feet) || head < 0 || feet < 0){
+    output.innerHTML = '<div style="color:#e76f51">请输入有效的数字！</div>';
+    return;
+  }
+
+  // Simulate the program running with input
+  let html = '<div style="color:#6A9955"># 用户输入：总头数='+head+'，总脚数='+feet+'</div>';
+  html += '<div style="color:#569CD6">tou</div> = <span class="num">'+head+'</span></div>';
+  html += '<div style="color:#569CD6">jiao</div> = <span class="num">'+feet+'</span></div>';
+  html += '<div style="color:#858585"># 开始枚举...</div>';
+
+  let found = false;
+  for(let ji=0; ji<=head; ji++){
+    const tu = head - ji;
+    if(2*ji + 4*tu === feet){
+      html += '<div style="color:#858585"># 找到解！</div>';
+      html += '<div style="color:#B5CEA8">鸡: '+ji+' 只</div>';
+      html += '<div style="color:#B5CEA8">兔: '+tu+' 只</div>';
+      found = true;
+      break;
+    }
+  }
+
+  if(!found){
+    html += '<div style="color:#858585"># 枚举结束，未找到解</div>';
+    html += '<div style="color:#e76f51">此题无解</div>';
+  }
+
+  output.innerHTML = html;
+}
+
+(function initFromQuery() {
+  if (!IS_EMBEDDED) return;
+  document.body.classList.add('embedded-mode');
+  const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+  switchTab(Number.isFinite(step) && step >= 1 && step <= 3 ? step : 1);
+})();
+</script>
+</body>
+</html>

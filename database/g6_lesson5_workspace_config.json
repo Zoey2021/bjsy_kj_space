@@ -1,0 +1,182 @@
+{
+  "layout": "student_workspace",
+  "lessonTitle": "第5课 算法执行",
+  "objectives": "我能在 IDLE 中运行 Python 程序，读懂常见报错并调试修正，还能用 jie 变量完善算法并用 input 让程序通用化。",
+  "evaluationHint": "完成三个探究活动后，请如实填写元认知自评，帮助自己和教师了解学习状态。",
+  "introMap": {
+    "title": "算法执行",
+    "branches": [
+      {
+        "label": "3 本课学习目标",
+        "nodes": [
+          { "text": "运行程序，让算法真正执行" },
+          { "text": "读懂报错，调试四种常见错误" },
+          { "text": "完善算法，使程序更通用友好" }
+        ]
+      },
+      {
+        "label": "1. 核心学习内容",
+        "nodes": [
+          { "text": "运行 → 调试 → 完善" },
+          { "text": "Bug猎人：大小写、标点、缩进" },
+          { "text": "jie 变量与 input() 通用化" }
+        ]
+      },
+      {
+        "label": "2. 课堂完成顺序",
+        "nodes": [
+          { "text": "左侧依次完成活动一、活动二、活动三" },
+          { "text": "（对应网页活动一、活动二、活动三）" },
+          { "text": "全部活动完成后作答课堂小测" }
+        ]
+      }
+    ]
+  },
+  "evaluationForm": {
+    "title": "学习评价",
+    "intro": "以下题目没有标准答案，请根据本课真实学习感受选择最符合的一项。",
+    "questions": [
+      {
+        "id": "e1",
+        "aspect": "学习兴趣",
+        "stem": "本课「运行、调试、完善程序」的内容，你的学习兴趣如何？",
+        "options": [
+          "非常感兴趣，还想调试更多程序",
+          "比较感兴趣，愿意跟着完成探究",
+          "一般，能跟着完成要求",
+          "不太感兴趣，看到报错就紧张"
+        ]
+      },
+      {
+        "id": "e2",
+        "aspect": "难度感知",
+        "stem": "你觉得本课哪个环节最有挑战性？",
+        "options": [
+          "活动一：找出并修复三个 Bug",
+          "活动二：添加 jie 变量完善算法",
+          "活动三：用 input 改造通用程序",
+          "读懂英文报错信息",
+          "我觉得都不难，掌握较好"
+        ]
+      },
+      {
+        "id": "e3",
+        "aspect": "学习信心",
+        "stem": "完成三个探究活动后，你对自己「运行并调试 Python 程序」的信心如何？",
+        "options": [
+          "非常有信心，遇到报错也能自己排查",
+          "比较有信心，偶尔需要提示",
+          "信心一般，还需要更多练习",
+          "还不太有信心，希望获得更多帮助"
+        ]
+      }
+    ]
+  },
+  "activities": [
+    {
+      "index": 1,
+      "title": "Bug猎人",
+      "step": 1,
+      "path": "/lessons/g6-up-lesson5/index.html",
+      "unlocked": true
+    },
+    {
+      "index": 2,
+      "title": "完善算法",
+      "step": 2,
+      "path": "/lessons/g6-up-lesson5/index.html",
+      "unlocked": false
+    },
+    {
+      "index": 3,
+      "title": "通用化改造",
+      "step": 3,
+      "path": "/lessons/g6-up-lesson5/index.html",
+      "unlocked": false
+    }
+  ],
+  "quiz": {
+    "title": "课堂小测",
+    "unlockAfterActivity": 3,
+    "questions": [
+      {
+        "id": "k1",
+        "dimension": "知识掌握",
+        "stem": "计算机完成算法执行，通常需要：",
+        "options": [
+          "只画流程图即可",
+          "运行程序，让计算机按步骤执行",
+          "把代码写在纸上就行",
+          "不需要任何操作"
+        ],
+        "answer": 1,
+        "explanation": "算法要写成程序并运行，计算机才会按步骤执行。"
+      },
+      {
+        "id": "k2",
+        "dimension": "知识掌握",
+        "stem": "NameError: name 'tu' is not defined 最可能是因为：",
+        "options": [
+          "变量名大小写不一致",
+          "缺少冒号",
+          "缩进错误",
+          "程序运行太快"
+        ],
+        "answer": 0,
+        "explanation": "Python 区分大小写，Tu 和 tu 会被当作不同变量。"
+      },
+      {
+        "id": "a1",
+        "dimension": "能力提升",
+        "stem": "调试程序时，「调试四查」不包括：",
+        "options": [
+          "检查大小写",
+          "检查标点符号",
+          "检查缩进",
+          "检查电脑品牌"
+        ],
+        "answer": 3,
+        "explanation": "四查指大小写、标点、冒号、缩进等语法问题。"
+      },
+      {
+        "id": "a2",
+        "dimension": "能力提升",
+        "stem": "添加 jie 变量的主要作用是：",
+        "options": [
+          "让程序运行更快",
+          "记录是否找到解，无解时提示用户",
+          "减少代码行数",
+          "替换 while 循环"
+        ],
+        "answer": 1,
+        "explanation": "jie 用于跟踪是否找到解，避免无解时程序沉默不语。"
+      },
+      {
+        "id": "l1",
+        "dimension": "素养变化",
+        "stem": "把固定数字改成 input() 输入，体现了：",
+        "options": [
+          "让程序能解同一类问题，而不仅是一道题",
+          "程序越复杂越好",
+          "不需要调试了",
+          "算法与程序无关"
+        ],
+        "answer": 0,
+        "explanation": "通用化改造使程序能处理不同数据的同类问题。"
+      },
+      {
+        "id": "l2",
+        "dimension": "素养变化",
+        "stem": "遇到报错时，正确的做法是：",
+        "options": [
+          "先读报错信息再定位修改",
+          "立刻删除全部代码重写",
+          "忽略报错继续运行",
+          "认为程序不可能修好"
+        ],
+        "answer": 0,
+        "explanation": "读懂报错类型和行号，是规范调试的第一步。"
+      }
+    ]
+  }
+}

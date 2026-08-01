@@ -53,6 +53,9 @@ services:
       # 互动课静态页（按目录挂载，避免覆盖 generated 卷）
       - ./frontend/public/lessons/g6-up-lesson1:/usr/share/nginx/html/lessons/g6-up-lesson1:ro
       - ./frontend/public/lessons/g6-up-lesson2:/usr/share/nginx/html/lessons/g6-up-lesson2:ro
+      - ./frontend/public/lessons/g6-up-lesson3:/usr/share/nginx/html/lessons/g6-up-lesson3:ro
+      - ./frontend/public/lessons/g6-up-lesson4:/usr/share/nginx/html/lessons/g6-up-lesson4:ro
+      - ./frontend/public/lessons/g6-up-lesson5:/usr/share/nginx/html/lessons/g6-up-lesson5:ro
       # 教材 PDF 挂载本地目录，更新文件后无需重建镜像（文件须 chmod 644）
       - ./frontend/public/textbooks:/usr/share/nginx/html/textbooks:ro
       - ./frontend/public/pdfjs:/usr/share/nginx/html/pdfjs:ro

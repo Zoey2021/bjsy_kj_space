@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>算法设计 — 枚举法探究活动</title>
+<style>
+:root{
+  --p:#264653;--s:#2a9d8f;--a:#e9c46a;--l:#f4a261;--b:#e76f51;
+  --bg:#F8F9FA;--card:#fff;--bd:#dee2e6;--tx:#333;--tx2:#6c757d;
+  --r:12px;--rs:8px;--sh:0 2px 12px rgba(0,0,0,.06);--tr:.25s;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:var(--bg);min-height:100vh;color:var(--tx)}
+/* Header + Tabs */
+.top-bar{background:var(--p);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.top-bar h2{font-size:17px;font-weight:700}
+.tab-nav{display:flex;gap:4px;flex-wrap:wrap}
+.tab-nav button{background:rgba(255,255,255,.12);color:#fff;border:none;padding:7px 16px;border-radius:20px;cursor:pointer;font-size:13px;transition:var(--tr);font-family:inherit}
+.tab-nav button:hover{background:rgba(255,255,255,.22)}
+.tab-nav button.active{background:var(--a);color:var(--p);font-weight:700}
+/* Panels */
+.panel{display:none;padding:16px 20px;max-width:1100px;margin:0 auto}
+.panel.active{display:block}
+/* Cards */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px 20px;margin-bottom:14px}
+.card h3{font-size:15px;color:var(--p);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+/* Tables */
+table{border-collapse:collapse;width:100%;font-size:13px;margin:8px 0}
+th,td{border:1.5px solid var(--bd);padding:6px 10px;text-align:center}
+th{background:var(--p);color:#fff;font-weight:700;font-size:12px}
+td.hit{background:rgba(233,196,106,.4);font-weight:700}
+td.current{background:rgba(42,157,143,.15);border:2px solid var(--s)}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600;transition:var(--tr)}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover{opacity:.9}
+.btn-s{background:var(--s);color:#fff}
+.btn-a{background:var(--a);color:var(--p)}
+.btn-o{background:#fff;color:var(--p);border:2px solid var(--p)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-r{background:var(--b);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+/* Inline */
+.inline-flex{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.col2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:768px){.col2{grid-template-columns:1fr}}
+/* Problem card */
+.pcard{background:linear-gradient(135deg,#E8F4F2,#F0FAF8);border:1.5px solid rgba(42,157,143,.3);border-radius:var(--r);padding:14px 18px;margin-bottom:14px;font-size:14px;line-height:1.8}
+.pcard .hl{color:var(--s);font-weight:700}
+/* Feedback */
+.fb{padding:10px 14px;border-radius:var(--rs);font-size:13px;margin-top:8px;display:none}
+.fb.show{display:block}
+.fb.ok{background:#d4edda;border:1px solid #28a745;color:#155724}
+.fb.err{background:#f8d7da;border:1px solid #dc3545;color:#721c24}
+.fb.info{background:#d1ecf1;border:1px solid #17a2b8;color:#0c5460}
+/* Input */
+input,select{font-family:inherit;padding:7px 10px;border:1.5px solid var(--bd);border-radius:6px;font-size:13px;transition:var(--tr)}
+input:focus{outline:none;border-color:var(--s);box-shadow:0 0 0 3px rgba(42,157,143,.12)}
+input.correct{border-color:#28a745!important;background:#d4edda!important}
+input.wrong{border-color:#dc3545!important;background:#f8d7da!important}
+/* Step indicator */
+.steps{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.steps .si{flex:1;min-width:100px;padding:8px 10px;border-radius:var(--rs);text-align:center;font-size:12px;font-weight:700;background:#fff;border:2px solid var(--bd);color:var(--tx2);transition:var(--tr)}
+.steps .si.on{background:var(--p);color:#fff;border-color:var(--p)}
+.steps .si.done{background:#d4edda;border-color:#28a745;color:#155724}
+.steps .si .sn{font-size:18px;display:block}
+/* Speed bar */
+.speed-bar{display:flex;gap:6px;align-items:center;margin:8px 0}
+.speed-bar button{padding:4px 12px;border:1.5px solid var(--bd);border-radius:10px;cursor:pointer;font-size:11px;font-family:inherit;background:#fff;transition:var(--tr)}
+.speed-bar button.on{background:var(--s);color:#fff;border-color:var(--s)}
+/* Flowchart SVG */
+.fc-svg{border:1px solid var(--bd);border-radius:var(--rs);background:#fff;overflow:auto}
+/* Counter display */
+.big-num{font-size:48px;font-weight:700;color:var(--p);text-align:center;line-height:1}
+.big-num .sub{font-size:14px;font-weight:400;color:var(--tx2);display:block}
+/* Nested loop vis */
+.loop-box{border:2px solid var(--bd);border-radius:var(--rs);padding:10px;margin:4px}
+.loop-box.outer{border-color:var(--s);background:rgba(42,157,143,.05)}
+.loop-box.inner{border-color:var(--a);background:rgba(233,196,106,.08);margin-left:24px}
+.loop-label{font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:4px}
+/* Animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ani{animation:fadeIn .4s ease}
+body.embedded-mode{background:#fff}
+body.embedded-mode .top-bar .tab-nav{display:none!important}
+body.embedded-mode .top-bar{padding:10px 16px}
+body.embedded-mode .panel{max-width:none;padding:12px 16px}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <h2>🔄 算法设计 — 枚举法探究活动</h2>
+  <div class="tab-nav">
+    <button class="active" onclick="switchTab(1)">📊 活动一：手工枚举模拟器</button>
+    <button onclick="switchTab(2)">📐 活动二：流程图参数填空</button>
+    <button onclick="switchTab(3)">🔁 活动三：百钱买百鸡双层枚举</button>
+  </div>
+</div>
+
+<!-- ═══════════ PANEL 1: 手工枚举模拟器 ═══════════ -->
+<div class="panel active" id="panel1">
+  <div class="card">
+    <h3>📊 活动一：手工枚举 — 看计算机怎么"一个一个试"</h3>
+    <div class="pcard">
+      鸡兔同笼：共 <span class="hl">35头</span>、<span class="hl">94脚</span>。枚举对象：鸡的只数 ji，范围 <span class="hl">0~35</span>。
+      判断条件：<span class="hl">2×ji + 4×(35-ji) = 94</span>
+    </div>
+
+    <div class="speed-bar">
+      <span style="font-size:12px;font-weight:700">速度：</span>
+      <button class="on" onclick="setSpeed(1)">🐢 慢</button>
+      <button onclick="setSpeed(2)">🏃 中</button>
+      <button onclick="setSpeed(3)">🚀 快</button>
+      <button onclick="setSpeed(4)" style="border-color:var(--b);color:var(--b)">⚡ 极速</button>
+    </div>
+
+    <!-- Counter display -->
+    <div class="col2" style="margin:10px 0">
+      <div class="card" style="text-align:center;background:rgba(42,157,143,.06)">
+        <div class="big-num" id="jiDisplay">0<span class="sub">鸡的只数 ji</span></div>
+      </div>
+      <div class="card" style="text-align:center;background:rgba(233,196,106,.1)">
+        <div class="big-num" id="tuDisplay">35<span class="sub">兔的只数 tu = 35-ji</span></div>
+      </div>
+    </div>
+    <div class="card" style="text-align:center;background:rgba(244,162,97,.08)" id="legsCard">
+      <span style="font-size:28px;font-weight:700;color:var(--p)" id="legsDisplay">140</span>
+      <span style="font-size:14px;color:var(--tx2);display:block">总脚数 = 2×ji + 4×tu</span>
+      <span id="hitBanner" style="display:none;font-size:20px;font-weight:700;color:#28a745">🎉 找到了！ji=23, tu=12 时总脚数 = 94 ✓</span>
+    </div>
+
+    <div class="inline-flex">
+      <button class="btn btn-p" id="btnNext" onclick="stepEnum()">▶ 下一步（ji=0→1→2…）</button>
+      <button class="btn btn-o" onclick="runAll()">🏁 自动跑完</button>
+      <button class="btn btn-r btn-sm" onclick="resetEnum()">🔄 重置</button>
+      <span style="font-size:13px;color:var(--tx2)">已试 <b id="tryCount">0</b> 次</span>
+    </div>
+
+    <!-- Enumeration table -->
+    <div style="overflow-x:auto;max-height:400px;overflow-y:auto;margin-top:10px">
+      <table id="enumTbl">
+        <thead><tr><th>尝试次数</th><th>鸡 ji</th><th>兔 tu</th><th>总脚数</th><th>=94？</th></tr></thead>
+        <tbody id="enumBody"></tbody>
+      </table>
+    </div>
+    <div class="fb" id="a1fb"></div>
+  </div>
+</div>
+
+<!-- ═══════════ PANEL 2: 流程图参数填空 ═══════════ -->
+<div class="panel" id="panel2">
+  <div class="card">
+    <h3>📐 活动二：枚举法流程图 — 填入参数，生成流程图</h3>
+    <div class="pcard">
+      农场鸡兔：共 <span class="hl">20头</span>、<span class="hl">56脚</span>。请填入枚举法的三个关键参数，然后查看生成的流程图。
+    </div>
+
+    <div class="steps">
+      <div class="si on" id="si2-1"><span class="sn">①</span>填参数</div>
+      <div class="si" id="si2-2"><span class="sn">②</span>生成流程图</div>
+      <div class="si" id="si2-3"><span class="sn">③</span>检查验证</div>
+    </div>
+
+    <!-- Step 1: Fill params -->
+    <div id="s2-fill">
+      <div class="inline-flex">
+        <label style="font-weight:700;font-size:13px">枚举对象：</label>
+        <input id="f1" placeholder="例如：鸡的只数" style="width:140px">
+        <label style="font-weight:700;font-size:13px">变量名：</label>
+        <input id="f2" placeholder="let name" style="width:70px" value="ji">
+      </div>
+      <div class="inline-flex">
+        <label style="font-weight:700;font-size:13px">枚举范围：从</label>
+        <input id="f3" type="number" value="0" style="width:70px">
+        <span>到</span>
+        <input id="f4" type="number" placeholder="例如 20" style="width:70px">
+      </div>
+      <div class="inline-flex">
+        <label style="font-weight:700;font-size:13px">关系公式（另一个对象怎么算）：</label>
+        <input id="f5" placeholder="例如 tu = 总头数 - ji" style="width:220px" value="tu = 头总数 - ji">
+      </div>
+      <div class="inline-flex">
+        <label style="font-weight:700;font-size:13px">头总数：</label>
+        <input id="f6" type="number" placeholder="20" style="width:70px">
+        <label style="font-weight:700;font-size:13px">脚总数：</label>
+        <input id="f7" type="number" placeholder="56" style="width:70px">
+      </div>
+      <div class="inline-flex">
+        <label style="font-weight:700;font-size:13px">判断条件（脚数公式）：</label>
+        <input id="f8" placeholder="例如 2×ji + 4×tu = 脚总数" style="width:300px" value="2×ji + 4×tu = 脚总数">
+      </div>
+      <button class="btn btn-p" onclick="genFlowchart()">生成流程图 →</button>
+      <div class="fb" id="a2fb"></div>
+    </div>
+
+    <!-- Step 2: Show flowchart -->
+    <div id="s2-flow" style="display:none">
+      <div style="border:2px solid var(--s);border-radius:var(--r);padding:14px;background:#fff;overflow:auto">
+        <svg viewBox="0 0 600 800" width="100%" style="max-width:600px" id="flowSvg">
+        </svg>
+      </div>
+      <div class="inline-flex" style="margin-top:10px">
+        <button class="btn btn-o" onclick="backFill()">← 返回修改参数</button>
+        <button class="btn btn-p" onclick="checkFlowchart()">✅ 检查流程图</button>
+      </div>
+      <div class="fb" id="a2fb2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PANEL 3: 百钱买百鸡双层枚举 ═══════════ -->
+<div class="panel" id="panel3">
+  <div class="card">
+    <h3>🔁 活动三：百钱买百鸡 — 理解双层枚举（嵌套循环）</h3>
+    <div class="pcard">
+      公鸡5文、母鸡3文、小鸡3只1文。100文买100只。<br>
+      枚举 <span class="hl">公鸡 0~20</span>，每选定一个公鸡数，再枚举 <span class="hl">母鸡 0~33</span>，小鸡自动算出。
+    </div>
+
+    <!-- Nested loop visualization -->
+    <div class="col2">
+      <!-- Left: controls -->
+      <div>
+        <div class="loop-box outer">
+          <div class="loop-label">🔵 外层循环：枚举公鸡 gong</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-weight:700" id="gongVal">gong = 0</span>
+            <span style="font-size:11px;color:var(--tx2)">（范围 0~20）</span>
+          </div>
+          <button class="btn btn-sm btn-s" onclick="stepGong()" id="btnGong" style="margin-top:6px">▶ 取下一个 gong</button>
+        </div>
+
+        <div class="loop-box inner" id="innerBox" style="display:none">
+          <div class="loop-label">🟡 内层循环：枚举母鸡 mu</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-weight:700" id="muVal">mu = 0</span>
+            <span style="font-size:11px;color:var(--tx2)">（范围 0~33）</span>
+          </div>
+          <button class="btn btn-sm btn-a" onclick="stepMu()" id="btnMu" style="margin-top:6px">▶ 试下一个 mu</button>
+          <div style="margin-top:6px;font-size:12px;color:var(--tx2)">
+            小鸡 = 100 - <span id="gX">0</span> - <span id="mX">0</span> = <b id="xX">100</b> 只<br>
+            总价 = 5×<span id="gP">0</span> + 3×<span id="mP">0</span> + <span id="xP">100</span>/3 = <b id="totalPrice">33.33</b> 文
+          </div>
+          <div id="matchMsg" style="font-size:12px;margin-top:4px"></div>
+        </div>
+      </div>
+
+      <!-- Right: results table -->
+      <div style="overflow:auto;max-height:350px">
+        <table>
+          <thead><tr><th>公鸡</th><th>母鸡</th><th>小鸡</th><th>总价</th><th>=100?</th></tr></thead>
+          <tbody id="nestBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="inline-flex" style="margin-top:8px">
+      <button class="btn btn-p" onclick="autoRunNest()">🏁 自动跑完全部枚举</button>
+      <button class="btn btn-r btn-sm" onclick="resetNest()">🔄 重置</button>
+      <span style="font-size:12px;color:var(--tx2)">已尝试 <b id="nestCount">0</b> 种组合 | 找到 <b id="nestFound">0</b> 个解</span>
+    </div>
+    <div class="fb info" id="a3fb" style="display:block">
+      💡 鸡兔同笼 = 一层循环（枚举鸡 0~35，共36种可能）<br>
+      百钱买百鸡 = 两层循环（外层公鸡 0~20，内层母鸡 0~33，共 21×34=714 种组合）<br>
+      这就是"嵌套循环"——循环里面套循环！
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   TAB SWITCH
+   ══════════════════════════════════════════════════════ */
+function switchTab(n){
+  document.querySelectorAll('.tab-nav button').forEach((b,i)=>b.classList.toggle('active',i+1===n));
+  document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',i+1===n));
+}
+
+const urlParams = new URLSearchParams(location.search);
+const IS_EMBEDDED = urlParams.get('embedded') === '1';
+const learnSpaceNotifiedSteps = new Set();
+
+function notifyLearnSpaceComplete(step) {
+  if (!window.parent || window.parent === window) return;
+  if (learnSpaceNotifiedSteps.has(step)) return;
+  learnSpaceNotifiedSteps.add(step);
+  const params = new URLSearchParams(location.search);
+  const idx = parseInt(params.get('activityIndex') || params.get('step') || String(step), 10);
+  window.parent.postMessage({
+    type: 'LEARN_SPACE_SUBMIT',
+    payload: {
+      activityIndex: Number.isFinite(idx) ? idx : step,
+      step,
+      stepCompleted: true,
+      source: 'g6-up-lesson3'
+    }
+  }, '*');
+}
+
+/* ══════════════════════════════════════════════════════
+   ACTIVITY 1: 手工枚举模拟器
+   ══════════════════════════════════════════════════════ */
+let ji=0, stepCount=0, speed=1, timer=null, found=false;
+function setSpeed(n){
+  speed=n;
+  document.querySelectorAll('.speed-bar button').forEach((b,i)=>b.classList.toggle('on',i===n-1));
+}
+function stepEnum(){
+  if(found)return;
+  stepCount++;
+  const tu=35-ji, legs=2*ji+4*tu;
+  document.getElementById('jiDisplay').innerHTML=ji+'<span class="sub">鸡的只数 ji</span>';
+  document.getElementById('tuDisplay').innerHTML=tu+'<span class="sub">兔的只数 tu = 35-ji</span>';
+  document.getElementById('legsDisplay').textContent=legs;
+  document.getElementById('tryCount').textContent=stepCount;
+
+  // Add row
+  const row=document.createElement('tr');
+  row.innerHTML=`<td>${stepCount}</td><td>${ji}</td><td>${tu}</td><td>${legs}</td><td>${legs===94?'✅':'✗'}</td>`;
+  document.getElementById('enumBody').appendChild(row);
+
+  if(legs===94){
+    found=true;
+    row.classList.add('hit');
+    document.getElementById('hitBanner').style.display='block';
+    document.getElementById('legsCard').style.background='rgba(40,167,69,.12)';
+    document.getElementById('btnNext').disabled=true;
+    showFb('a1fb','🎉 找到了！鸡23只，兔12只是正确答案。枚举了'+stepCount+'次就找到了。','ok');
+    notifyLearnSpaceComplete(1);
+  }
+  ji++;
+  if(!found)row.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function runAll(){
+  const delay=speed===1?400:speed===2?150:speed===3?30:5;
+  function tick(){
+    if(ji>35||found){clearInterval(timer);return}
+    stepEnum();
+  }
+  timer=setInterval(tick,delay);
+}
+
+function resetEnum(){
+  clearInterval(timer);ji=0;stepCount=0;found=false;
+  document.getElementById('jiDisplay').innerHTML='0<span class="sub">鸡的只数 ji</span>';
+  document.getElementById('tuDisplay').innerHTML='35<span class="sub">兔的只数 tu = 35-ji</span>';
+  document.getElementById('legsDisplay').textContent='140';
+  document.getElementById('tryCount').textContent='0';
+  document.getElementById('enumBody').innerHTML='';
+  document.getElementById('hitBanner').style.display='none';
+  document.getElementById('legsCard').style.background='rgba(244,162,97,.08)';
+  document.getElementById('btnNext').disabled=false;
+  hideFb('a1fb');
+}
+
+/* ══════════════════════════════════════════════════════
+   ACTIVITY 2: 流程图参数填空
+   ══════════════════════════════════════════════════════ */
+function updateSi2(n){
+  for(let i=1;i<=3;i++){const e=document.getElementById('si2-'+i);e.classList.remove('on','done');if(i<n)e.classList.add('done');if(i===n)e.classList.add('on')}
+}
+
+function genFlowchart(){
+  const headTotal=parseInt(document.getElementById('f6').value)||0;
+  const legTotal=parseInt(document.getElementById('f7').value)||0;
+  const varName=document.getElementById('f2').value||'ji';
+  if(!headTotal||!legTotal){showFb('a2fb','⚠️ 请填写头总数和脚总数。','err');return}
+  
+  const svg=document.getElementById('flowSvg');
+  const opp=varName==='ji'?'tu':varName==='gong'?'mu':varName==='x'?'y':'_opp';
+  svg.innerHTML=drawFlowchartSVG(varName,opp,headTotal,legTotal);
+  document.getElementById('s2-fill').style.display='none';
+  document.getElementById('s2-flow').style.display='block';
+  updateSi2(2);
+}
+
+function backFill(){
+  document.getElementById('s2-flow').style.display='none';
+  document.getElementById('s2-fill').style.display='block';
+  updateSi2(1);
+}
+
+function checkFlowchart(){
+  const h=parseInt(document.getElementById('f6').value)||0;
+  const l=parseInt(document.getElementById('f7').value)||0;
+  if(h===20&&l===56){showFb('a2fb2','✅ 正确！农场鸡兔同笼：枚举鸡0~20，总脚数=56时即为答案（鸡12兔8）。','ok');updateSi2(3);notifyLearnSpaceComplete(2)}
+  else{showFb('a2fb2','⚠️ 参数可能有误。农场题应为：20头、56脚。请检查。','err')}
+}
+
+function drawFlowchartSVG(v,opp,h,leg){
+  return `<g font-family="Microsoft YaHei,Arial,sans-serif" font-size="13" text-anchor="middle">
+    <!-- Start -->
+    <rect x="235" y="10" width="130" height="36" rx="18" fill="#2a9d8f"/><text x="300" y="33" fill="#fff" font-weight="700">开始</text>
+    <line x1="300" y1="46" x2="300" y2="70" stroke="#264653" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- Init -->
+    <rect x="220" y="70" width="160" height="34" rx="6" fill="#fff" stroke="#264653" stroke-width="2"/><text x="300" y="92" fill="#264653">${v} = 0</text>
+    <line x1="300" y1="104" x2="300" y2="130" stroke="#264653" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- Condition 1 -->
+    <polygon points="300,130 420,175 300,220 180,175" fill="#e9c46a" stroke="#264653" stroke-width="2"/>
+    <text x="300" y="172" fill="#264653" font-size="12" font-weight="700">${v} ≤ ${h}?</text>
+    <!-- No branch -->
+    <text x="440" y="165" fill="#e76f51" font-size="11">否</text>
+    <line x1="420" y1="175" x2="480" y2="175" stroke="#264653" stroke-width="2"/>
+    <rect x="475" y="157" width="80" height="36" rx="18" fill="#2a9d8f"/>
+    <text x="515" y="180" fill="#fff" font-weight="700">结束</text>
+    <!-- Yes branch -->
+    <text x="280" y="215" fill="#2a9d8f" font-size="11">是</text>
+    <line x1="300" y1="220" x2="300" y2="250" stroke="#264653" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- Calc opp -->
+    <rect x="200" y="250" width="200" height="34" rx="6" fill="#fff" stroke="#264653" stroke-width="2"/>
+    <text x="300" y="272" fill="#264653">${opp} = ${h} - ${v}</text>
+    <line x1="300" y1="284" x2="300" y2="310" stroke="#264653" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- Condition 2 -->
+    <polygon points="300,310 450,365 300,420 150,365" fill="#e9c46a" stroke="#264653" stroke-width="2"/>
+    <text x="300" y="365" fill="#264653" font-size="11" font-weight="700">2×${v}+4×${opp}=${leg}?</text>
+    <!-- No -->
+    <text x="145" y="365" fill="#e76f51" font-size="11">否</text>
+    <rect x="50" y="353" width="90" height="26" rx="6" fill="#fff" stroke="#264653" stroke-width="2"/>
+    <text x="95" y="371" fill="#264653" font-size="11">${v} = ${v} + 1</text>
+    <line x1="150" y1="365" x2="145" y2="365" stroke="#264653" stroke-width="2"/>
+    <line x1="95" y1="353" x2="95" y2="175" stroke="#264653" stroke-width="2" stroke-dasharray="5,3"/>
+    <text x="85" y="260" fill="#e76f51" font-size="11" transform="rotate(-90,85,260)">回</text>
+    <!-- Yes -->
+    <text x="455" y="375" fill="#2a9d8f" font-size="11">是</text>
+    <line x1="450" y1="365" x2="480" y2="365" stroke="#264653" stroke-width="2"/>
+    <rect x="475" y="347" width="100" height="36" rx="6" fill="#28a745" opacity=".2" stroke="#28a745" stroke-width="2"/>
+    <text x="525" y="370" fill="#28a745" font-size="11" font-weight="700">输出 ${v}, ${opp}</text>
+    <line x1="525" y1="347" x2="525" y2="300" stroke="#264653" stroke-width="2"/>
+    <rect x="490" y="264" width="70" height="36" rx="18" fill="#2a9d8f"/>
+    <text x="525" y="287" fill="#fff" font-size="11" font-weight="700">结束</text>
+    <!-- Arrow marker def -->
+    <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#264653"/>
+    </marker></defs>
+    </g>`;
+}
+
+/* ══════════════════════════════════════════════════════
+   ACTIVITY 3: 百钱买百鸡双层枚举
+   ══════════════════════════════════════════════════════ */
+let gong=0, mu=0, nestCount=0, nestFoundCount=0, nestTimer=null, innerActive=false;
+function stepGong(){
+  if(gong>20){showFb('a3fb','✅ 枚举完毕！共有4组解（已在表格中标出）。','ok');notifyLearnSpaceComplete(3);return}
+  innerActive=true;mu=0;
+  document.getElementById('innerBox').style.display='block';
+  document.getElementById('gongVal').textContent='gong = '+gong;
+  document.getElementById('gX').textContent=gong;
+  document.getElementById('gP').textContent=gong;
+  updateMuDisplay();
+  document.getElementById('btnMu').disabled=false;
+  document.getElementById('btnGong').disabled=true;
+}
+
+function stepMu(){
+  if(mu>33){innerActive=false;gong++;document.getElementById('innerBox').style.display='none';document.getElementById('btnGong').disabled=false;stepGong();return}
+  nestCount++;
+  const xiao=100-gong-mu;
+  if(xiao<0){mu++;stepMu();return}
+  const price=5*gong+3*mu+xiao/3;
+  const isMatch=price===100&&xiao%3===0;
+  document.getElementById('mX').textContent=mu;
+  document.getElementById('xX').textContent=xiao;
+  document.getElementById('totalPrice').textContent=price.toFixed(2);
+  document.getElementById('matchMsg').textContent=isMatch?'🎉 找到一组解！':'';
+  document.getElementById('matchMsg').style.color=isMatch?'#28a745':'var(--tx2)';
+
+  const row=document.createElement('tr');
+  row.innerHTML=`<td>${gong}</td><td>${mu}</td><td>${xiao}</td><td>${price.toFixed(2)}</td><td>${isMatch?'✅':'✗'}</td>`;
+  if(isMatch){row.classList.add('hit');nestFoundCount++}
+  document.getElementById('nestBody').appendChild(row);
+  row.scrollIntoView({behavior:'smooth',block:'center'});
+
+  document.getElementById('nestCount').textContent=nestCount;
+  document.getElementById('nestFound').textContent=nestFoundCount;
+  mu++;
+  updateMuDisplay();
+}
+
+function updateMuDisplay(){document.getElementById('muVal').textContent='mu = '+mu;document.getElementById('mP').textContent=mu}
+function autoRunNest(){
+  if(gong>20){resetNest();gong=0;mu=0;nestCount=0;nestFoundCount=0;document.getElementById('nestBody').innerHTML=''}
+  function tick(){
+    if(gong>20){clearInterval(nestTimer);showFb('a3fb','✅ 枚举完毕！共找到 <b>'+nestFoundCount+'</b> 组解。','ok');notifyLearnSpaceComplete(3);return}
+    if(!innerActive){stepGong();mu=0}
+    stepMu();
+    if(mu>33){innerActive=false;gong++}
+  }
+  nestTimer=setInterval(tick,50);
+}
+function resetNest(){clearInterval(nestTimer);gong=0;mu=0;nestCount=0;nestFoundCount=0;innerActive=false;document.getElementById('gongVal').textContent='gong = 0';document.getElementById('muVal').textContent='mu = 0';document.getElementById('innerBox').style.display='none';document.getElementById('btnGong').disabled=false;document.getElementById('btnMu').disabled=true;document.getElementById('nestBody').innerHTML='';document.getElementById('nestCount').textContent='0';document.getElementById('nestFound').textContent='0';hideFb('a3fb')}
+
+/* ══════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════ */
+function showFb(id,msg,type){
+  const el=document.getElementById(id);el.textContent=msg;el.className='fb show '+type;
+}
+function hideFb(id){const el=document.getElementById(id);el.className='fb'}
+
+/* INIT */
+resetEnum();
+
+(function initFromQuery() {
+  if (!IS_EMBEDDED) return;
+  document.body.classList.add('embedded-mode');
+  const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+  switchTab(Number.isFinite(step) && step >= 1 && step <= 3 ? step : 1);
+})();
+</script>
+</body>
+</html>

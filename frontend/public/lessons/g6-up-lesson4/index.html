@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第4课 算法的程序体验 — 探究活动</title>
+<style>
+  :root {
+    --p: #264653; --s: #2a9d8f; --a: #e9c46a; --l: #f4a261; --c: #e76f51;
+    --bg: #f8f9fa; --card: #ffffff; --tx: #333; --tx2: #777; --bd: #e0e0e0;
+    --r: 12px; --rs: 8px; --sh: 0 2px 8px rgba(0,0,0,.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: var(--bg); color: var(--tx); min-height: 100vh; }
+  /* Header */
+  .header { background: linear-gradient(135deg, var(--p) 0%, var(--s) 100%); color: #fff; padding: 20px 24px; text-align: center; }
+  .header h1 { font-size: 22px; margin-bottom: 6px; }
+  .header p { font-size: 13px; opacity: .9; }
+  /* Tabs */
+  .tabs { display: flex; justify-content: center; gap: 8px; padding: 14px 16px 0; background: var(--bg); border-bottom: 2px solid var(--bd); }
+  .tab { padding: 10px 20px; border-radius: var(--rs) var(--rs) 0 0; border: none; background: #e8e8e8; color: var(--tx2); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; }
+  .tab.active { background: var(--card); color: var(--p); border-bottom: 3px solid var(--s); }
+  .tab:hover:not(.active) { background: #f0f0f0; }
+  /* Panels */
+  .step-panel { display: none; padding: 20px 24px 40px; max-width: 1100px; margin: 0 auto; }
+  .step-panel.active { display: block; }
+  /* Card */
+  .card { background: var(--card); border-radius: var(--r); padding: 20px; box-shadow: var(--sh); margin-bottom: 16px; border: 1px solid var(--bd); }
+  .card-title { font-size: 16px; font-weight: 700; color: var(--p); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .card-desc { font-size: 13.5px; color: var(--tx); line-height: 1.75; }
+  /* Code editor */
+  .code-wrap { background: #1e1e1e; border-radius: var(--r); padding: 16px 0; overflow-x: auto; margin-top: 12px; }
+  .code-line { display: block; font-family: "SF Mono", "Fira Code", "Consolas", monospace; font-size: 14px; color: #d4d4d4; line-height: 1.9; white-space: pre; padding: 0 16px; }
+  .code-line:hover { background: rgba(255,255,255,.03); }
+  .code-line-num { display: inline-block; width: 30px; color: #858585; text-align: right; margin-right: 14px; user-select: none; font-size: 12px; }
+  .code-input { background: #2d2d2d; border: 1.5px solid #555; border-radius: 4px; color: #d4d4d4; font-family: inherit; font-size: 14px; padding: 2px 8px; min-width: 80px; outline: none; }
+  .code-input:focus { border-color: var(--s); }
+  .code-input.correct { border-color: #4caf50; background: #1b3a1b; }
+  .code-input.wrong { border-color: var(--c); background: #3a1b1b; }
+  .code-keyword { color: #c586c0; }
+  .code-string { color: #ce9178; }
+  .code-number { color: #b5cea8; }
+  .code-comment { color: #6a9955; }
+  .code-var { color: #9cdcfe; }
+  .code-op { color: #d4d4d4; }
+  .code-func { color: #dcdcaa; }
+  /* Buttons */
+  .btn-group { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .btn { padding: 10px 24px; border: none; border-radius: var(--rs); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; }
+  .btn-primary { background: var(--s); color: #fff; }
+  .btn-primary:hover { background: #238b7e; }
+  .btn-accent { background: var(--a); color: var(--p); }
+  .btn-accent:hover { background: #d4a853; }
+  .btn-danger { background: var(--c); color: #fff; }
+  .btn-danger:hover { background: #d45a3d; }
+  /* Feedback */
+  .feedback { padding: 12px 16px; border-radius: var(--rs); margin-top: 14px; font-size: 13.5px; display: none; }
+  .feedback.show { display: block; }
+  .feedback.success { background: #e8f5e9; border: 1px solid #4caf50; color: #2e7d32; }
+  .feedback.error { background: #ffebee; border: 1px solid var(--c); color: #c62828; }
+  .feedback.info { background: #e3f2fd; border: 1px solid #2196f3; color: #1565c0; }
+  /* Flowchart mini */
+  .flowchart-mini { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 12px; background: #f0f4f8; border-radius: var(--rs); margin-top: 10px; font-size: 12px; }
+  .fc-box { padding: 6px 12px; border-radius: 4px; border: 2px solid var(--p); background: #fff; font-weight: 600; }
+  .fc-diamond { padding: 6px 10px; border-radius: 4px; border: 2px solid var(--a); background: #fff; transform: rotate(0); font-weight: 600; }
+  .fc-arrow { color: var(--tx2); font-size: 16px; }
+  .fc-loop { color: var(--c); font-size: 18px; }
+  /* Editor style for activity 2 */
+  .editor-card { background: #1e1e1e; border-radius: var(--r); padding: 0; overflow: hidden; margin-top: 12px; }
+  .editor-toolbar { background: #2d2d2d; padding: 8px 16px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid #3d3d3d; }
+  .editor-toolbar .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-red { background: #ff5f56; } .dot-yellow { background: #ffbd2e; } .dot-green { background: #27c93f; }
+  .editor-toolbar span { color: #aaa; font-size: 12px; margin-left: 8px; }
+  .editor-textarea { width: 100%; min-height: 220px; background: #1e1e1e; border: none; color: #d4d4d4; font-family: "SF Mono", "Fira Code", "Consolas", monospace; font-size: 14px; line-height: 1.9; padding: 12px 16px; resize: vertical; outline: none; }
+  /* Hint */
+  .hint { background: #fff8e1; border-left: 4px solid var(--a); padding: 10px 14px; border-radius: 0 var(--rs) var(--rs) 0; font-size: 13px; color: var(--tx); margin-top: 10px; }
+  .hint strong { color: var(--p); }
+  /* Responsive */
+  @media (max-width: 600px) { .tabs { flex-wrap: wrap; } .tab { padding: 8px 14px; font-size: 13px; } }
+  body.embedded-mode { background: #fff; }
+  body.embedded-mode .header { padding: 12px 16px; }
+  body.embedded-mode .header p { display: none; }
+  body.embedded-mode .tabs { display: none !important; }
+  body.embedded-mode .step-panel { max-width: none; padding: 12px 16px 24px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🐍 第4课 算法的程序体验 — 探究活动</h1>
+  <p>把流程图翻译成代码，让计算机帮你算！</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab(0)">📋 活动一：代码填空</button>
+  <button class="tab" onclick="switchTab(1)">✏️ 活动二：改数字</button>
+  <button class="tab" onclick="switchTab(2)">🔁 活动三：嵌套循环</button>
+</div>
+
+<!-- ==================== 活动一：代码填空（鸡兔同笼） ==================== -->
+<div class="step-panel active" id="panel1">
+
+  <div class="card">
+    <div class="card-title">📋 活动一：Python代码填空 —— 鸡兔同笼</div>
+    <div class="card-desc">
+      下面是鸡兔同笼枚举法的<strong>半成品代码</strong>。根据你第3课画的流程图，把空白处填上正确的代码。<br>
+      提示：流程图上的每个框，对应代码里的一句话。
+    </div>
+    <div class="flowchart-mini">
+      <span class="fc-box">开始</span>
+      <span class="fc-arrow">→</span>
+      <span class="fc-box">ji=0</span>
+      <span class="fc-arrow">→</span>
+      <span class="fc-diamond">ji≤35?</span>
+      <span class="fc-arrow">→</span>
+      <span class="fc-box">tu=35-ji</span>
+      <span class="fc-arrow">→</span>
+      <span class="fc-diamond">2ji+4tu=94?</span>
+      <span class="fc-arrow">→</span>
+      <span class="fc-box">输出</span>
+      <span class="fc-loop">↺</span>
+      <span class="fc-box">ji+1</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="code-wrap">
+      <div class="code-line"><span class="code-line-num">1</span><span class="code-comment"># 鸡兔同笼：35头，94脚</span></div>
+      <div class="code-line"><span class="code-line-num">2</span><span class="code-var">ji</span> <span class="code-op">=</span> <input type="text" class="code-input" id="a1_1" placeholder="?" style="width:50px;">  <span class="code-comment"># ① 从几开始枚举？</span></div>
+      <div class="code-line"><span class="code-line-num">3</span><span class="code-keyword">while</span> <span class="code-var">ji</span> <span class="code-op">&lt;=</span> <input type="text" class="code-input" id="a1_2" placeholder="?" style="width:50px;"> :  <span class="code-comment"># ② 枚举到几？</span></div>
+      <div class="code-line"><span class="code-line-num">4</span>    <span class="code-var">tu</span> <span class="code-op">=</span> <input type="text" class="code-input" id="a1_3" placeholder="?" style="width:120px;">  <span class="code-comment"># ③ 兔=总头-鸡</span></div>
+      <div class="code-line"><span class="code-line-num">5</span>    <span class="code-keyword">if</span> <span class="code-number">2</span> <span class="code-op">*</span> <span class="code-var">ji</span> <span class="code-op">+</span> <span class="code-number">4</span> <span class="code-op">*</span> <span class="code-var">tu</span> <span class="code-op">==</span> <input type="text" class="code-input" id="a1_4" placeholder="?" style="width:50px;"> :  <span class="code-comment"># ④ 总脚数等于几？</span></div>
+      <div class="code-line"><span class="code-line-num">6</span>        <span class="code-func">print</span>(<input type="text" class="code-input" id="a1_5" placeholder='"鸡:", ji, "兔:", tu' style="width:200px;">)  <span class="code-comment"># ⑤ 输出什么？</span></div>
+      <div class="code-line"><span class="code-line-num">7</span>    <span class="code-var">ji</span> <span class="code-op">=</span> <span class="code-var">ji</span> <span class="code-op">+</span> <input type="text" class="code-input" id="a1_6" placeholder="?" style="width:50px;">  <span class="code-comment"># ⑥ 每次加几？</span></div>
+    </div>
+    <div class="hint">💡 <strong>提示：</strong>对照你的流程图，看看每个框在代码里变成了什么。第6行是循环的"步进"——每次让鸡的数量增加多少？</div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="checkA1()">✅ 检查答案</button>
+      <button class="btn btn-accent" onclick="showA1Hint()">💡 看提示</button>
+      <button class="btn btn-danger" onclick="resetA1()">🔄 重置</button>
+    </div>
+    <div class="feedback" id="fb_a1"></div>
+  </div>
+
+</div>
+
+<!-- ==================== 活动二：代码修改（农场鸡兔） ==================== -->
+<div class="step-panel" id="panel2">
+
+  <div class="card">
+    <div class="card-title">✏️ 活动二：只改三个数字 —— 农场鸡兔</div>
+    <div class="card-desc">
+      左边是<strong>35头94脚</strong>的完整代码。现在题目变成：<strong>20头，56脚</strong>。<br>
+      请把代码里需要改的三个数字改掉，然后点击"运行模拟"看看结果对不对！
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="editor-card">
+      <div class="editor-toolbar">
+        <span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
+        <span>farm.py — 请修改下面代码中的三个数字</span>
+      </div>
+      <textarea class="editor-textarea" id="a2_editor" spellcheck="false">ji = 0
+while ji <= 35:
+    tu = 35 - ji
+    if 2 * ji + 4 * tu == 94:
+        print("鸡:", ji, "只，兔:", tu, "只")
+    ji = ji + 1</textarea>
+    </div>
+    <div class="hint">💡 <strong>改哪里？</strong>你需要把代码中的 <strong>35</strong>、<strong>35</strong>、<strong>94</strong> 这三个数字改成农场的数字。提示：两个35要改的一样吗？</div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="runA2()">▶ 运行模拟</button>
+      <button class="btn btn-accent" onclick="checkA2Answer()">✅ 检查修改</button>
+      <button class="btn btn-danger" onclick="resetA2()">🔄 重置</button>
+    </div>
+    <div class="feedback" id="fb_a2"></div>
+  </div>
+
+</div>
+
+<!-- ==================== 活动三：百钱买百鸡（嵌套循环） ==================== -->
+<div class="step-panel" id="panel3">
+
+  <div class="card">
+    <div class="card-title">🔁 活动三：百钱买百鸡 —— 嵌套循环填空</div>
+    <div class="card-desc">
+      第3课我们说过，百钱买百鸡需要<strong>两层循环</strong>。外层循环公鸡，内层循环母鸡，小鸡自动算。<br>
+      请在代码的空白处填入正确的数字或变量名。
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="code-wrap">
+      <div class="code-line"><span class="code-line-num">1</span><span class="code-comment"># 百钱买百鸡：公鸡5文，母鸡3文，小鸡1文3只</span></div>
+      <div class="code-line"><span class="code-line-num">2</span><span class="code-var">gong</span> <span class="code-op">=</span> <span class="code-number">0</span></div>
+      <div class="code-line"><span class="code-line-num">3</span><span class="code-keyword">while</span> <span class="code-var">gong</span> <span class="code-op">&lt;=</span> <input type="text" class="code-input" id="a3_1" placeholder="?" style="width:50px;"> :  <span class="code-comment"># ① 公鸡最多几只？（5×gong≤100）</span></div>
+      <div class="code-line"><span class="code-line-num">4</span>    <span class="code-var">mu</span> <span class="code-op">=</span> <span class="code-number">0</span></div>
+      <div class="code-line"><span class="code-line-num">5</span>    <span class="code-keyword">while</span> <span class="code-var">mu</span> <span class="code-op">&lt;=</span> <input type="text" class="code-input" id="a3_2" placeholder="?" style="width:50px;"> :  <span class="code-comment"># ② 母鸡最多几只？（3×mu≤100）</span></div>
+      <div class="code-line"><span class="code-line-num">6</span>        <span class="code-var">xiao</span> <span class="code-op">=</span> <input type="text" class="code-input" id="a3_3" placeholder="?" style="width:100px;"> <span class="code-op">-</span> <span class="code-var">gong</span> <span class="code-op">-</span> <span class="code-var">mu</span>  <span class="code-comment"># ③ 小鸡=总数-公鸡-母鸡</span></div>
+      <div class="code-line"><span class="code-line-num">7</span>        <span class="code-keyword">if</span> <span class="code-number">5</span> <span class="code-op">*</span> <input type="text" class="code-input" id="a3_4" placeholder="?" style="width:60px;"> <span class="code-op">+</span> <span class="code-number">3</span> <span class="code-op">*</span> <input type="text" class="code-input" id="a3_5" placeholder="?" style="width:60px;"> <span class="code-op">+</span> <input type="text" class="code-input" id="a3_6" placeholder="?" style="width:60px;"> <span class="code-op">/</span> <span class="code-number">3</span> <span class="code-op">==</span> <span class="code-number">100</span> :  <span class="code-comment"># ④⑤⑥ 填变量名</span></div>
+      <div class="code-line"><span class="code-line-num">8</span>            <span class="code-func">print</span>(<span class="code-string">"公鸡:"</span>, <span class="code-var">gong</span>, <span class="code-string">"母鸡:"</span>, <span class="code-var">mu</span>, <span class="code-string">"小鸡:"</span>, <span class="code-var">xiao</span>)</div>
+      <div class="code-line"><span class="code-line-num">9</span>        <span class="code-var">mu</span> <span class="code-op">=</span> <span class="code-var">mu</span> <span class="code-op">+</span> <span class="code-number">1</span></div>
+      <div class="code-line"><span class="code-line-num">10</span>    <span class="code-var">gong</span> <span class="code-op">=</span> <span class="code-var">gong</span> <span class="code-op">+</span> <span class="code-number">1</span></div>
+    </div>
+    <div class="hint">💡 <strong>提示：</strong>① 公鸡5文一只，100文最多买几只？ ② 母鸡3文一只，100文最多买几只？ ③ 总数是100只。④⑤⑥ 三个乘法分别对应公鸡总价、母鸡总价、小鸡总价。</div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="checkA3()">✅ 检查答案</button>
+      <button class="btn btn-accent" onclick="showA3Answer()">👀 看完整代码</button>
+      <button class="btn btn-danger" onclick="resetA3()">🔄 重置</button>
+    </div>
+    <div class="feedback" id="fb_a3"></div>
+  </div>
+
+</div>
+
+<script>
+/* ---------- Tab switching ---------- */
+function switchTab(n) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === n));
+  document.querySelectorAll('.step-panel').forEach((p, i) => p.classList.toggle('active', i === n));
+}
+
+const urlParams = new URLSearchParams(location.search);
+const IS_EMBEDDED = urlParams.get('embedded') === '1';
+const learnSpaceNotifiedSteps = new Set();
+
+function notifyLearnSpaceComplete(step) {
+  if (!window.parent || window.parent === window) return;
+  if (learnSpaceNotifiedSteps.has(step)) return;
+  learnSpaceNotifiedSteps.add(step);
+  const params = new URLSearchParams(location.search);
+  const idx = parseInt(params.get('activityIndex') || params.get('step') || String(step), 10);
+  window.parent.postMessage({
+    type: 'LEARN_SPACE_SUBMIT',
+    payload: {
+      activityIndex: Number.isFinite(idx) ? idx : step,
+      step,
+      stepCompleted: true,
+      source: 'g6-up-lesson4'
+    }
+  }, '*');
+}
+
+/* ---------- Activity 1 ---------- */
+function checkA1() {
+  const v1 = document.getElementById('a1_1').value.trim();
+  const v2 = document.getElementById('a1_2').value.trim();
+  const v3 = document.getElementById('a1_3').value.trim();
+  const v4 = document.getElementById('a1_4').value.trim();
+  const v5 = document.getElementById('a1_5').value.trim();
+  const v6 = document.getElementById('a1_6').value.trim();
+
+  const correct = { 1: '0', 2: '35', 3: '35 - ji', 4: '94', 5: '"鸡:", ji, "只，兔:", tu, "只"', 6: '1' };
+  let score = 0;
+  const ids = ['a1_1','a1_2','a1_3','a1_4','a1_5','a1_6'];
+  const vals = [v1, v2, v3, v4, v5, v6];
+
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    const val = vals[i].replace(/\s+/g, '');
+    const ans = Object.values(correct)[i].replace(/\s+/g, '');
+    if (val === ans) {
+      el.classList.add('correct'); el.classList.remove('wrong'); score++;
+    } else {
+      el.classList.add('wrong'); el.classList.remove('correct');
+    }
+  });
+
+  const fb = document.getElementById('fb_a1');
+  if (score === 6) {
+    fb.className = 'feedback show success';
+    fb.innerHTML = '🎉 全对！代码逻辑完整：<br>ji从0开始枚举 → 循环到35 → 每次算兔的数量 → 判断脚数是否等于94 → 是就输出 → 鸡加1继续。这就是枚举法！';
+    notifyLearnSpaceComplete(1);
+  } else {
+    fb.className = 'feedback show error';
+    fb.innerHTML = `⚠️ 还有 ${6-score} 处不对。再对照你的流程图看看：每个框对应代码里的哪一行？`;
+  }
+}
+
+function showA1Hint() {
+  const fb = document.getElementById('fb_a1');
+  fb.className = 'feedback show info';
+  fb.innerHTML = '💡 逐行对照：<br>① 流程图「ji=0」→ 代码从0开始<br>② 流程图「ji≤35?」→ 枚举到35<br>③ 流程图「tu=35-ji」→ 总头数35减鸡<br>④ 流程图「2×ji+4×tu=94?」→ 总脚94<br>⑤ 输出框 → print(鸡, 兔)<br>⑥ 步进 → 每次加1';
+}
+
+function resetA1() {
+  ['a1_1','a1_2','a1_3','a1_4','a1_5','a1_6'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = ''; el.classList.remove('correct','wrong');
+  });
+  document.getElementById('fb_a1').className = 'feedback';
+}
+
+/* ---------- Activity 2 ---------- */
+function runA2() {
+  const code = document.getElementById('a2_editor').value;
+  const fb = document.getElementById('fb_a2');
+
+  try {
+    let output = [];
+    const origLog = console.log;
+    console.log = (...args) => output.push(args.join(' '));
+
+    // Safe eval for this specific educational context
+    eval(code);
+
+    console.log = origLog;
+
+    if (output.length === 0) {
+      fb.className = 'feedback show error';
+      fb.innerHTML = '⚠️ 没有输出。检查条件判断是否正确？脚数算对了吗？';
+      return;
+    }
+
+    const hasCorrect = output.some(line => line.includes('12') && line.includes('8'));
+    if (hasCorrect) {
+      fb.className = 'feedback show success';
+      fb.innerHTML = '🎉 正确！输出：' + output.join('<br>') + '<br><br>✅ 你成功把35头94脚改成了20头56脚！';
+      notifyLearnSpaceComplete(2);
+    } else {
+      fb.className = 'feedback show error';
+      fb.innerHTML = '⚠️ 有输出但不正确。输出：<br>' + output.join('<br>') + '<br><br>提示：20头56脚，鸡应该是12只，兔应该是8只。';
+    }
+  } catch (e) {
+    fb.className = 'feedback show error';
+    fb.innerHTML = '❌ 代码报错：<br><code>' + e.message + '</code><br>检查缩进和冒号！';
+  }
+}
+
+function checkA2Answer() {
+  const code = document.getElementById('a2_editor').value;
+  const fb = document.getElementById('fb_a2');
+
+  // Check for the three changed numbers
+  const has20_1 = /while\s+ji\s*<=\s*20/.test(code);
+  const has20_2 = /tu\s*=\s*20\s*-\s*ji/.test(code);
+  const has56 = /==\s*56/.test(code);
+
+  let changed = [];
+  if (!has20_1) changed.push('while条件里的35要改成20');
+  if (!has20_2) changed.push('tu=35-ji要改成tu=20-ji');
+  if (!has56) changed.push('脚数判断里的94要改成56');
+
+  if (changed.length === 0) {
+    fb.className = 'feedback show success';
+    fb.innerHTML = '✅ 三个数字都改对了！现在点击"运行模拟"看看结果。';
+  } else {
+    fb.className = 'feedback show error';
+    fb.innerHTML = '⚠️ 还有没改对的地方：<br>• ' + changed.join('<br>• ');
+  }
+}
+
+function resetA2() {
+  document.getElementById('a2_editor').value = 'ji = 0\nwhile ji <= 35:\n    tu = 35 - ji\n    if 2 * ji + 4 * tu == 94:\n        print("鸡:", ji, "只，兔:", tu, "只")\n    ji = ji + 1';
+  document.getElementById('fb_a2').className = 'feedback';
+}
+
+/* ---------- Activity 3 ---------- */
+function checkA3() {
+  const v1 = document.getElementById('a3_1').value.trim();
+  const v2 = document.getElementById('a3_2').value.trim();
+  const v3 = document.getElementById('a3_3').value.trim();
+  const v4 = document.getElementById('a3_4').value.trim();
+  const v5 = document.getElementById('a3_5').value.trim();
+  const v6 = document.getElementById('a3_6').value.trim();
+
+  const correct = { 1: '20', 2: '33', 3: '100', 4: 'gong', 5: 'mu', 6: 'xiao' };
+  let score = 0;
+  const ids = ['a3_1','a3_2','a3_3','a3_4','a3_5','a3_6'];
+  const vals = [v1, v2, v3, v4, v5, v6];
+
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    const val = vals[i].replace(/\s+/g, '');
+    const ans = Object.values(correct)[i].replace(/\s+/g, '');
+    if (val === ans) {
+      el.classList.add('correct'); el.classList.remove('wrong'); score++;
+    } else {
+      el.classList.add('wrong'); el.classList.remove('correct');
+    }
+  });
+
+  const fb = document.getElementById('fb_a3');
+  if (score === 6) {
+    fb.className = 'feedback show success';
+    fb.innerHTML = '🎉 全对！<br>外层循环公鸡(0~20)，内层循环母鸡(0~33)，小鸡自动算(100-gong-mu)。<br>判断条件：5×gong + 3×mu + xiao/3 = 100<br>这就是嵌套循环！';
+    notifyLearnSpaceComplete(3);
+  } else {
+    fb.className = 'feedback show error';
+    fb.innerHTML = `⚠️ 还有 ${6-score} 处不对。①②算最大数量，③用总数减，④⑤⑥填变量名。`;
+  }
+}
+
+function showA3Answer() {
+  const fb = document.getElementById('fb_a3');
+  fb.className = 'feedback show info';
+  fb.innerHTML = '<pre style="margin:0;font-size:13px;line-height:1.8;background:#1e1e1e;color:#d4d4d4;padding:12px;border-radius:8px;overflow:auto;">gong = 0\nwhile gong <= 20:      # ① 公鸡最多20只（5×20=100）\n    mu = 0\n    while mu <= 33:    # ② 母鸡最多33只（3×33=99）\n        xiao = 100 - gong - mu  # ③ 总数100\n        if 5*gong + 3*mu + xiao/3 == 100:  # ④⑤⑥\n            print(...)\n        mu = mu + 1\n    gong = gong + 1</pre>';
+}
+
+function resetA3() {
+  ['a3_1','a3_2','a3_3','a3_4','a3_5','a3_6'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = ''; el.classList.remove('correct','wrong');
+  });
+  document.getElementById('fb_a3').className = 'feedback';
+}
+
+(function initFromQuery() {
+  if (!IS_EMBEDDED) return;
+  document.body.classList.add('embedded-mode');
+  const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+  const tab = Number.isFinite(step) && step >= 1 && step <= 3 ? step - 1 : 0;
+  switchTab(tab);
+})();
+</script>
+</body>
+</html>

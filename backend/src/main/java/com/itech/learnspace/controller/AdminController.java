@@ -9,6 +9,7 @@ import com.itech.learnspace.service.AuthService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -35,7 +36,7 @@ public class AdminController {
     }
 
     @PostMapping("/users")
-    public ApiResponse<SysUser> createUser(@RequestBody UserCreateRequest request) {
+    public ApiResponse<Map<String, Object>> createUser(@RequestBody UserCreateRequest request) {
         checkAdmin();
         return ApiResponse.ok(adminService.createUser(request));
     }

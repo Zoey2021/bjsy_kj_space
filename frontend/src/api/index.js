@@ -14,6 +14,12 @@ export const submitTask = (data) => request.post('/learn/submit', data)
 export const recordVisit = (data) => request.post('/learn/visit', data)
 export const getMyRecords = () => request.get('/learn/records')
 export const getLessonRecords = (lessonId) => request.get(`/learn/records/lesson/${lessonId}`)
+export const getCurrentLesson = () => request.get('/learn/current-lesson')
+export const getNotifications = (since) =>
+  request.get('/learn/notifications', { params: since ? { since } : {} })
+export const teacherIntervene = (data) => request.post('/teacher/intervene', data)
+export const setClassCurrentLesson = (classId, lessonId) =>
+  request.put(`/teacher/class/${classId}/current-lesson`, { lessonId })
 export const getClasses = () => request.get('/dashboard/classes')
 export const getLessonActivityDashboard = (lessonId, classId) =>
   request.get(`/dashboard/lesson/${lessonId}/class/${classId}`)

@@ -74,7 +74,8 @@ const activeMenu = computed(() => {
 })
 
 const mainClass = computed(() => ({
-  'main-flush': route.path.includes('/activity-editor') || route.path.includes('/course-map/grade/')
+  'main-flush': route.path.includes('/activity-editor') || route.path.includes('/course-map/grade/'),
+  'main-lesson': /^\/teacher\/lesson\/\d+$/.test(route.path)
 }))
 
 const logout = () => {
@@ -177,6 +178,10 @@ const logout = () => {
 }
 .main-flush {
   padding: 12px 16px 16px !important;
+  overflow: hidden;
+}
+.layout :deep(.el-main.main-lesson) {
+  padding: 0;
   overflow: hidden;
 }
 </style>

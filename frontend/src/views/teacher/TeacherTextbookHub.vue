@@ -9,7 +9,7 @@
 
     <el-tabs v-model="activeTab" class="hub-tabs">
       <el-tab-pane label="目录导航" name="outline">
-        <TextbookDirectory v-if="tree" :tree="tree" mode="teacher" />
+        <TextbookDirectory v-if="tree" :tree="tree" mode="teacher" @lesson-click="goLesson" />
       </el-tab-pane>
 
       <el-tab-pane label="课程管理" name="manage" lazy>
@@ -46,6 +46,10 @@ const pdfUrl = ref('')
 const activeTab = ref('outline')
 
 const goMap = () => router.push('/teacher/course-map')
+
+const goLesson = (lesson) => {
+  router.push({ path: `/teacher/lesson/${lesson.id}`, query: { gradeId: String(gradeId) } })
+}
 
 onMounted(async () => {
   const res = await teacherGetOutline(gradeId)

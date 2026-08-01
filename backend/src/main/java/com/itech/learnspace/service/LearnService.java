@@ -241,6 +241,9 @@ public class LearnService {
             } else if ("evaluation".equals(type)) {
                 log.setActivityKey("evaluation");
                 log.setActivityIndex(98);
+            } else if ("reading".equals(type)) {
+                log.setActivityKey("reading");
+                log.setActivityIndex(0);
             } else if (node.has("activityIndex")) {
                 int idx = node.get("activityIndex").asInt();
                 log.setActivityIndex(idx);
@@ -258,7 +261,8 @@ public class LearnService {
             JsonNode node = objectMapper.readTree(contentJson);
             return node.has("activityIndex") || node.has("completedActivities")
                     || "quiz".equals(node.path("type").asText())
-                    || "evaluation".equals(node.path("type").asText());
+                    || "evaluation".equals(node.path("type").asText())
+                    || "reading".equals(node.path("type").asText());
         } catch (Exception ignored) {
             return false;
         }
@@ -317,6 +321,13 @@ public class LearnService {
                 if (!"student_workspace".equals(cfg.path("layout").asText())) {
                     continue;
                 }
+                java.util.Map<String, Object> readingRow = new java.util.HashMap<String, Object>();
+                readingRow.put("index", 0);
+                readingRow.put("key", "reading");
+                readingRow.put("title", "阅读教材");
+                readingRow.put("type", "READING");
+                activityRows.add(readingRow);
+
                 if (cfg.has("activities")) {
                     for (JsonNode act : cfg.get("activities")) {
                         int idx = act.path("index").asInt();
@@ -365,6 +376,9 @@ public class LearnService {
                         }
                         if (node.has("quizScore") || "quiz".equals(node.path("type").asText())) {
                             completed.add(99);
+                        }
+                        if ("reading".equals(node.path("type").asText())) {
+                            completed.add(0);
                         }
                         if ("evaluation".equals(node.path("type").asText()) || node.has("evaluationAnswers")) {
                             completed.add(98);

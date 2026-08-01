@@ -30,6 +30,10 @@ public class SysClass {
     @Column(name = "login_code_expires_at")
     private LocalDateTime loginCodeExpiresAt;
 
+    /** 班级当前进行中的课时（学生登录后自动跳转） */
+    @Column(name = "current_lesson_id")
+    private Long currentLessonId;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
