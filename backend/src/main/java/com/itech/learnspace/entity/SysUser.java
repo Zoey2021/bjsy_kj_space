@@ -18,6 +18,7 @@ public class SysUser {
     private String username;
 
     @Column(nullable = false, length = 100)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String password;
 
     @Column(name = "real_name", nullable = false, length = 50)

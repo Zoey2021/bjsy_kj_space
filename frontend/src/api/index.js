@@ -22,6 +22,26 @@ export const applyParkAccess = () => request.post('/learn/park/apply')
 export const getParkApplications = (classId) =>
   request.get('/teacher/park/applications', { params: { classId } })
 export const reviewParkAccess = (data) => request.post('/teacher/park/review', data)
+
+/** 教师端后台管理：教师 / 班级 / 学生 */
+export const manageListTeachers = () => request.get('/teacher/manage/teachers')
+export const manageCreateTeacher = (data) => request.post('/teacher/manage/teachers', data)
+export const manageUpdateTeacher = (id, data) => request.put(`/teacher/manage/teachers/${id}`, data)
+export const manageDeleteTeacher = (id) => request.delete(`/teacher/manage/teachers/${id}`)
+export const manageResetTeacherPassword = (id) => request.put(`/teacher/manage/teachers/${id}/reset-password`)
+
+export const manageListClasses = () => request.get('/teacher/manage/classes')
+export const manageCreateClass = (data) => request.post('/teacher/manage/classes', data)
+export const manageUpdateClass = (id, data) => request.put(`/teacher/manage/classes/${id}`, data)
+export const manageDeleteClass = (id) => request.delete(`/teacher/manage/classes/${id}`)
+
+export const manageListStudents = (classId) =>
+  request.get('/teacher/manage/students', { params: classId ? { classId } : {} })
+export const manageCreateStudent = (data) => request.post('/teacher/manage/students', data)
+export const manageUpdateStudent = (id, data) => request.put(`/teacher/manage/students/${id}`, data)
+export const manageDeleteStudent = (id) => request.delete(`/teacher/manage/students/${id}`)
+export const manageResetStudentPassword = (id) => request.put(`/teacher/manage/students/${id}/reset-password`)
+
 export const teacherIntervene = (data) => request.post('/teacher/intervene', data)
 export const setClassCurrentLesson = (classId, lessonId) =>
   request.put(`/teacher/class/${classId}/current-lesson`, { lessonId })
