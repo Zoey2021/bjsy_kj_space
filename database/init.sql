@@ -45,6 +45,7 @@ CREATE TABLE sys_class (
   teacher_id    BIGINT       NOT NULL COMMENT '班主任/授课教师ID',
   login_code    VARCHAR(6)   NULL COMMENT '班级登录码（6位数字）',
   login_code_expires_at DATETIME NULL COMMENT '班级码过期时间',
+  current_lesson_id BIGINT   NULL COMMENT '班级当前进行中的课时',
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_teacher_id (teacher_id),
@@ -250,6 +251,26 @@ CREATE TABLE learn_submission_log (
   KEY idx_student_lesson (student_id, lesson_id),
   KEY idx_student_created (student_id, created_at)
 ) ENGINE=InnoDB COMMENT='活动提交明细';
+
+-- ------------------------------------------------------------
+-- 14. 游学乐园访问申请与授权
+-- ------------------------------------------------------------
+CREATE TABLE learn_park_access (
+  id            BIGINT       NOT NULL AUTO_INCREMENT,
+  student_id    BIGINT       NOT NULL COMMENT '学生ID',
+  class_id      BIGINT       NOT NULL COMMENT '班级ID',
+  lesson_id     BIGINT       NULL COMMENT '申请时关联的当前课时',
+  status        VARCHAR(20)  NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/APPROVED/REJECTED/REVOKED',
+  applied_at    DATETIME     NULL,
+  reviewed_at   DATETIME     NULL,
+  reviewer_id   BIGINT       NULL COMMENT '审批教师',
+  review_note   VARCHAR(200) NULL,
+  created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_park_student (student_id),
+  KEY idx_park_class_status (class_id, status)
+) ENGINE=InnoDB COMMENT='游学乐园访问申请与授权';
 
 -- ============================================================
 -- 表关系说明：

@@ -13,7 +13,8 @@ const routes = [
       { path: 'textbook/:gradeId', component: () => import('../views/student/TextbookOutline.vue') },
       { path: 'lesson/:id', component: () => import('../views/student/LessonDetail.vue') },
       { path: 'records', component: () => import('../views/student/MyRecords.vue') },
-      { path: 'ai', component: () => import('../views/ai/AiCenter.vue') }
+      { path: 'ai', component: () => import('../views/ai/AiCenter.vue') },
+      { path: 'park', component: () => import('../views/student/StudyPark.vue') }
     ]
   },
   {

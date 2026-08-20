@@ -27,6 +27,9 @@ const title = computed(() => {
   const t = props.item?.type || props.item?.data?.type
   if (t === 'guide') return '学习建议'
   if (t === 'broadcast') return '全班提醒'
+  if (t === 'park_approve') return '游学乐园已开启'
+  if (t === 'park_reject') return '游学乐园申请未通过'
+  if (t === 'park_revoke') return '游学乐园已关闭'
   return '教师提醒'
 })
 
@@ -34,6 +37,7 @@ const icon = computed(() => {
   const t = props.item?.type || props.item?.data?.type
   if (t === 'guide') return '💡'
   if (t === 'broadcast') return '📢'
+  if (t && String(t).startsWith('park_')) return '🎮'
   return '🔔'
 })
 
@@ -57,6 +61,9 @@ const onClick = () => {
 .notify-remind { border-left: 4px solid #f59e0b; }
 .notify-guide { border-left: 4px solid #6366f1; }
 .notify-broadcast { border-left: 4px solid #ef4444; }
+.notify-park_approve { border-left: 4px solid #10b981; }
+.notify-park_reject,
+.notify-park_revoke { border-left: 4px solid #f97316; }
 .notify-body {
   flex: 1;
   display: flex;

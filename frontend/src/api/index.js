@@ -17,6 +17,11 @@ export const getLessonRecords = (lessonId) => request.get(`/learn/records/lesson
 export const getCurrentLesson = () => request.get('/learn/current-lesson')
 export const getNotifications = (since) =>
   request.get('/learn/notifications', { params: since ? { since } : {} })
+export const getParkStatus = () => request.get('/learn/park/status')
+export const applyParkAccess = () => request.post('/learn/park/apply')
+export const getParkApplications = (classId) =>
+  request.get('/teacher/park/applications', { params: { classId } })
+export const reviewParkAccess = (data) => request.post('/teacher/park/review', data)
 export const teacherIntervene = (data) => request.post('/teacher/intervene', data)
 export const setClassCurrentLesson = (classId, lessonId) =>
   request.put(`/teacher/class/${classId}/current-lesson`, { lessonId })

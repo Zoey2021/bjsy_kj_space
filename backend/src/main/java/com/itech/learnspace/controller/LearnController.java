@@ -9,6 +9,7 @@ import com.itech.learnspace.exception.BusinessException;
 import com.itech.learnspace.service.AuthService;
 import com.itech.learnspace.service.LearnService;
 import com.itech.learnspace.service.NotificationService;
+import com.itech.learnspace.service.ParkService;
 import com.itech.learnspace.service.SseService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -24,13 +25,16 @@ public class LearnController {
     private final LearnService learnService;
     private final AuthService authService;
     private final NotificationService notificationService;
+    private final ParkService parkService;
     private final SseService sseService;
 
     public LearnController(LearnService learnService, AuthService authService,
-                           NotificationService notificationService, SseService sseService) {
+                           NotificationService notificationService, ParkService parkService,
+                           SseService sseService) {
         this.learnService = learnService;
         this.authService = authService;
         this.notificationService = notificationService;
+        this.parkService = parkService;
         this.sseService = sseService;
     }
 
@@ -97,5 +101,25 @@ public class LearnController {
             throw new BusinessException(403, "仅学生可访问");
         }
         return ApiResponse.ok(notificationService.getNotificationsSince(user.getId(), since));
+    }
+
+    /** 游学乐园：当前状态（是否可申请 / 是否已解锁） */
+    @GetMapping("/park/status")
+    public ApiResponse<Map<String, Object>> parkStatus() {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可访问");
+        }
+        return ApiResponse.ok(parkService.getStatus(user.getId()));
+    }
+
+    /** 游学乐园：学生提交开启申请 */
+    @PostMapping("/park/apply")
+    public ApiResponse<Map<String, Object>> parkApply() {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可申请");
+        }
+        return ApiResponse.ok("申请已提交", parkService.apply(user.getId()));
     }
 }

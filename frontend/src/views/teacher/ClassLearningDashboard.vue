@@ -94,6 +94,69 @@
       <p v-if="codeExpiresHint" class="banner-expires">{{ codeExpiresHint }}</p>
     </section>
 
+    <section v-if="classId" class="park-section">
+      <div class="section-head">
+        <h3>
+          <span class="sec-icon">🎮</span>
+          游学乐园授权
+          <el-tag v-if="parkPendingCount" size="small" type="warning" style="margin-left:8px">
+            {{ parkPendingCount }} 待审
+          </el-tag>
+        </h3>
+        <button type="button" class="act-btn sm" @click="loadParkApps">刷新申请</button>
+      </div>
+      <p class="park-tip">学生完成当前课时任务并提交申请后，可在此授权开启贪吃蛇、打字等娱乐活动。</p>
+      <el-table :data="parkApps" stripe size="small" max-height="280" v-loading="parkLoading">
+        <el-table-column prop="realName" label="学生" width="100" />
+        <el-table-column prop="username" label="学号" width="110" />
+        <el-table-column prop="lessonTitle" label="关联课时" min-width="160">
+          <template #default="{ row }">{{ row.lessonTitle || '—' }}</template>
+        </el-table-column>
+        <el-table-column label="任务" width="90" align="center">
+          <template #default="{ row }">
+            <span :class="row.taskCompleted ? 'done' : 'undone'">
+              {{ row.taskCompleted ? '已完成' : '未完成' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" :type="parkStatusType(row.status)">{{ parkStatusText(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="申请时间" width="160">
+          <template #default="{ row }">{{ formatTime(row.appliedAt) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="200" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              v-if="row.status === 'PENDING' || row.status === 'REJECTED' || row.status === 'REVOKED'"
+              link
+              type="success"
+              size="small"
+              :disabled="!row.taskCompleted"
+              @click="reviewPark(row, 'approve')"
+            >授权</el-button>
+            <el-button
+              v-if="row.status === 'PENDING'"
+              link
+              type="warning"
+              size="small"
+              @click="reviewPark(row, 'reject')"
+            >拒绝</el-button>
+            <el-button
+              v-if="row.status === 'APPROVED'"
+              link
+              type="danger"
+              size="small"
+              @click="reviewPark(row, 'revoke')"
+            >关闭</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <p v-if="!parkApps.length && !parkLoading" class="empty-hint">暂无游学乐园申请</p>
+    </section>
+
     <template v-if="lessonId">
       <!-- 中部三卡片 -->
       <section class="cards-row">
@@ -279,7 +342,18 @@ import {
   Tooltip,
   Legend
 } from 'chart.js'
-import { getClasses, getLessonActivityDashboard, teacherGetTextbooks, teacherGetOutline, getClassLoginCode, refreshClassLoginCode, teacherIntervene, setClassCurrentLesson } from '../../api'
+import {
+  getClasses,
+  getLessonActivityDashboard,
+  teacherGetTextbooks,
+  teacherGetOutline,
+  getClassLoginCode,
+  refreshClassLoginCode,
+  teacherIntervene,
+  setClassCurrentLesson,
+  getParkApplications,
+  reviewParkAccess
+} from '../../api'
 
 Chart.register(
   BarController, BarElement, LineController, LineElement, PointElement,
@@ -317,6 +391,10 @@ let eventSource = null
 const detailVisible = ref(false)
 const detailMode = ref('submitted')
 const detailAct = ref(null)
+
+const parkApps = ref([])
+const parkLoading = ref(false)
+const parkPendingCount = computed(() => parkApps.value.filter((r) => r.status === 'PENDING').length)
 
 const quiz = computed(() => data.value.quizSummary || {})
 const evaluation = computed(() => data.value.evaluationSummary || {})
@@ -474,6 +552,46 @@ const openDetail = (act, mode) => {
   detailAct.value = act
   detailMode.value = mode
   detailVisible.value = true
+}
+
+const parkStatusText = (s) => ({
+  PENDING: '待审批',
+  APPROVED: '已授权',
+  REJECTED: '已拒绝',
+  REVOKED: '已关闭'
+}[s] || s)
+
+const parkStatusType = (s) => ({
+  PENDING: 'warning',
+  APPROVED: 'success',
+  REJECTED: 'info',
+  REVOKED: 'danger'
+}[s] || 'info')
+
+const loadParkApps = async () => {
+  if (!classId.value) {
+    parkApps.value = []
+    return
+  }
+  parkLoading.value = true
+  try {
+    const res = await getParkApplications(classId.value)
+    parkApps.value = res.data || []
+  } catch {
+    parkApps.value = []
+  } finally {
+    parkLoading.value = false
+  }
+}
+
+const reviewPark = async (row, action) => {
+  try {
+    await reviewParkAccess({ studentId: row.studentId, action })
+    ElMessage.success(action === 'approve' ? '已授权开启游学乐园' : action === 'reject' ? '已拒绝申请' : '已关闭访问')
+    await loadParkApps()
+  } catch (e) {
+    ElMessage.error(e?.message || '操作失败')
+  }
 }
 
 const isLowScore = (row) => {
@@ -747,7 +865,7 @@ const onClassChange = async () => {
   syncQuery()
   connectSse()
   await loadClassLoginCode()
-  await loadData()
+  await Promise.all([loadData(), loadParkApps()])
 }
 
 onMounted(async () => {
@@ -781,7 +899,7 @@ onMounted(async () => {
   syncQuery()
   connectSse()
   await loadClassLoginCode()
-  await loadData()
+  await Promise.all([loadData(), loadParkApps()])
 })
 
 onUnmounted(() => {
@@ -1024,7 +1142,8 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
 }
 
 .progress-section,
-.matrix-section {
+.matrix-section,
+.park-section {
   margin: 16px 20px 0;
   background: #fff;
   border-radius: 12px;
@@ -1032,6 +1151,12 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
 }
 .matrix-section { margin-bottom: 20px; }
+.park-tip {
+  margin: -4px 0 12px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+}
 .section-head {
   display: flex;
   justify-content: space-between;

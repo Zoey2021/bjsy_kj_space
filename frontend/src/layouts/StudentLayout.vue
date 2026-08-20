@@ -14,6 +14,7 @@
         <el-menu-item index="/student/map">课程地图</el-menu-item>
         <el-menu-item index="/student/records">学习记录</el-menu-item>
         <el-menu-item index="/student/ai">AI体验中心</el-menu-item>
+        <el-menu-item index="/student/park">游学乐园</el-menu-item>
       </el-menu>
       <span class="user">
         {{ realName }}
@@ -74,9 +75,14 @@ const closeNotify = () => {
 }
 
 const handleNotifyAction = (item) => {
+  const type = item?.type || item?.data?.type
   const lessonId = item?.lessonId || item?.data?.lessonId
   const actIndex = item?.activityIndex ?? item?.data?.activityIndex
   closeNotify()
+  if (type && String(type).startsWith('park_')) {
+    router.push('/student/park')
+    return
+  }
   if (lessonId) {
     const query = actIndex != null ? { step: String(actIndex) } : {}
     router.push({ path: `/student/lesson/${lessonId}`, query })
