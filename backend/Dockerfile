@@ -1,6 +1,7 @@
 # 多阶段构建：先用 Maven 编译，再运行 JAR
 FROM maven:3.8-eclipse-temurin-8 AS build
 WORKDIR /app
+COPY settings.xml /root/.m2/settings.xml
 COPY pom.xml .
 COPY src ./src
 RUN mvn package -DskipTests -q
