@@ -75,7 +75,8 @@ const activeMenu = computed(() => {
 
 const mainClass = computed(() => ({
   'main-flush': route.path.includes('/activity-editor') || route.path.includes('/course-map/grade/'),
-  'main-lesson': /^\/teacher\/lesson\/\d+$/.test(route.path)
+  'main-lesson': /^\/teacher\/lesson\/\d+$/.test(route.path),
+  'main-map': route.path === '/teacher/course-map'
 }))
 
 const logout = () => {
@@ -182,6 +183,18 @@ const logout = () => {
 }
 .layout :deep(.el-main.main-lesson) {
   padding: 0;
+  overflow: hidden;
+}
+.layout :deep(.el-main.main-map) {
+  overflow: hidden;
+  padding: 10px 16px 12px;
+  display: flex;
+  flex-direction: column;
+}
+.layout :deep(.el-main.main-map > *) {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 </style>

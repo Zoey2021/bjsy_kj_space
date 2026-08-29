@@ -5,10 +5,11 @@
       <p class="page-sub">选择配套或校本教材，在线阅读电子课本，或进入建课管理</p>
     </header>
 
+    <div class="map-body">
     <section class="panel panel-main">
       <h2 class="panel-title">配套课程</h2>
-      <el-row :gutter="18" class="grade-row">
-        <el-col v-for="g in mainGradeGroups" :key="g.key" :xs="24" :sm="12" :md="6">
+      <el-row :gutter="12" class="grade-row">
+        <el-col v-for="g in mainGradeGroups" :key="g.key" :span="6">
           <div class="grade-card">
             <div class="grade-card-head">{{ g.cardTitle }}</div>
             <div class="dual-covers">
@@ -19,7 +20,7 @@
                 @click="openGrade(slot.book.id)"
               >
                 <div class="book-thumb">
-                  <img v-if="slot.book.coverUrl" :src="slot.book.coverUrl" :alt="slot.book.name" />
+                  <img v-if="slot.book.coverUrl" :src="slot.book.coverUrl" :alt="slot.book.name" loading="lazy" decoding="async" />
                   <div v-else class="thumb-placeholder">封面</div>
                 </div>
                 <div class="book-label">{{ slot.book.name }}</div>
@@ -32,13 +33,11 @@
 
     <section class="panel panel-school">
       <h2 class="panel-title">校本课程</h2>
-      <el-row :gutter="18" class="grade-row">
+      <el-row :gutter="12" class="grade-row">
         <el-col
           v-for="series in schoolSeriesGroups"
           :key="series.key"
-          :xs="24"
-          :sm="12"
-          :md="6"
+          :span="6"
         >
           <div class="grade-card grade-card-school">
             <div class="grade-card-head">{{ series.cardTitle }}</div>
@@ -50,7 +49,7 @@
                 @click="openGrade(book.id)"
               >
                 <div class="book-thumb school-thumb">
-                  <img v-if="book.coverUrl" :src="book.coverUrl" :alt="book.name" />
+                  <img v-if="book.coverUrl" :src="book.coverUrl" :alt="book.name" loading="lazy" decoding="async" />
                   <div v-else class="thumb-placeholder school-ph">本</div>
                 </div>
                 <div class="book-label">{{ book.name }}</div>
@@ -58,7 +57,7 @@
             </div>
           </div>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col :span="6">
           <div class="grade-card grade-card-school">
             <div class="grade-card-head">{{ integratedInquiry.cardTitle }}</div>
             <div class="dual-covers">
@@ -69,7 +68,7 @@
                 @click="openInquirySlot(slot)"
               >
                 <div class="book-thumb school-thumb">
-                  <img :src="slot.coverUrl" :alt="slot.label" />
+                  <img :src="slot.coverUrl" :alt="slot.label" loading="lazy" decoding="async" />
                 </div>
                 <div class="book-label">{{ slot.label }}</div>
               </div>
@@ -78,6 +77,7 @@
         </el-col>
       </el-row>
     </section>
+    </div>
   </div>
 </template>
 
@@ -142,29 +142,51 @@ onMounted(async () => {
 
 <style scoped>
 .map-page {
-  max-width: 1120px;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 8px 4px 32px;
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
-.page-header { margin-bottom: 24px; }
+.page-header {
+  flex-shrink: 0;
+  margin-bottom: 8px;
+}
 .page-title {
-  margin: 0 0 6px;
-  font-size: 26px;
+  margin: 0 0 2px;
+  font-size: 20px;
   font-weight: 700;
   color: #1e293b;
 }
 .page-sub {
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
   color: #64748b;
 }
+.map-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 .panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   background: #fafbfc;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 22px;
-  margin-bottom: 24px;
+  border-radius: 14px;
+  padding: 10px 12px 12px;
+  margin-bottom: 0;
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
 }
 .panel-main { border-top: 3px solid #2563eb; }
 .panel-school {
@@ -173,48 +195,76 @@ onMounted(async () => {
   border-color: #d1e7dd;
 }
 .panel-title {
-  margin: 0 0 18px;
-  font-size: 18px;
+  flex-shrink: 0;
+  margin: 0 0 8px;
+  font-size: 15px;
   font-weight: 700;
 }
 .panel-main .panel-title { color: #1e40af; }
 .panel-school .panel-title { color: #0f766e; }
-.grade-row { align-items: stretch; }
+.grade-row {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  align-items: stretch;
+  flex-wrap: nowrap !important;
+}
+.grade-row :deep(.el-col) {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+}
 .grade-card {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(165deg, #f0f9ff 0%, #e0f2fe 40%, #f8fafc 100%);
   border: 1px solid #bae6fd;
-  border-radius: 14px;
-  padding: 14px 12px 16px;
-  height: 100%;
-  transition: transform 0.2s, box-shadow 0.2s;
+  border-radius: 12px;
+  padding: 8px 8px 10px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
 }
 .grade-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12);
 }
 .grade-card-head {
+  flex-shrink: 0;
   text-align: center;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: #0c4a6e;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
   border-bottom: 1px dashed #94a3b8;
 }
-.dual-covers { display: flex; gap: 10px; justify-content: center; }
+.dual-covers {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
 .book-slot {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   cursor: pointer;
   text-align: center;
   border-radius: 10px;
-  padding: 6px 4px;
+  padding: 2px;
 }
 .book-slot:hover { background: rgba(255, 255, 255, 0.65); }
 .book-thumb {
-  aspect-ratio: 3 / 4;
-  max-height: 200px;
-  margin: 0 auto 8px;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  margin: 0 auto 4px;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #cbd5e1;
@@ -238,5 +288,11 @@ onMounted(async () => {
 .grade-card-school .grade-card-head { color: #115e59; border-bottom-color: #5eead4; }
 .school-thumb img { object-fit: contain; object-position: center top; }
 .school-ph { font-size: 22px; font-weight: 700; color: #0f766e; }
-.book-label { font-size: 12px; font-weight: 600; color: #334155; line-height: 1.35; }
+.book-label {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.3;
+}
 </style>

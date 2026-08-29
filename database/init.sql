@@ -305,7 +305,9 @@ INSERT INTO course_grade (name, sort_order, description, textbook_type, cover_ur
 ('二年级上册', 90, '科创启航 · 洞察未来科创启航（二年级上册）', 'SCHOOL', '/course-covers/kechuang-up.png', NULL),
 ('二年级下册', 91, '科创启航 · 洞察未来科创启航（二年级下册）', 'SCHOOL', '/course-covers/kechuang-down.png', NULL),
 ('二年级上册', 92, '娃娃讲科技 · 少儿趣味科普课堂（二年级上册）', 'SCHOOL', '/course-covers/wawa-tech-up.png', NULL),
-('二年级下册', 93, '娃娃讲科技 · 少儿趣味科普课堂（二年级下册）', 'SCHOOL', '/course-covers/wawa-tech-down.png', NULL);
+('二年级下册', 93, '娃娃讲科技 · 少儿趣味科普课堂（二年级下册）', 'SCHOOL', '/course-covers/wawa-tech-down.png', NULL),
+('上册', 94, '人工智能启蒙 · 人工智能启蒙（上册）', 'SCHOOL', '/course-covers/ai-enlighten-up.png', NULL),
+('下册', 95, '人工智能启蒙 · 人工智能启蒙（下册）', 'SCHOOL', '/course-covers/ai-enlighten-down.png', NULL);
 
 INSERT INTO course_unit (grade_id, name, sort_order, description) VALUES
 ((SELECT id FROM course_grade WHERE name='三年级上册' AND textbook_type='MAIN' LIMIT 1), '第一单元 感受信息社会', 1, NULL),

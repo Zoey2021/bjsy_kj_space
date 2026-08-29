@@ -1,7 +1,7 @@
 <template>
   <div class="login-page">
     <aside class="login-visual" aria-hidden="true">
-      <img src="/login-cover.png" alt="" class="cover-img" />
+      <img src="/login-cover.png" alt="" class="cover-img" fetchpriority="high" />
       <div class="visual-mask" />
     </aside>
 
@@ -104,6 +104,7 @@
       title="请选择你的名字"
       width="920px"
       align-center
+      append-to-body
       modal-class="student-picker-overlay"
       class="student-picker-dialog"
       :close-on-click-modal="false"
@@ -253,20 +254,30 @@ const openStudentPicker = async () => {
 }
 
 const confirmStudent = async (stu) => {
-  if (!pendingCode.value) return
+  const studentId = Number(stu?.studentId ?? stu?.id)
+  if (!pendingCode.value) {
+    ElMessage.warning('班级码已失效，请重新进入班级')
+    return
+  }
+  if (!Number.isFinite(studentId) || studentId <= 0) {
+    ElMessage.error('未识别到学生信息，请刷新后重试')
+    return
+  }
+  if (pickLoading.value) return
   pickLoading.value = true
   try {
     const res = await classCodeLogin({
       code: pendingCode.value,
-      studentId: Number(stu.studentId)
+      studentId
     })
-    ElMessage.success(`欢迎，${stu.realName}！`)
-    pickerVisible.value = false
-    if (res.data?.role !== 'STUDENT') {
+    const data = res.data
+    if (data?.role !== 'STUDENT') {
       ElMessage.error('班级码登录仅适用于学生')
       return
     }
-    saveLoginAndRedirect(res.data)
+    pickerVisible.value = false
+    ElMessage.success(`欢迎，${stu.realName}！`)
+    saveLoginAndRedirect(data)
   } catch {
     /* 拦截器已提示 */
   } finally {

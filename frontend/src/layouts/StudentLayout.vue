@@ -51,7 +51,8 @@ const notifySince = ref(Number(localStorage.getItem('notify_since') || 0))
 let eventSource = null
 
 const mainClass = computed(() => ({
-  'main-lesson': route.path.includes('/student/lesson/')
+  'main-lesson': route.path.includes('/student/lesson/'),
+  'main-map': route.path === '/student/map'
 }))
 
 const logout = () => {
@@ -209,5 +210,17 @@ onUnmounted(() => {
   padding: 0;
   overflow: hidden;
   background: #eef1f6;
+}
+.layout :deep(.el-main.main-map) {
+  overflow: hidden;
+  padding: 10px 16px 12px;
+  display: flex;
+  flex-direction: column;
+}
+.layout :deep(.el-main.main-map > *) {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 </style>
