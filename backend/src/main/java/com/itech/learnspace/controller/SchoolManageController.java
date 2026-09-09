@@ -2,6 +2,7 @@ package com.itech.learnspace.controller;
 
 import com.itech.learnspace.dto.ApiResponse;
 import com.itech.learnspace.dto.ClassSaveRequest;
+import com.itech.learnspace.dto.StudentBatchRequest;
 import com.itech.learnspace.dto.StudentSaveRequest;
 import com.itech.learnspace.dto.TeacherSaveRequest;
 import com.itech.learnspace.entity.SysUser;
@@ -108,6 +109,16 @@ public class SchoolManageController {
     public ApiResponse<Map<String, Object>> createStudent(@RequestBody StudentSaveRequest request) {
         checkTeacherOrAdmin();
         return ApiResponse.ok("创建成功", schoolManageService.createStudent(request));
+    }
+
+    @PostMapping("/students/batch")
+    public ApiResponse<Map<String, Object>> batchCreateStudents(@RequestBody StudentBatchRequest request) {
+        checkTeacherOrAdmin();
+        Map<String, Object> result = schoolManageService.batchCreateStudents(request);
+        int created = result.get("createdCount") instanceof Number ? ((Number) result.get("createdCount")).intValue() : 0;
+        int failed = result.get("failedCount") instanceof Number ? ((Number) result.get("failedCount")).intValue() : 0;
+        String msg = "成功 " + created + " 人" + (failed > 0 ? "，失败 " + failed + " 人" : "");
+        return ApiResponse.ok(msg, result);
     }
 
     @PutMapping("/students/{id}")

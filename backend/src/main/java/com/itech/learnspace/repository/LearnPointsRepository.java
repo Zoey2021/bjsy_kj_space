@@ -14,6 +14,9 @@ public interface LearnPointsRepository extends JpaRepository<LearnPoints, Long> 
     @Query("SELECT COALESCE(SUM(p.points), 0) FROM LearnPoints p WHERE p.studentId = ?1")
     Integer sumPointsByStudentId(Long studentId);
 
-    @Query("SELECT p.studentId, SUM(p.points) FROM LearnPoints p WHERE p.studentId IN ?1 GROUP BY p.studentId ORDER BY SUM(p.points) DESC")
+    @Query("SELECT COALESCE(SUM(p.points), 0) FROM LearnPoints p WHERE p.studentId = ?1 AND p.points > 0")
+    Integer sumEarnedByStudentId(Long studentId);
+
+    @Query("SELECT p.studentId, SUM(p.points) FROM LearnPoints p WHERE p.studentId IN ?1 AND p.points > 0 GROUP BY p.studentId")
     List<Object[]> rankByClassStudents(List<Long> studentIds);
 }

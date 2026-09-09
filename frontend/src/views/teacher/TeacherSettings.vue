@@ -66,25 +66,39 @@
         <div class="toolbar">
           <el-select
             v-model="filterClassId"
-            clearable
             filterable
-            placeholder="按班级筛选"
-            style="width: 220px"
+            placeholder="请选择班级"
+            style="width: 260px"
             @change="loadStudents"
           >
             <el-option
               v-for="c in classes"
               :key="c.id"
-              :label="`${c.name}（${c.gradeName}）`"
+              :label="`${c.name}（${c.studentCount ?? 0}人）`"
               :value="c.id"
             />
           </el-select>
           <el-button type="primary" @click="openStudentDialog()">新增学生</el-button>
-          <el-button @click="loadStudents">刷新</el-button>
+          <el-button type="success" @click="openBatchDialog">批量添加学生</el-button>
+          <el-button :disabled="!filterClassId" @click="downloadStudentRoster">下载学生名单</el-button>
+          <el-button :disabled="!filterClassId" @click="loadStudents">刷新</el-button>
         </div>
-        <el-table :data="students" stripe border size="small" v-loading="loadingStudents">
+        <p v-if="selectedClass" class="roster-hint">
+          当前班级：<strong>{{ selectedClass.name }}</strong>
+          共 <strong>{{ students.length }}</strong> 人
+        </p>
+        <p v-else class="roster-hint">请先选择班级，再查看该班全部学生名单。</p>
+        <el-table
+          :data="students"
+          stripe
+          border
+          size="small"
+          v-loading="loadingStudents"
+          :empty-text="filterClassId ? '该班暂无学生' : '请先选择班级'"
+        >
           <el-table-column prop="id" label="ID" width="70" />
-          <el-table-column prop="username" label="账号/学号" min-width="120" />
+          <el-table-column prop="username" label="账号" min-width="140" />
+          <el-table-column prop="studentNo" label="学号" width="80" />
           <el-table-column prop="realName" label="姓名" min-width="100" />
           <el-table-column prop="className" label="班级" min-width="140" />
           <el-table-column label="状态" width="90" align="center">
@@ -215,11 +229,42 @@
         <el-button type="primary" :loading="saving" @click="saveStudent">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="batchVisible" title="批量添加学生" width="720px" destroy-on-close>
+      <p class="batch-tip">每行填写：班级、学号、姓名。班级名称须与「班级管理」一致（如 2023级4班）。每班最多 50 人，学号为 1～50。</p>
+      <div class="toolbar" style="margin-bottom: 10px">
+        <el-button @click="downloadStudentTemplate">下载名单模板</el-button>
+        <el-upload :show-file-list="false" accept=".csv,.txt,.tsv" :before-upload="onRosterFile">
+          <el-button>上传 CSV</el-button>
+        </el-upload>
+      </div>
+      <el-input
+        v-model="batchText"
+        type="textarea"
+        :rows="10"
+        placeholder="班级,学号,姓名&#10;2023级4班,1,张三&#10;2023级4班,2,李四"
+      />
+      <div v-if="batchResult" class="batch-result">
+        <p>成功 {{ batchResult.createdCount || 0 }} 人，失败 {{ batchResult.failedCount || 0 }} 人。</p>
+        <el-button v-if="batchResult.created?.length" size="small" @click="downloadCreatedAccounts">下载本次账号密码</el-button>
+        <el-table v-if="batchResult.failed?.length" :data="batchResult.failed" size="small" max-height="220" style="margin-top:8px">
+          <el-table-column prop="line" label="行" width="60" />
+          <el-table-column prop="className" label="班级" width="120" />
+          <el-table-column prop="studentNo" label="学号" width="70" />
+          <el-table-column prop="realName" label="姓名" width="90" />
+          <el-table-column prop="reason" label="原因" min-width="180" />
+        </el-table>
+      </div>
+      <template #footer>
+        <el-button @click="batchVisible = false">关闭</el-button>
+        <el-button type="primary" :loading="saving" @click="submitBatch">开始导入</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   manageListTeachers,
@@ -233,6 +278,7 @@ import {
   manageDeleteClass,
   manageListStudents,
   manageCreateStudent,
+  manageBatchCreateStudents,
   manageUpdateStudent,
   manageDeleteStudent,
   manageResetStudentPassword
@@ -249,10 +295,14 @@ const loadingTeachers = ref(false)
 const loadingClasses = ref(false)
 const loadingStudents = ref(false)
 const filterClassId = ref(null)
+const selectedClass = computed(() => classes.value.find((c) => c.id === filterClassId.value) || null)
 
 const teacherVisible = ref(false)
 const classVisible = ref(false)
 const studentVisible = ref(false)
+const batchVisible = ref(false)
+const batchText = ref('')
+const batchResult = ref(null)
 
 const teacherForm = ref({ id: null, username: '', realName: '', password: '', status: 1 })
 const classForm = ref({ id: null, name: '', gradeName: '', teacherId: null })
@@ -310,9 +360,13 @@ const loadClasses = async () => {
 }
 
 const loadStudents = async () => {
+  if (!filterClassId.value) {
+    students.value = []
+    return
+  }
   loadingStudents.value = true
   try {
-    const res = await manageListStudents(filterClassId.value || undefined)
+    const res = await manageListStudents(filterClassId.value)
     students.value = res.data || []
   } catch (e) {
     ElMessage.error(e?.message || '加载学生失败')
@@ -321,15 +375,18 @@ const loadStudents = async () => {
   }
 }
 
-const onTabChange = (name) => {
+const onTabChange = async (name) => {
   if (name === 'teachers') loadTeachers()
   if (name === 'classes') {
     loadTeachers()
     loadClasses()
   }
   if (name === 'students') {
-    loadClasses()
-    loadStudents()
+    await loadClasses()
+    if (!filterClassId.value && classes.value[0]) {
+      filterClassId.value = classes.value[0].id
+    }
+    await loadStudents()
   }
 }
 
@@ -566,6 +623,96 @@ const removeStudent = async (row) => {
   }
 }
 
+const downloadCsv = (filename, header, lines) => {
+  const blob = new Blob(['\uFEFF' + [header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
+}
+
+const rosterStudentNo = (row) => {
+  if (row.studentNo) return row.studentNo
+  const m = String(row.username || '').match(/20\d{2}(\d{2})(\d{2})$/)
+  return m ? String(parseInt(m[2], 10)) : ''
+}
+
+const downloadStudentRoster = () => {
+  if (!students.value.length) {
+    ElMessage.warning('当前没有可下载的学生，请先选择班级或刷新名单')
+    return
+  }
+  const lines = students.value.map((r) => [r.className || '', rosterStudentNo(r), r.realName || ''].join(','))
+  const name = filterClassId.value
+    ? (classes.value.find((c) => c.id === filterClassId.value)?.name || '班级')
+    : '全部班级'
+  downloadCsv(`学生名单_${name}.csv`, '班级,学号,姓名', lines)
+  ElMessage.success('已下载学生名单')
+}
+
+const downloadStudentTemplate = () => {
+  downloadCsv('学生名单模板.csv', '班级,学号,姓名', ['2023级4班,1,张三', '2023级4班,2,李四'])
+}
+
+const parseRosterText = (text) => {
+  const rows = []
+  for (const raw of String(text || '').replace(/^\uFEFF/, '').split(/\r?\n/)) {
+    const line = raw.trim()
+    if (!line) continue
+    const parts = line.split(/[,，\t]/).map((s) => s.trim().replace(/^"|"$/g, ''))
+    if (parts[0] === '班级' || parts[0].toLowerCase() === 'classname') continue
+    rows.push({
+      className: parts[0] || '',
+      studentNo: parts[1] || '',
+      realName: parts[2] || ''
+    })
+  }
+  return rows
+}
+
+const onRosterFile = (file) => {
+  const reader = new FileReader()
+  reader.onload = () => {
+    batchText.value = String(reader.result || '')
+    ElMessage.success('已读入文件，请确认后导入')
+  }
+  reader.readAsText(file, 'UTF-8')
+  return false
+}
+
+const openBatchDialog = () => {
+  batchText.value = '班级,学号,姓名\n'
+  batchResult.value = null
+  batchVisible.value = true
+}
+
+const submitBatch = async () => {
+  const rows = parseRosterText(batchText.value)
+  if (!rows.length) {
+    ElMessage.warning('请先粘贴或上传名单（班级、学号、姓名）')
+    return
+  }
+  saving.value = true
+  try {
+    const res = await manageBatchCreateStudents({ rows })
+    batchResult.value = res.data || {}
+    ElMessage.success(res.message || '导入完成')
+    await loadStudents()
+    await loadClasses()
+  } catch (e) {
+    ElMessage.error(e?.message || '导入失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+const downloadCreatedAccounts = () => {
+  const list = batchResult.value?.created || []
+  if (!list.length) return
+  const lines = list.map((r) => [r.className || '', r.studentNo || '', r.realName || '', r.username || '', r.initialPassword || ''].join(','))
+  downloadCsv('批量导入账号.csv', '班级,学号,姓名,账号,初始密码', lines)
+}
+
 onMounted(async () => {
   booting.value = true
   try {
@@ -588,6 +735,11 @@ onMounted(async () => {
   margin-bottom: 12px;
   align-items: center;
 }
+.roster-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #475569;
+}
 .block-card { border-radius: 12px; margin-bottom: 16px; min-height: 200px; }
 .block-icon { font-size: 36px; margin-bottom: 8px; }
 .block-card h3 { margin: 0 0 12px; font-size: 16px; }
@@ -598,4 +750,6 @@ onMounted(async () => {
   font-size: 13px;
   line-height: 1.8;
 }
+.batch-tip { margin: 0 0 10px; color: #64748b; font-size: 13px; line-height: 1.6; }
+.batch-result { margin-top: 12px; font-size: 13px; color: #334155; }
 </style>

@@ -1,6 +1,7 @@
 package com.itech.learnspace.service;
 
 import com.itech.learnspace.dto.ClassSaveRequest;
+import com.itech.learnspace.dto.StudentBatchRequest;
 import com.itech.learnspace.dto.StudentSaveRequest;
 import com.itech.learnspace.dto.TeacherSaveRequest;
 import com.itech.learnspace.entity.SysClass;
@@ -22,6 +23,7 @@ public class SchoolManageService {
 
     private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final int MAX_CLASS_SIZE = 50;
 
     private final SysUserRepository userRepository;
     private final SysClassRepository classRepository;
@@ -198,22 +200,24 @@ public class SchoolManageService {
 
     public List<Map<String, Object>> listStudents(Long classId) {
         List<SysUser> list;
-        if (classId != null) {
-            list = userRepository.findByClassId(classId).stream()
-                    .filter(u -> "STUDENT".equals(u.getRole()))
-                    .collect(Collectors.toList());
-        } else {
-            list = userRepository.findByRole("STUDENT");
+        if (classId == null) {
+            return Collections.emptyList();
         }
+        list = userRepository.findByClassId(classId).stream()
+                .filter(u -> "STUDENT".equals(u.getRole()))
+                .collect(Collectors.toList());
         Map<Long, String> classNames = classRepository.findAll().stream()
                 .collect(Collectors.toMap(SysClass::getId, SysClass::getName, (a, b) -> a));
         return list.stream()
-                .sorted(Comparator.comparing(SysUser::getId))
                 .map(u -> {
                     Map<String, Object> m = toUserMap(u);
                     m.put("className", u.getClassId() != null ? classNames.getOrDefault(u.getClassId(), "") : "");
+                    m.put("studentNo", PretestG4Service.parseStudentNo(u.getUsername()));
                     return m;
                 })
+                .sorted(Comparator
+                        .comparingInt((Map<String, Object> m) -> parseStudentNoOrder(m.get("studentNo")))
+                        .thenComparing(m -> String.valueOf(m.getOrDefault("realName", ""))))
                 .collect(Collectors.toList());
     }
 
@@ -226,6 +230,7 @@ public class SchoolManageService {
         }
         classRepository.findById(req.getClassId())
                 .orElseThrow(() -> new BusinessException("班级不存在"));
+        ensureClassCapacity(req.getClassId(), 1);
         if (userRepository.findByUsername(req.getUsername().trim()).isPresent()) {
             throw new BusinessException("账号已存在");
         }
@@ -266,6 +271,9 @@ public class SchoolManageService {
         if (req.getClassId() != null) {
             classRepository.findById(req.getClassId())
                     .orElseThrow(() -> new BusinessException("班级不存在"));
+            if (!req.getClassId().equals(user.getClassId())) {
+                ensureClassCapacity(req.getClassId(), 1);
+            }
             user.setClassId(req.getClassId());
         }
         if (req.getStatus() != null) {
@@ -292,6 +300,119 @@ public class SchoolManageService {
         Map<String, Object> out = toUserMap(user);
         out.put("initialPassword", raw);
         return out;
+    }
+
+    @Transactional
+    public Map<String, Object> batchCreateStudents(StudentBatchRequest request) {
+        List<StudentBatchRequest.Row> rows = request == null || request.getRows() == null
+                ? Collections.emptyList() : request.getRows();
+        if (rows.isEmpty()) {
+            throw new BusinessException("请先粘贴或上传学生名单");
+        }
+        if (rows.size() > 200) {
+            throw new BusinessException("单次最多导入 200 人");
+        }
+
+        Map<String, SysClass> classByKey = new HashMap<String, SysClass>();
+        for (SysClass c : classRepository.findAll()) {
+            classByKey.put(normalizeClassKey(c.getName()), c);
+            if (StringUtils.hasText(c.getGradeName())) {
+                classByKey.put(normalizeClassKey(c.getGradeName() + c.getName()), c);
+            }
+        }
+
+        Map<Long, Integer> existingCount = new HashMap<Long, Integer>();
+        Map<Long, Set<String>> existingNos = new HashMap<Long, Set<String>>();
+        Map<Long, Integer> incomingCount = new HashMap<Long, Integer>();
+
+        List<Map<String, Object>> created = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> failed = new ArrayList<Map<String, Object>>();
+
+        int line = 1;
+        for (StudentBatchRequest.Row row : rows) {
+            line++;
+            String className = row.getClassName() == null ? "" : row.getClassName().trim();
+            String studentNoRaw = row.getStudentNo() == null ? "" : row.getStudentNo().trim();
+            String realName = row.getRealName() == null ? "" : row.getRealName().trim();
+            if (!StringUtils.hasText(className) && !StringUtils.hasText(studentNoRaw) && !StringUtils.hasText(realName)) {
+                continue;
+            }
+            if (!StringUtils.hasText(className) || !StringUtils.hasText(studentNoRaw) || !StringUtils.hasText(realName)) {
+                failed.add(failRow(line, className, studentNoRaw, realName, "班级、学号、姓名都要填写"));
+                continue;
+            }
+            SysClass clazz = classByKey.get(normalizeClassKey(className));
+            if (clazz == null) {
+                failed.add(failRow(line, className, studentNoRaw, realName, "找不到班级「" + className + "」，请与班级管理中的名称一致"));
+                continue;
+            }
+            Integer no;
+            try {
+                String digits = studentNoRaw.replaceFirst("^0+(?=\\d)", "");
+                no = Integer.parseInt(digits);
+            } catch (Exception e) {
+                failed.add(failRow(line, className, studentNoRaw, realName, "学号必须是数字"));
+                continue;
+            }
+            if (no < 1 || no > MAX_CLASS_SIZE) {
+                failed.add(failRow(line, className, studentNoRaw, realName, "学号须在 1～" + MAX_CLASS_SIZE + " 之间"));
+                continue;
+            }
+            String studentNo = String.valueOf(no);
+            Long classId = clazz.getId();
+            if (!existingCount.containsKey(classId)) {
+                List<SysUser> members = userRepository.findByClassId(classId).stream()
+                        .filter(u -> "STUDENT".equals(u.getRole()))
+                        .collect(Collectors.toList());
+                existingCount.put(classId, members.size());
+                Set<String> nos = new HashSet<String>();
+                for (SysUser u : members) {
+                    String parsed = PretestG4Service.parseStudentNo(u.getUsername());
+                    if (StringUtils.hasText(parsed)) {
+                        nos.add(parsed);
+                    }
+                }
+                existingNos.put(classId, nos);
+            }
+            if (existingNos.get(classId).contains(studentNo)) {
+                failed.add(failRow(line, className, studentNo, realName, "该班已有学号 " + studentNo));
+                continue;
+            }
+            int nextCount = existingCount.get(classId) + incomingCount.getOrDefault(classId, 0) + 1;
+            if (nextCount > MAX_CLASS_SIZE) {
+                failed.add(failRow(line, className, studentNo, realName, "班级人数不能超过 " + MAX_CLASS_SIZE + " 人"));
+                continue;
+            }
+            String username = buildStudentUsername(realName, clazz.getName(), no);
+            if (userRepository.findByUsername(username).isPresent()) {
+                failed.add(failRow(line, className, studentNo, realName, "账号已存在：" + username));
+                continue;
+            }
+            String raw = generatePassword(6);
+            SysUser user = new SysUser();
+            user.setUsername(username);
+            user.setPassword(passwordEncoder.encode(raw));
+            user.setRealName(realName);
+            user.setRole("STUDENT");
+            user.setClassId(classId);
+            user.setStatus(1);
+            user = userRepository.save(user);
+            existingNos.get(classId).add(studentNo);
+            incomingCount.put(classId, incomingCount.getOrDefault(classId, 0) + 1);
+
+            Map<String, Object> out = toUserMap(user);
+            out.put("className", clazz.getName());
+            out.put("studentNo", studentNo);
+            out.put("initialPassword", raw);
+            created.add(out);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        result.put("createdCount", created.size());
+        result.put("failedCount", failed.size());
+        result.put("created", created);
+        result.put("failed", failed);
+        return result;
     }
 
     // ---------- helpers ----------
@@ -354,5 +475,67 @@ public class SchoolManageService {
             sb.append(PASSWORD_CHARS.charAt(RANDOM.nextInt(PASSWORD_CHARS.length())));
         }
         return sb.toString();
+    }
+
+    private Map<String, Object> failRow(int line, String className, String studentNo, String realName, String reason) {
+        Map<String, Object> m = new LinkedHashMap<String, Object>();
+        m.put("line", line);
+        m.put("className", className);
+        m.put("studentNo", studentNo);
+        m.put("realName", realName);
+        m.put("reason", reason);
+        return m;
+    }
+
+    private static int parseStudentNoOrder(Object raw) {
+        if (raw == null) {
+            return Integer.MAX_VALUE;
+        }
+        String s = String.valueOf(raw).trim();
+        if (s.isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
+        try {
+            return Integer.parseInt(s.replaceFirst("^0+(?=\\d)", ""));
+        } catch (Exception e) {
+            return Integer.MAX_VALUE;
+        }
+    }
+
+    private void ensureClassCapacity(Long classId, int adding) {
+        long count = userRepository.findByClassId(classId).stream()
+                .filter(u -> "STUDENT".equals(u.getRole()))
+                .count();
+        if (count + adding > MAX_CLASS_SIZE) {
+            throw new BusinessException("班级人数不能超过 " + MAX_CLASS_SIZE + " 人");
+        }
+    }
+
+    static String normalizeClassKey(String name) {
+        if (name == null) {
+            return "";
+        }
+        String s = name.replaceAll("\\s+", "");
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(20\\d{2})级0*(\\d+)班").matcher(s);
+        if (m.find()) {
+            return m.group(1) + "级" + Integer.parseInt(m.group(2)) + "班";
+        }
+        return s;
+    }
+
+    static String buildStudentUsername(String realName, String className, int studentNo) {
+        String letters = realName == null ? "" : realName.replaceAll("[^A-Za-z]", "").toLowerCase();
+        if (!StringUtils.hasText(letters)) {
+            letters = "s";
+        }
+        String year = "0000";
+        String classNo = "00";
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(20\\d{2})级0*(\\d+)班")
+                .matcher(className == null ? "" : className);
+        if (m.find()) {
+            year = m.group(1);
+            classNo = String.format("%02d", Integer.parseInt(m.group(2)));
+        }
+        return letters + year + classNo + String.format("%02d", studentNo);
     }
 }

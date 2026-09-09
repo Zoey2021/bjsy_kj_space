@@ -63,9 +63,6 @@ public class AuthService {
     public Map<String, Object> getOrGenerateClassLoginCode(Long classId, Long teacherId) {
         SysClass cls = classRepository.findById(classId)
                 .orElseThrow(() -> new BusinessException("班级不存在"));
-        if (!cls.getTeacherId().equals(teacherId)) {
-            throw new BusinessException(403, "无权操作该班级");
-        }
         if (cls.getLoginCode() == null || isCodeExpired(cls)) {
             return generateClassLoginCode(cls);
         }
@@ -76,9 +73,6 @@ public class AuthService {
     public Map<String, Object> refreshClassLoginCode(Long classId, Long teacherId) {
         SysClass cls = classRepository.findById(classId)
                 .orElseThrow(() -> new BusinessException("班级不存在"));
-        if (!cls.getTeacherId().equals(teacherId)) {
-            throw new BusinessException(403, "无权操作该班级");
-        }
         return generateClassLoginCode(cls);
     }
 

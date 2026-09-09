@@ -39,8 +39,11 @@ public class DashboardService {
         this.pointsRepository = pointsRepository;
     }
 
+    /** 本校教师共用全部班级，不按任课教师字段隔离 */
     public List<SysClass> getTeacherClasses(Long teacherId) {
-        return classRepository.findByTeacherId(teacherId);
+        List<SysClass> all = classRepository.findAll();
+        all.sort(Comparator.comparing(SysClass::getId));
+        return all;
     }
 
     /**
@@ -163,35 +166,95 @@ public class DashboardService {
         return result;
     }
 
-    /** 班级积分排行 */
+    /** 班级积分排行（含 0 分学生，按累计获得积分排序） */
     public List<Map<String, Object>> getClassRanking(Long classId) {
-        List<SysUser> students = userRepository.findByClassId(classId);
+        return getClassRanking(classId, null);
+    }
+
+    public List<Map<String, Object>> getClassRanking(Long classId, Long currentStudentId) {
+        List<SysUser> students = userRepository.findByClassIdAndRoleAndStatus(classId, "STUDENT", 1);
+        if (students.isEmpty()) {
+            return Collections.emptyList();
+        }
         List<Long> ids = students.stream().map(SysUser::getId).collect(Collectors.toList());
-        if (ids.isEmpty()) return Collections.emptyList();
-
-        Map<Long, String> nameMap = students.stream()
-                .collect(Collectors.toMap(SysUser::getId, SysUser::getRealName));
-
-        List<Object[]> ranks = pointsRepository.rankByClassStudents(ids);
+        Map<Long, Integer> pointsMap = new HashMap<Long, Integer>();
+        for (Object[] row : pointsRepository.rankByClassStudents(ids)) {
+            Number pts = (Number) row[1];
+            pointsMap.put((Long) row[0], pts == null ? 0 : pts.intValue());
+        }
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
-        int rank = 1;
-        for (Object[] row : ranks) {
+        for (SysUser s : students) {
             Map<String, Object> item = new HashMap<String, Object>();
-            item.put("rank", rank++);
-            item.put("studentId", row[0]);
-            item.put("realName", nameMap.get(row[0]));
-            item.put("points", row[1]);
+            item.put("studentId", s.getId());
+            item.put("realName", s.getRealName());
+            item.put("points", pointsMap.getOrDefault(s.getId(), 0));
+            item.put("isMe", currentStudentId != null && currentStudentId.equals(s.getId()));
             result.add(item);
+        }
+        result.sort((a, b) -> {
+            int pb = ((Number) b.get("points")).intValue();
+            int pa = ((Number) a.get("points")).intValue();
+            if (pb != pa) {
+                return pb - pa;
+            }
+            return String.valueOf(a.get("realName")).compareTo(String.valueOf(b.get("realName")));
+        });
+        int rank = 1;
+        for (Map<String, Object> item : result) {
+            item.put("rank", rank++);
         }
         return result;
     }
 
-    public void checkTeacherOwnsClass(Long teacherId, Long classId) {
-        SysClass cls = classRepository.findById(classId)
-                .orElseThrow(() -> new BusinessException("班级不存在"));
-        if (!cls.getTeacherId().equals(teacherId)) {
-            throw new BusinessException(403, "无权查看该班级");
+    /** 学生班级学习大屏：本班排行 + 本课各环节完成人数 */
+    public Map<String, Object> buildStudentClassScreen(Long classId, Long lessonId, Long studentId) {
+        Map<String, Object> dash = buildLessonActivityDashboard(lessonId, classId);
+        List<Map<String, Object>> ranking = getClassRanking(classId, studentId);
+        List<Map<String, Object>> activities = new ArrayList<Map<String, Object>>();
+        Object rawActs = dash.get("activities");
+        if (rawActs instanceof List) {
+            for (Object o : (List<?>) rawActs) {
+                if (!(o instanceof Map)) {
+                    continue;
+                }
+                @SuppressWarnings("unchecked")
+                Map<String, Object> src = (Map<String, Object>) o;
+                Map<String, Object> act = new HashMap<String, Object>();
+                act.put("index", src.get("index"));
+                act.put("title", src.get("title"));
+                act.put("type", src.get("type"));
+                act.put("submittedCount", src.get("submittedCount"));
+                act.put("totalStudents", dash.get("totalStudents"));
+                act.put("submitRate", src.get("submitRate"));
+                activities.add(act);
+            }
         }
+        Integer myRank = null;
+        Integer myPoints = 0;
+        for (Map<String, Object> row : ranking) {
+            if (Boolean.TRUE.equals(row.get("isMe"))) {
+                myRank = (Integer) row.get("rank");
+                myPoints = ((Number) row.get("points")).intValue();
+                break;
+            }
+        }
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("classId", classId);
+        result.put("className", dash.get("className"));
+        result.put("lessonId", lessonId);
+        result.put("lessonTitle", dash.get("lessonTitle"));
+        result.put("totalStudents", dash.get("totalStudents"));
+        result.put("ranking", ranking);
+        result.put("activities", activities);
+        result.put("myRank", myRank);
+        result.put("myPoints", myPoints);
+        result.put("updateTime", dash.get("updateTime"));
+        return result;
+    }
+
+    public void checkTeacherOwnsClass(Long teacherId, Long classId) {
+        classRepository.findById(classId)
+                .orElseThrow(() -> new BusinessException("班级不存在"));
     }
 
     /**

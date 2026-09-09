@@ -94,6 +94,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC
 .fc-step-num{width:22px;height:22px;border-radius:50%;background:var(--s);color:#FFF;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
 .fc-step-text{min-width:0;word-break:normal;white-space:normal}
 .fc-task-tip{width:100%;margin-top:8px;padding:8px 12px;background:rgba(233,196,106,.18);border:1px solid rgba(233,196,106,.35);border-radius:var(--rs);font-size:12.5px;color:#8B6E00;line-height:1.5}
+.scaf-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.scaf-C{background:#fdeaea;color:#b91c1c}
+.scaf-B{background:#fdf3e0;color:#b45309}
+.scaf-A{background:#e6f6ec;color:#15803d}
+.scaf-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.55;color:#334155}
+.scaf-card b{color:#0f766e}
+.scaf-symbols{display:grid;grid-template-columns:22px 1fr;gap:5px 8px;align-items:center}
+.sym{width:20px;height:16px}
+.sym-term{border-radius:10px;background:#264653}
+.sym-io{background:#E3F2FD;border:1.5px solid #64B5F6;transform:skewX(-16deg)}
+.sym-proc{background:#E8F4F2;border:1.5px solid #2A9D8F;border-radius:2px}
+.sym-dec{width:16px;height:16px;background:#FEF9E7;border:1.5px solid #E9C46A;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.level-switch{display:flex;gap:6px;align-items:center}
+.level-switch button{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px}
+.level-switch button.on{background:#2A9D8F;border-color:#2A9D8F}
 .fc-canvas-inner{position:relative;width:1100px;height:850px}
 .fc-conn-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}
 
@@ -233,6 +248,12 @@ body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
       <div class="header-sub">探究活动 · 同桌协作</div>
     </div>
   </div>
+  <div class="level-switch" id="levelSwitch" style="display:none">
+    <span style="font-size:12px;opacity:.85">预览支架</span>
+    <button type="button" data-lv="C" onclick="setScaffoldLevel('C')">C</button>
+    <button type="button" data-lv="B" onclick="setScaffoldLevel('B')">B</button>
+    <button type="button" data-lv="A" onclick="setScaffoldLevel('A')">A</button>
+  </div>
   <button class="btn-reset" onclick="resetAll()">🔄 全部重置</button>
 </div>
 
@@ -260,17 +281,19 @@ body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
 <div class="fc-layout">
   <!-- 左侧：题目 + Logo展示 -->
   <div class="fc-info-panel">
-    <div class="fc-info-title">📋 探究活动一：绘制流程图</div>
+    <div class="fc-info-title">📋 探究活动一：绘制流程图 <span id="scafBadge" class="scaf-badge scaf-B">提示支架</span></div>
 
     <!-- 任务说明 -->
     <div class="fc-task-card">
-      <div class="fc-task-desc">
+      <div class="fc-task-desc" id="scafTaskDesc">
         学校信息中心要从以下两个候选 logo 中选出一个最合适的方案，邀请了<b>1000名师生</b>参与投票（投 A 或 B）。请拖动右侧图块到画布上，用流程图表示计算机统计投票结果的完整过程。
       </div>
     </div>
 
+    <div id="scafExtra"></div>
+
     <!-- 操作步骤 -->
-    <div class="fc-task-steps">
+    <div class="fc-task-steps" id="scafSteps">
       <div class="fc-step"><span class="fc-step-num">1</span><span class="fc-step-text">拖动流程图图块到画布</span></div>
       <div class="fc-step"><span class="fc-step-num">2</span><span class="fc-step-text">移动模式-双击图块修改文字</span></div>
       <div class="fc-step"><span class="fc-step-num">3</span><span class="fc-step-text">连线模式-放好图块再连线</span></div>
@@ -296,7 +319,7 @@ body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
       </div>
     </div>
 
-    <div class="fc-task-tip">💡 可先「加载模板」看参考骨架，但必须自己补全连线（含循环）才能通过检查，不能直接提交模板。</div>
+    <div class="fc-task-tip" id="scafTip">💡 请按五个阶段画完整流程：初始化 → 输入 → 分支判断 → 循环 → 输出。</div>
   </div>
 
   <!-- 右侧：素材面板 + 工具栏 + 画布 -->
@@ -326,7 +349,7 @@ body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
     <div class="fc-toolbar">
       <button id="btnMove" class="active-mode" onclick="setMode('move')">✋ 移动模式</button>
       <button id="btnConnect" onclick="setMode('connect')">🔗 连线模式</button>
-      <button onclick="loadTemplate()">📋 加载模板</button>
+      <button id="btnTemplate" onclick="loadTemplate()">📋 加载模板</button>
       <button class="btn-danger" onclick="clearCanvas()">🗑️ 清空画布</button>
       <button onclick="checkFlowchart()">✅ 检查流程图</button>
       <span class="mode-hint" id="modeHint">当前：<span class="mh-move">移动模式</span> — 拖动图块调整位置</span>
@@ -465,6 +488,114 @@ function markCanvasEdited() {
 // ==================== STEP NAVIGATION ====================
 const urlParams = new URLSearchParams(location.search);
 const IS_EMBEDDED = urlParams.get('embedded') === '1';
+const IS_PREVIEW = urlParams.get('preview') === '1' || localStorage.getItem('role') === 'TEACHER';
+let scaffoldLevel = normalizeScaffold(urlParams.get('scaffold'));
+
+function normalizeScaffold(raw) {
+  const lv = String(raw || '').toUpperCase();
+  return (lv === 'A' || lv === 'B' || lv === 'C') ? lv : 'B';
+}
+
+function symbolSheetHtml() {
+  return '<div class="scaf-card"><b>流程图符号速查</b><div class="scaf-symbols" style="margin-top:6px">'
+    + '<div class="sym sym-term"></div><div>圆角矩形：开始 / 结束</div>'
+    + '<div class="sym sym-proc"></div><div>矩形：处理（初始化、加一票）</div>'
+    + '<div class="sym sym-io"></div><div>平行四边形：输入 / 输出</div>'
+    + '<div class="sym sym-dec"></div><div>菱形：判断 / 分支</div></div></div>';
+}
+
+function variableCardHtml() {
+  return '<div class="scaf-card"><b>变量提示卡</b><div style="margin-top:4px">a、b 初值 = 0（分别统计 A、B 的票）<br>tp 接收当前这一票<br>可用循环判断「还有票要统计吗」</div></div>';
+}
+
+function applyScaffoldUI() {
+  const badge = document.getElementById('scafBadge');
+  const desc = document.getElementById('scafTaskDesc');
+  const extra = document.getElementById('scafExtra');
+  const tip = document.getElementById('scafTip');
+  const steps = document.getElementById('scafSteps');
+  const btnTpl = document.getElementById('btnTemplate');
+  const common = '学校信息中心要从以下两个候选 logo 中选出一个最合适的方案，邀请了<b>1000名师生</b>参与投票（投 A 或 B）。';
+  if (badge) {
+    badge.className = 'scaf-badge scaf-' + scaffoldLevel;
+    badge.textContent = scaffoldLevel === 'C' ? '填空支架' : (scaffoldLevel === 'A' ? '挑战支架' : '提示支架');
+  }
+  if (scaffoldLevel === 'C') {
+    if (desc) desc.innerHTML = common + '请在半成品流程图里补全空缺的判断框、处理框和文字，再补上缺少的箭头。';
+    if (extra) extra.innerHTML = variableCardHtml() + symbolSheetHtml();
+    if (steps) steps.innerHTML =
+      '<div class="fc-step"><span class="fc-step-num">1</span><span class="fc-step-text">双击带「填空」的图块，补全文字</span></div>'
+      + '<div class="fc-step"><span class="fc-step-num">2</span><span class="fc-step-text">补上循环回连和「否→输出→结束」</span></div>'
+      + '<div class="fc-step"><span class="fc-step-num">3</span><span class="fc-step-text">对照符号速查，确认菱形是判断</span></div>'
+      + '<div class="fc-step"><span class="fc-step-num">4</span><span class="fc-step-text">点击检查流程图</span></div>';
+    if (tip) tip.textContent = '💡 不必从零画完整图。把空缺补全，并能指出哪里是循环、哪里是分支即可。';
+    if (btnTpl) { btnTpl.style.display = ''; btnTpl.textContent = '📋 重置半成品'; }
+  } else if (scaffoldLevel === 'A') {
+    if (desc) desc.innerHTML = common + '请独立画出完整流程图，并<b>自主增加一条分支</b>：当输入既不是 A 也不是 B 时，算法该怎么处理？';
+    if (extra) extra.innerHTML = '<div class="scaf-card"><b>思考提示</b><div style="margin-top:4px">如果某一票既不是「a」也不是「b」，流程图里应该加一个怎样的判断？无效票是忽略、提示，还是单独计数？</div></div>';
+    if (steps) steps.innerHTML =
+      '<div class="fc-step"><span class="fc-step-num">1</span><span class="fc-step-text">独立画出初始化、输入、循环、输出</span></div>'
+      + '<div class="fc-step"><span class="fc-step-num">2</span><span class="fc-step-text">补上「是否投 A」的分支</span></div>'
+      + '<div class="fc-step"><span class="fc-step-num">3</span><span class="fc-step-text">再增加无效票（非 A 非 B）分支</span></div>'
+      + '<div class="fc-step"><span class="fc-step-num">4</span><span class="fc-step-text">点击检查流程图</span></div>';
+    if (tip) tip.textContent = '💡 只给问题情境。请先完成教材中的基本算法，再处理异常输入。';
+    if (btnTpl) btnTpl.style.display = 'none';
+  } else {
+    if (desc) desc.innerHTML = common + '请对照教材例题，独立画出「两个作品投票」的完整流程图。';
+    if (extra) extra.innerHTML = variableCardHtml() + symbolSheetHtml()
+      + '<div class="scaf-card"><b>任务提示</b>必须包含 5 个阶段：初始化、输入、分支判断、循环、输出。本次不提供半成品模板。</div>';
+    if (steps) steps.innerHTML =
+      '<div class="fc-step"><span class="fc-step-num">1</span><span class="fc-step-text">拖动流程图图块到画布</span></div>'
+      + '<div class="fc-step"><span class="fc-step-num">2</span><span class="fc-step-text">移动模式-双击图块修改文字</span></div>'
+      + '<div class="fc-step"><span class="fc-step-num">3</span><span class="fc-step-text">连线模式-放好图块再连线</span></div>'
+      + '<div class="fc-step"><span class="fc-step-num">4</span><span class="fc-step-text">点击检查流程图提交</span></div>';
+    if (tip) tip.textContent = '💡 使用规范符号，分支和循环逻辑正确，输入输出完整，并与教材算法一致。';
+    if (btnTpl) btnTpl.style.display = 'none';
+  }
+  document.querySelectorAll('#levelSwitch button').forEach((b) => {
+    b.classList.toggle('on', b.dataset.lv === scaffoldLevel);
+  });
+}
+
+function placeTemplateNodes(items, withPartialLinks) {
+  clearCanvas();
+  items.forEach((t) => createNode(t.type, t.x, t.y, t.text));
+  if (withPartialLinks && nodes.length >= 9) {
+    const g = (i) => nodes[i].id;
+    connections = [
+      { fromId: g(0), fromPort: 'bottom', toId: g(1), toPort: 'top', label: '' },
+      { fromId: g(1), fromPort: 'bottom', toId: g(2), toPort: 'top', label: '' },
+      { fromId: g(2), fromPort: 'left', toId: g(3), toPort: 'top', label: '是' },
+      { fromId: g(3), fromPort: 'bottom', toId: g(4), toPort: 'top', label: '' },
+      { fromId: g(4), fromPort: 'left', toId: g(5), toPort: 'top', label: '是' },
+      { fromId: g(4), fromPort: 'right', toId: g(6), toPort: 'top', label: '否' }
+    ];
+  }
+  redrawConnections();
+}
+
+function loadFillTemplateC() {
+  placeTemplateNodes([
+    { type: 'start', x: 440, y: 30, text: '开始' },
+    { type: 'process', x: 440, y: 115, text: 'a=0，b=0（初始化计票）' },
+    { type: 'decision', x: 440, y: 220, text: '（填空：循环判断）' },
+    { type: 'io', x: 440, y: 340, text: '（填空：读入什么？）' },
+    { type: 'decision', x: 440, y: 460, text: '（填空：分支判断）' },
+    { type: 'process', x: 260, y: 590, text: 'a = a + 1' },
+    { type: 'process', x: 620, y: 590, text: '（填空：B 加一票）' },
+    { type: 'io', x: 680, y: 220, text: '（填空：输出结果）' },
+    { type: 'end', x: 680, y: 330, text: '结束' }
+  ], true);
+  loadedTemplateFingerprint = null;
+  showToast('半成品已就绪：请双击填空图块补全文字，并补上缺少的箭头');
+}
+
+function setScaffoldLevel(lv) {
+  scaffoldLevel = normalizeScaffold(lv);
+  applyScaffoldUI();
+  if (scaffoldLevel === 'C') loadFillTemplateC();
+  else clearCanvas();
+}
 
 if (!IS_EMBEDDED) {
   document.querySelectorAll('.step-tab').forEach(tab => {
@@ -758,8 +889,11 @@ function clearCanvas() {
 }
 
 function loadTemplate() {
-  clearCanvas();
-  const template = [
+  if (scaffoldLevel === 'C') {
+    loadFillTemplateC();
+    return;
+  }
+  placeTemplateNodes([
     { type: 'start', x: 440, y: 30, text: '开始' },
     { type: 'process', x: 440, y: 115, text: 'a=0，b=0（初始化计票）' },
     { type: 'decision', x: 440, y: 220, text: '还有票要统计吗？' },
@@ -769,21 +903,7 @@ function loadTemplate() {
     { type: 'process', x: 620, y: 590, text: 'b = b + 1' },
     { type: 'io', x: 680, y: 220, text: '输出 a 和 b' },
     { type: 'end', x: 680, y: 330, text: '结束' }
-  ];
-  template.forEach((t) => createNode(t.type, t.x, t.y, t.text));
-  markCanvasEdited();
-  if (nodes.length >= 9) {
-    const g = (i) => nodes[i].id;
-    connections = [
-      { fromId: g(0), fromPort: 'bottom', toId: g(1), toPort: 'top', label: '' },
-      { fromId: g(1), fromPort: 'bottom', toId: g(2), toPort: 'top', label: '' },
-      { fromId: g(2), fromPort: 'left', toId: g(3), toPort: 'top', label: '是' },
-      { fromId: g(3), fromPort: 'bottom', toId: g(4), toPort: 'top', label: '' },
-      { fromId: g(4), fromPort: 'left', toId: g(5), toPort: 'top', label: '是' },
-      { fromId: g(4), fromPort: 'right', toId: g(6), toPort: 'top', label: '否' }
-    ];
-  }
-  redrawConnections();
+  ], true);
   loadedTemplateFingerprint = canvasFingerprint();
   showToast('参考骨架已加载：请补全循环回连和「否→输出→结束」后再检查');
 }
@@ -805,6 +925,26 @@ function hasLoopBack() {
 
 function checkFlowchart() {
   const issues = [];
+
+  if (scaffoldLevel === 'C') {
+    const blanks = nodes.filter((n) => /填空|______/.test(n.text || ''));
+    if (blanks.length) issues.push('还有 ' + blanks.length + ' 处填空未补全，请双击图块改文字');
+    const loopOk = nodes.some((n) => n.type === 'decision' && /还有票|循环|统计/.test(n.text));
+    const branchOk = nodes.some((n) => n.type === 'decision' && /投|选择|是否.*a/i.test(n.text));
+    if (!loopOk) issues.push('请在循环判断的菱形里写出「还有票要统计吗」一类的话，标出循环结构');
+    if (!branchOk) issues.push('请在分支判断的菱形里写出「这票是投 A 吗」一类的话，标出分支结构');
+    if (!nodes.some((n) => /b\s*=\s*b\s*\+\s*1|b\+1/i.test(normText(n.text)))) {
+      issues.push('请补全 B 加一票的处理框');
+    }
+    if (!nodes.some((n) => /输出|结果/.test(n.text))) issues.push('请补全输出结果');
+    if (issues.length === 0) {
+      showToast('✅ 半成品已补全！你找出了循环和分支，本环节达成。');
+      markStepDone(1);
+    } else {
+      alert('⚠️ 检查发现问题：\n\n' + issues.map((s, i) => (i + 1) + '. ' + s).join('\n'));
+    }
+    return;
+  }
 
   if (loadedTemplateFingerprint && canvasFingerprint() === loadedTemplateFingerprint) {
     issues.push('加载模板后请补全连线（含循环回到「还有票要统计吗」和「否→输出→结束」），不能直接提交模板');
@@ -875,8 +1015,15 @@ function checkFlowchart() {
   const orphans = nodes.filter((n) => !connectedIds.has(n.id) && nodes.length > 1);
   if (orphans.length > 0) issues.push(`有 ${orphans.length} 个图块还没有连线`);
 
+  if (scaffoldLevel === 'A') {
+    const invalid = nodes.some((n) => /无效|既不是|都不是|异常|其他|不是\s*a/i.test(n.text || ''));
+    if (!invalid) issues.push('挑战：请增加处理无效票的分支（输入既不是 A 也不是 B 时）');
+  }
+
   if (issues.length === 0) {
-    showToast('✅ 流程图检查通过！你已画出完整的投票统计流程！');
+    showToast(scaffoldLevel === 'A'
+      ? '✅ 基本流程与无效票分支都完成了，挑战达成！'
+      : '✅ 流程图检查通过！你已画出完整的投票统计流程！');
     markStepDone(1);
   } else {
     alert('⚠️ 检查发现问题：\n\n' + issues.map((s, i) => (i + 1) + '. ' + s).join('\n'));
@@ -1052,15 +1199,23 @@ function resetAll() {
   document.querySelectorAll('.result-empty').forEach(e => e.style.display = '');
   document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('done'));
   switchStep(1);
+  if (scaffoldLevel === 'C') loadFillTemplateC();
   showToast('已全部重置，可以重新开始！');
 }
 
 // ==================== INIT ====================
 (function initFromQuery() {
-  if (!IS_EMBEDDED) return;
-  document.body.classList.add('embedded-mode');
-  const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
-  switchStep(Number.isFinite(step) && step >= 1 && step <= 3 ? step : 1);
+  if (IS_EMBEDDED) {
+    document.body.classList.add('embedded-mode');
+    const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+    switchStep(Number.isFinite(step) && step >= 1 && step <= 3 ? step : 1);
+  }
+  if (IS_PREVIEW) {
+    const sw = document.getElementById('levelSwitch');
+    if (sw) sw.style.display = 'flex';
+  }
+  applyScaffoldUI();
+  if (scaffoldLevel === 'C') loadFillTemplateC();
 })();
 
 // Handle canvas scroll + connection redraw

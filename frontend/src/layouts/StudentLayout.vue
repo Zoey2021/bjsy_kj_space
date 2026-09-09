@@ -51,7 +51,7 @@ const notifySince = ref(Number(localStorage.getItem('notify_since') || 0))
 let eventSource = null
 
 const mainClass = computed(() => ({
-  'main-lesson': route.path.includes('/student/lesson/'),
+  'main-lesson': route.path.includes('/student/lesson/') || route.path.startsWith('/student/pretest/'),
   'main-map': route.path === '/student/map'
 }))
 

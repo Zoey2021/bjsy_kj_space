@@ -40,7 +40,7 @@ function extractCoreNodes(text) {
   }
   if (!nodes.length) {
     const sentences = text.split(/[。！？\n]/).map((s) => s.trim()).filter(Boolean)
-    return asNodes(sentences.slice(0, 2).length ? sentences.slice(0, 2) : ['阅读教材，了解本课核心概念'])
+    return asNodes(sentences.slice(0, 2).length ? sentences.slice(0, 2) : ['了解本课核心概念'])
   }
   return nodes
 }

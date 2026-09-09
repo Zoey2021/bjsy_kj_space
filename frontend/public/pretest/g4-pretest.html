@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>四年级信息科技基础水平测试系统</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Microsoft YaHei","PingFang SC","SimSun",sans-serif; background:#eef2f7; color:#222; }
+  .topbar { background:#2b58a0; color:#fff; padding:10px 16px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:6000; }
+  .topbar h1 { font-size:17px; margin:0; font-weight:600; }
+  .topbar .role { margin-left:auto; display:flex; gap:8px; }
+  .topbar button { background:#fff; color:#2b58a0; border:none; padding:6px 14px; border-radius:5px; cursor:pointer; font-weight:600; font-size:13px; }
+  .topbar button.ghost { background:transparent; color:#fff; border:1px solid #fff; }
+  .wrap { max-width:920px; margin:0 auto; padding:18px; }
+  .section { background:#fff; border:1px solid #dbe3ee; border-radius:10px; padding:16px 18px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,.04); }
+  .section h2 { font-size:16px; margin:0 0 10px; color:#2b58a0; border-left:4px solid #2b58a0; padding-left:8px; }
+  .meta-row { display:flex; gap:12px; flex-wrap:wrap; }
+  .meta-row input { padding:6px 8px; border:1px solid #c5d4e8; border-radius:5px; font-size:14px; width:140px; }
+  .fill-q { font-size:14px; margin:8px 0; line-height:1.7; }
+  .fill-q input { width:160px; padding:3px 6px; border:1px solid #c5d4e8; border-radius:4px; font-size:14px; }
+  .choice-q { font-size:14px; margin:10px 0; }
+  .choice-q .opt { display:block; margin:3px 0 3px 18px; }
+  .choice-q input { margin-right:6px; }
+  .submit-btn { background:#e8a400; color:#222; border:none; padding:12px 28px; border-radius:6px; font-size:16px; font-weight:700; cursor:pointer; }
+  .center { text-align:center; margin-top:8px; }
+
+  /* 操作虚拟机 */
+  #opArea { position:relative; height:640px; border:1px solid #b9c9e0; border-radius:10px; background:linear-gradient(135deg,#e8f0fb,#cfe0f3); overflow:hidden; }
+  .op-bar { position:absolute; top:8px; left:8px; display:flex; gap:6px; z-index:5; }
+  .op-bar button { font-size:12px; padding:5px 10px; border:1px solid #b9c9e0; background:#fff; border-radius:5px; cursor:pointer; }
+  .op-task { position:absolute; left:8px; top:52px; width:236px; background:rgba(255,255,255,.93); border:1px solid #c5d4e8; border-radius:8px; padding:10px 12px; font-size:12px; line-height:1.55; z-index:4; max-height:560px; overflow:auto; }
+  .op-task h3 { margin:0 0 4px; font-size:13px; color:#2b58a0; }
+  .op-task ol { margin:4px 0; padding-left:18px; }
+  .window { position:absolute; background:#fff; border:1px solid #aebfd6; border-radius:8px; box-shadow:0 8px 26px rgba(0,0,0,.22); display:none; flex-direction:column; min-width:330px; z-index:10; }
+  .win-bar { height:32px; background:#eef3fa; border-bottom:1px solid #d3dded; border-radius:8px 8px 0 0; display:flex; align-items:center; padding:0 8px; cursor:move; font-size:13px; font-weight:600; color:#2b58a0; }
+  .win-bar .x { margin-left:auto; cursor:pointer; color:#888; font-weight:400; }
+  .win-bar .x:hover { color:#c00; }
+  .win-body { padding:10px; overflow:auto; max-height:520px; }
+  .crumb { font-size:13px; color:#444; margin-bottom:6px; }
+  .explorer-tools { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px; }
+  .explorer-tools button { font-size:12px; padding:3px 8px; border:1px solid #b9c9e0; background:#f4f8fd; border-radius:4px; cursor:pointer; }
+  .filearea { display:flex; flex-wrap:wrap; gap:8px; min-height:150px; }
+  .fitem { width:84px; text-align:center; cursor:pointer; font-size:12px; padding:5px 2px; border:1px solid transparent; border-radius:6px; }
+  .fitem .fic { width:42px; height:38px; margin:0 auto 3px; display:flex; align-items:center; justify-content:center; }
+  .fitem.sel { border-color:#2b58a0; background:#e3edfa; }
+  .fitem.drop { border:2px dashed #2b58a0; background:#eaf2ff; }
+  .wps-toolbar { display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+  .wps-toolbar select, .wps-toolbar button { font-size:13px; padding:4px 8px; border:1px solid #b9c9e0; border-radius:4px; background:#f4f8fd; cursor:pointer; }
+  .wps-toolbar button.on { background:#2b58a0; color:#fff; }
+  .wps-title { width:100%; border:1px solid #cdd8e8; border-radius:4px; padding:8px; font-size:18px; min-height:44px; margin-bottom:8px; outline:none; }
+  .wps-title:empty:before { content:'在此输入标题…'; color:#aaa; }
+  .wps-body { width:100%; height:110px; border:1px solid #cdd8e8; border-radius:4px; padding:8px; font-size:14px; resize:vertical; outline:none; }
+  .dtable { border-collapse:collapse; margin:6px 0; }
+  .dtable th, .dtable td { border:1px solid #b9c9e0; padding:5px 12px; font-size:14px; }
+  .dtable th { background:#eef3fa; }
+  .dq { margin:8px 0; }
+  .dq label { display:block; font-size:13px; font-weight:600; margin-bottom:3px; }
+  .dq textarea { width:100%; height:44px; border:1px solid #cdd8e8; border-radius:4px; padding:5px; font-size:13px; resize:vertical; }
+
+  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:9000; display:none; align-items:center; justify-content:center; }
+  .modal { background:#fff; border-radius:10px; padding:18px 22px; width:460px; max-width:92%; box-shadow:0 10px 40px rgba(0,0,0,.3); }
+  .modal h3 { margin:0 0 10px; color:#2b58a0; font-size:16px; }
+  .modal select, .modal input { width:100%; padding:6px; border:1px solid #cdd8e8; border-radius:4px; font-size:14px; margin:4px 0 10px; }
+  .modal .row { display:flex; gap:10px; justify-content:flex-end; margin-top:8px; }
+  .modal .row button { padding:6px 16px; border-radius:5px; border:none; cursor:pointer; font-size:14px; }
+  .btn-primary { background:#2b58a0; color:#fff; }
+  .btn-cancel { background:#e6e6e6; color:#333; }
+
+  /* 教师端 */
+  #teacher { display:none; }
+  .tstat { display:flex; gap:16px; flex-wrap:wrap; font-size:14px; align-items:center; margin-bottom:12px; }
+  .tstat .pill { background:#eef3fa; border:1px solid #c5d4e8; border-radius:20px; padding:4px 14px; }
+  .tstat button { padding:6px 14px; border-radius:5px; border:1px solid #b9c9e0; background:#fff; cursor:pointer; }
+  .tstat button.danger { background:#c0392b; color:#fff; border:none; }
+  .card { background:#fff; border:1px solid #dbe3ee; border-radius:8px; margin-bottom:10px; overflow:hidden; }
+  .card .head { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; background:#f7faff; }
+  .card .head:hover { background:#eaf2ff; }
+  .card .head .name { font-weight:700; }
+  .card .head .sub { color:#777; font-size:12px; }
+  .card .head .badge { margin-left:auto; font-size:12px; padding:2px 10px; border-radius:12px; background:#e8a400; color:#222; }
+  .card .head .badge.ok { background:#2ecc71; color:#fff; }
+  .card .head .badge.bad { background:#e74c3c; color:#fff; }
+  .card .detail { display:none; padding:12px 16px; border-top:1px solid #eee; font-size:13px; }
+  .card .detail.open { display:block; }
+  .grp { margin:8px 0; }
+  .grp b { color:#2b58a0; }
+  .rk { color:#0a7d3c; font-weight:700; }
+  .wr { color:#c00; font-weight:700; }
+  .fb { color:#555; font-size:12.5px; margin:2px 0 2px 14px; }
+  .ansline { margin:3px 0; }
+  .empty { color:#888; text-align:center; padding:40px; }
+  .hidden { display:none !important; }
+  @media print { .topbar,.op-bar{display:none;} #opArea{height:auto;} .window{position:static!important;display:block!important;box-shadow:none;margin:8px 0;} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>四年级信息科技基础水平测试</h1>
+  <div class="role" id="identityBar">正在读取账号…</div>
+</div>
+
+<!-- ===================== 学生端 ===================== -->
+<div class="wrap" id="student">
+  <input type="hidden" id="stuClass">
+  <input type="hidden" id="stuNo">
+  <input type="hidden" id="stuName">
+
+  <div class="section">
+    <h2>一、填空题（每空 2 分，共 20 分）</h2>
+    <div id="fillArea"></div>
+  </div>
+
+  <div class="section">
+    <h2>二、选择题（每题 3 分，共 30 分）</h2>
+    <div id="choiceArea"></div>
+  </div>
+
+  <div class="section">
+    <h2>三、操作题（共 40 分，在下方虚拟机中完成）</h2>
+    <div id="opArea">
+      <div class="op-bar">
+        <button onclick="openWin('explorer')">🗂 我的电脑</button>
+        <button onclick="openWin('wps')">📝 WPS 文字</button>
+        <button onclick="openWin('data')">🔍 数据小侦探</button>
+      </div>
+      <div class="op-task">
+        <h3>任务单（操作题 40 分）</h3>
+        <ol>
+          <li><b>文件管理（12分）</b>：桌面建“四年级信息作业”，里面建“文档”“图片”子文件夹，把“自我介绍.txt”移进“文档”。</li>
+          <li><b>WPS文字（12分）</b>：打开WPS→新建；标题“我的信息科技小作品”设为<b>一号、加粗、居中</b>；正文“四年级，我要用数据说话！”，保存到“四年级信息作业\文档”，文件名“作品.docx”。</li>
+          <li><b>数据小侦探（16分）</b>：读水果表答 4 问（见“数据小侦探”）。</li>
+        </ol>
+        <div style="color:#777;font-size:11.5px;">双击文件夹进入；单击选中后用上方按钮；也可把文件拖到文件夹图标上移动。</div>
+      </div>
+
+      <div class="window" id="win-explorer" style="left:256px; top:48px; width:420px; height:360px;">
+        <div class="win-bar">我的电脑 — 文件管理<span class="x" onclick="closeWin('explorer')">✕</span></div>
+        <div class="win-body">
+          <div class="crumb" id="crumb"></div>
+          <div class="explorer-tools">
+            <button onclick="newFolder()">＋ 新建文件夹</button>
+            <button onclick="renameSel()">✎ 重命名</button>
+            <button onclick="deleteSel()">🗑 删除</button>
+            <button onclick="moveSel()">➡ 移动到…</button>
+            <button onclick="openSel()">↩ 打开</button>
+            <button onclick="goUp()">↑ 返回</button>
+          </div>
+          <div class="filearea" id="filearea"></div>
+        </div>
+      </div>
+
+      <div class="window" id="win-wps" style="left:300px; top:96px; width:470px; height:400px;">
+        <div class="win-bar">WPS 文字<span class="x" onclick="closeWin('wps')">✕</span></div>
+        <div class="win-body">
+          <div class="wps-toolbar">
+            <label>字号：</label>
+            <select id="wpsSize" onchange="applyTitleStyle()">
+              <option>初号</option><option>小初</option><option selected>一号</option><option>小一</option>
+              <option>二号</option><option>小二</option><option>三号</option><option>四号</option><option>小四</option><option>五号</option>
+            </select>
+            <button id="btnBold" onclick="toggleBold()"><b>B 加粗</b></button>
+            <button id="btnCenter" onclick="toggleCenter()">⬛ 居中</button>
+          </div>
+          <div class="wps-title" id="wpsTitle" contenteditable="true" oninput="wpsDoc.title=this.textContent"></div>
+          <textarea class="wps-body" id="wpsBody" oninput="wpsDoc.body=this.value" placeholder="在此输入正文…"></textarea>
+          <div style="margin-top:8px;">
+            <button class="btn-primary" style="border:none;padding:6px 14px;border-radius:5px;cursor:pointer;" onclick="saveDoc()">💾 保存到…</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="window" id="win-data" style="left:330px; top:60px; width:450px; height:420px;">
+        <div class="win-bar">数据小侦探<span class="x" onclick="closeWin('data')">✕</span></div>
+        <div class="win-body">
+          <p style="font-size:13px;margin:0 0 4px;">四(1)班同学最喜欢的水果统计：</p>
+          <table class="dtable"><tr><th>苹果</th><th>香蕉</th><th>橘子</th><th>草莓</th></tr>
+          <tr><td>12人</td><td>8人</td><td>6人</td><td>14人</td></tr></table>
+          <div class="dq"><label>1. 最喜欢哪种水果的人最多？请用表中的数字说明。</label><textarea id="q1"></textarea></div>
+          <div class="dq"><label>2. 一共有多少人参加调查？你是怎么算出来的？</label><textarea id="q2"></textarea></div>
+          <div class="dq"><label>3. 要向同学“证明”“草莓比苹果更受欢迎”，你怎么用这些数字说？（写一两句）</label><textarea id="q3"></textarea></div>
+          <div class="dq"><label>4. 给四种水果各编一个编号（如苹果01）方便统计，写写你的编码想法。</label><textarea id="q4"></textarea></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="center">
+    <button class="submit-btn" id="submitBtn" onclick="submitWork()">提交作业</button>
+    <div id="stuResult" style="margin-top:14px;font-size:15px;"></div>
+  </div>
+</div>
+
+<!-- ===================== 教师端 ===================== -->
+<div class="wrap" id="teacher">
+  <div class="section">
+    <h2>实时提交监控（教师端）</h2>
+    <div class="tstat">
+      <span class="pill" id="tCount">已提交：0 人</span>
+      <span class="pill" id="tOpFull">操作满分：0 人</span>
+      <span class="pill" id="tConn">连接状态：—</span>
+      <button onclick="exportCSV()">导出 CSV</button>
+      <button class="danger" onclick="clearAll()">清空全部</button>
+    </div>
+    <div id="teacherList"><div class="empty">等待学生提交…（请先用 node server.js 启动服务）</div></div>
+  </div>
+</div>
+
+<!-- 移动/保存弹窗 -->
+<div class="modal-bg" id="moveModal">
+  <div class="modal">
+    <h3 id="moveTitle">移动到…</h3>
+    <div id="moveTarget"></div>
+    <div class="row">
+      <button class="btn-cancel" onclick="closeMove()">取消</button>
+      <button class="btn-primary" onclick="doMove()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 结果弹窗（学生端提交后也可看） -->
+<div class="modal-bg" id="resultModal">
+  <div class="modal" style="width:520px;">
+    <h3>提交结果</h3>
+    <div id="resultBody"></div>
+    <div class="row">
+      <button class="btn-primary" onclick="closeResult()">知道了</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+/* =================== 学生名册（来自 四年级学生名单.xlsx） =================== */
+const ROSTER = {
+  "401":[["1","蔡月出"], ["2","陈颢昀"], ["3","陈芊言"], ["4","陈欣睿"], ["5","陈语诚"], ["6","陈悦鸣"], ["7","陈致凯"], ["8","池弈漩"], ["9","单曦晨"], ["10","傅裕程"], ["11","何瑞霖"], ["12","江子涵"], ["13","解茗西"], ["14","金雨琪"], ["15","阚泠月"], ["16","来诺依"], ["17","卢可欣"], ["18","麻恩愷"], ["19","倪雨善"], ["20","潘昕瑶"], ["21","冉孟杭"], ["22","沈翀"], ["23","王博"], ["24","王辰旭"], ["25","王宋祉霖"], ["26","王梓萌"], ["27","肖逸茗"], ["28","谢承霖"], ["29","徐澄朗"], ["30","徐池晚"], ["31","叶程语"], ["32","叶昕"], ["33","俞璟城"], ["34","俞柠柠"], ["35","张津菲"], ["36","张霄跃"], ["37","张弈"], ["38","章励"], ["39","赵思远"], ["40","赵未一"], ["41","赵一诺"], ["42","支润"], ["43","朱涵钰"], ["44","朱彦潼"], ["45","朱弈帆"]],
+  "402":[["1","陈婧祎"], ["2","陈煊鈜"], ["3","陈逸阳"], ["4","方晨铭"], ["5","冯清杨"], ["6","冯昱霖"], ["7","傅欣颖"], ["8","韩昊东"], ["9","何书涵"], ["10","胡坦巍"], ["11","蒋抒芮"], ["12","来芃宇"], ["13","礼悠然"], ["14","刘欣怡"], ["15","吕艺"], ["16","马子聿"], ["17","毛雨沐"], ["18","沈言蹊"], ["19","潘俊昊"], ["20","邵亦昕"], ["21","沈斯麦"], ["22","沈子喻"], ["23","帅舒涵"], ["24","王惟新"], ["25","王怡荃"], ["26","吴子遥"], ["27","徐润卿"], ["28","徐之恒"], ["29","许书奕"], ["30","杨朔"], ["31","叶泠萱"], ["32","叶思柔"], ["33","俞婉清"], ["34","俞沅杭"], ["35","张皓轩"], ["36","张可为"], ["37","张澍泉"], ["38","张育宁"], ["39","章书涵"], ["40","赵翊"], ["41","郑楚果"], ["42","郑可昕"], ["43","郑胤岐"], ["44","郑子衿"], ["45","周子衿"]],
+  "403":[["1","陈若卿"], ["2","陈亦甯"], ["3","董倚辰"], ["4","董哲源"], ["5","樊子豪"], ["6","方昊泽"], ["7","丰裕凌"], ["8","高语潼"], ["9","胡瑾翊"], ["10","黄靖宇"], ["11","黄思博"], ["12","黄馨萦"], ["13","黄越宁"], ["14","姜楠"], ["15","蒋乐尧"], ["16","金羿泽"], ["17","来允"], ["18","林景函"], ["19","刘瀚祺"], ["20","骆漪朵"], ["21","马铭妤"], ["22","潘锦程"], ["23","潘凌"], ["24","彭媛"], ["25","钱彦羽"], ["26","沈灵犀"], ["27","盛阅"], ["28","石岑汐"], ["29","宋佑锦"], ["30","孙琳皓"], ["31","汪谦颖"], ["32","王正则"], ["33","吴子睿"], ["34","夏楚凡"], ["35","徐逸淳"], ["36","杨羽墨"], ["37","于越"], ["38","张晨昱"], ["39","张秦语"], ["40","张舒忆"], ["41","张艺潇"], ["42","郑熙"], ["43","钟煦"], ["44","朱沐阳"], ["45","来远航"]],
+  "404":[["1","陈柏宇"], ["2","陈汐诺"], ["3","丁心妍"], ["4","房家玺"], ["5","顾家宁"], ["6","郭子涵"], ["7","黄穗"], ["8","霍锦默"], ["9","姜来"], ["10","孔小岛"], ["11","来钧涛"], ["12","劳歆妍"], ["13","李欣澄"], ["14","林浩琪"], ["15","林翌辰"], ["16","刘泽楷"], ["17","卢家毅"], ["18","陆毛扬"], ["19","金保泓"], ["20","潘一凡"], ["21","彭睿岩"], ["22","任天杭"], ["23","邵涵睿"], ["24","宋袁宇宸"], ["25","苏栎雯"], ["26","苏莯"], ["27","孙书曼"], ["28","孙洋曦"], ["29","王明磊"], ["30","王舒芸"], ["31","王周祺"], ["32","王子鸣"], ["33","熊嘉澍"], ["34","薛子奕"], ["35","杨悠悠"], ["36","袁梓琪"], ["37","袁梓瑶"], ["38","占恬安"], ["39","张楷淳"], ["40","张琳姝"], ["41","张琳晞"], ["42","张轩安"], ["43","赵叙廷"], ["44","赵昱星"], ["45","郑语桐"]]
+};
+/* 班级 / 学号 / 姓名 三级联动下拉 */
+function initRoster(){
+  var clsSel=document.getElementById('stuClass');
+  Object.keys(ROSTER).sort(function(a,b){return a-b;}).forEach(function(c){
+    var o=document.createElement('option'); o.value=c; o.textContent=c+'班'; clsSel.appendChild(o);
+  });
+  function fillStu(){
+    var c=clsSel.value, noSel=document.getElementById('stuNo'), nameSel=document.getElementById('stuName');
+    noSel.innerHTML='<option value="">请选择学号</option>';
+    nameSel.innerHTML='<option value="">请选择姓名</option>';
+    if(!c) return;
+    ROSTER[c].forEach(function(p){
+      var o1=document.createElement('option'); o1.value=p[0]; o1.textContent=p[0]; noSel.appendChild(o1);
+      var o2=document.createElement('option'); o2.value=p[1]; o2.textContent=p[1]; nameSel.appendChild(o2);
+    });
+  }
+  function sync(){
+    var c=clsSel.value, noSel=document.getElementById('stuNo'), nameSel=document.getElementById('stuName');
+    if(!c) return;
+    var map={}; ROSTER[c].forEach(function(p){ map[p[0]]=p[1]; map[p[1]]=p[0]; });
+    if(document.activeElement===noSel && noSel.value) nameSel.value=map[noSel.value]||'';
+    else if(document.activeElement===nameSel && nameSel.value) noSel.value=map[nameSel.value]||'';
+  }
+  clsSel.onchange=fillStu;
+  document.getElementById('stuNo').onchange=sync;
+  document.getElementById('stuName').onchange=sync;
+}
+function readPlatformIdentity(){
+  var name = localStorage.getItem('realName') || '';
+  var className = localStorage.getItem('className') || '';
+  var username = localStorage.getItem('username') || '';
+  var no = '';
+  var m = String(username).match(/20\d{2}(\d{2})(\d{2})$/);
+  if (m) no = String(parseInt(m[2], 10));
+  return { name: name, className: className, no: no, username: username };
+}
+function applyPlatformIdentity(){
+  var id = readPlatformIdentity();
+  document.getElementById('stuName').value = id.name;
+  document.getElementById('stuClass').value = id.className;
+  document.getElementById('stuNo').value = id.no;
+  var bar = document.getElementById('identityBar');
+  if (bar) {
+    bar.textContent = (id.name || '未登录') + (id.className ? ' · ' + id.className : '') + (id.no ? ' · 学号 ' + id.no : '');
+  }
+  var preview = /(?:^|[?&])preview=1(?:&|$)/.test(location.search) || localStorage.getItem('role') === 'TEACHER';
+  if (preview) {
+    var btn = document.getElementById('submitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '教师预览（不可提交）'; }
+  }
+}
+if(document.readyState!=='loading') applyPlatformIdentity();
+else document.addEventListener('DOMContentLoaded', applyPlatformIdentity);
+
+/* =================== 题目数据 =================== */
+var FILL_Q = [
+  '把鼠标指针移到图标上，快速按两下左键，这叫________。',
+  '键盘上删除光标前一个字的键叫________键（Backspace）。',
+  '在浏览器里输入网址后，按________键就能打开网页。',
+  '在WPS文字中，让文字变粗要点击工具栏上的________（B）按钮。',
+  'WPS演示里，一页一页的内容叫做一张________。',
+  '把文件分门别类放进不同的文件夹，这叫________管理。',
+  '身高、体重、温度这些数字和记录，都叫________。',
+  '用具体的数字来说明“我们班大部分同学喜欢跳绳”，就是用________来证明想法。',
+  '超市商品上黑白相间的竖条叫________码，扫码就能知道价格。',
+  '给每个同学编一个独一无二的学号，这种方便管理的方法叫________。'
+];
+var FILL_KEY = ['双击','退格','回车','加粗','幻灯片','文件','数据','数据','条形','编码'];
+var CHOICE_Q = [
+  {q:'想在网上找“杭州西湖”的照片，最好用（ ）。',o:['发电子邮件','用浏览器搜索','关掉电脑','打游戏'],a:'B'},
+  {q:'在WPS文字中，要让标题“居中”显示，应该点击（ ）。',o:['左对齐','居中','右对齐','下划线'],a:'B'},
+  {q:'下面哪个文件名最可能是WPS文字文档？（ ）',o:['春游.doc','春游.ppt','春游.jpg','春游.mp3'],a:'A'},
+  {q:'把“照片”文件夹里的图片移到“作业”文件夹，这叫做（ ）。',o:['复制','移动','删除','重命名'],a:'B'},
+  {q:'下面哪一组是可以用数字记录的“数据”？（ ）',o:['小明身高135厘米、体重32千克','今天天气真好','我最喜欢画画','妈妈做的饭真香'],a:'A'},
+  {q:'老师想证明“我们班男生比女生多”，最好用（ ）。',o:['一张男女生人数的统计表','一幅风景画','一首儿歌','一个童话故事'],a:'A'},
+  {q:'下面哪个是“身边的编码”？（ ）',o:['居民身份证号码','一首古诗','一段音乐','一片云'],a:'A'},
+  {q:'关于二维码，下列说法正确的是（ ）。',o:['扫一扫可以加好友、付钱、看网页','二维码里什么也存不了','二维码只有黑色没有白色','二维码会叫出声音'],a:'A'},
+  {q:'下列说法，正确的是（ ）。',o:['长时间盯屏幕对眼睛不好，要休息','可以把密码随便告诉网友','上网时随便点陌生链接','电脑不用爱护'],a:'A'},
+  {q:'学信息科技遇到不会的操作，你通常会（ ）。',o:['先自己试一试，再问老师和同学','马上放弃','假装会了','只等别人做'],a:'A'}
+];
+var CHOICE_KEY = CHOICE_Q.map(function(c){return c.a;});
+var TEACHER_CODE = '8888';
+
+/* 渲染填空/选择 */
+(function(){
+  var fa=document.getElementById('fillArea');
+  FILL_Q.forEach(function(t,i){
+    var d=document.createElement('div'); d.className='fill-q';
+    d.innerHTML=(i+1)+'. '+t.replace('________','<input id="fill'+(i+1)+'">');
+    fa.appendChild(d);
+  });
+  var ca=document.getElementById('choiceArea');
+  CHOICE_Q.forEach(function(c,i){
+    var d=document.createElement('div'); d.className='choice-q';
+    var html=(i+1)+'. '+c.q;
+    c.o.forEach(function(opt,j){
+      var lab=String.fromCharCode(65+j);
+      html+='<label class="opt"><input type="radio" name="ch'+(i+1)+'" value="'+lab+'">'+lab+'. '+opt+'</label>';
+    });
+    d.innerHTML=html; ca.appendChild(d);
+  });
+})();
+
+/* =================== 虚拟文件系统 =================== */
+function freshFs(){
+  return { name:'桌面', type:'folder', children:{
+    '自我介绍.txt': { type:'file', kind:'txt', content:'大家好，我是XXX，我喜欢信息科技课。' },
+    '春游照片.jpg': { type:'file', kind:'img' },
+    '班级通知.ppt': { type:'file', kind:'ppt' }
+  }};
+}
+var fs = freshFs();
+var explorerPath = [];
+var selectedName = null;
+
+function getNodeByPath(arr){ var n=fs; for(var i=0;i<arr.length;i++){ n=n.children[arr[i]]; if(!n) return null; } return n; }
+function getFolderByPathStr(str){ if(str===''||str==='桌面') return fs; return getNodeByPath(str.split('/')); }
+function collectFolders(node,prefix,out){ for(var k in node.children){ var c=node.children[k]; if(c.type==='folder'){ var p=prefix?prefix+'/'+k:k; out.push(p); collectFolders(c,p,out); } } }
+function allFolderPaths(){ var out=['桌面']; collectFolders(fs,'',out); return out; }
+
+function renderExplorer(){
+  var node=getNodeByPath(explorerPath);
+  var crumb='桌面'; for(var i=0;i<explorerPath.length;i++) crumb+=' / '+explorerPath[i];
+  document.getElementById('crumb').innerHTML='当前位置：<b>'+crumb+'</b>';
+  var area=document.getElementById('filearea'); area.innerHTML='';
+  for(var name in node.children){
+    var item=node.children[name];
+    var div=document.createElement('div');
+    div.className='fitem'+(selectedName===name?' sel':'');
+    div.setAttribute('data-name',name);
+    var icon=item.type==='folder'
+      ? '<svg width="34" height="30" viewBox="0 0 34 30"><path d="M2 6h11l3 4h16v18H2z" fill="#f6c244" stroke="#caa023"/></svg>'
+      : '<svg width="30" height="34" viewBox="0 0 30 34"><rect x="5" y="2" width="20" height="30" rx="2" fill="#fff" stroke="#9bb0cc"/><rect x="5" y="2" width="20" height="8" fill="#2b58a0"/></svg>';
+    div.innerHTML='<div class="fic">'+icon+'</div>'+name;
+    div.ondblclick=(function(nm){return function(){ if(item.type==='folder'){ explorerPath.push(nm); selectedName=null; renderExplorer(); } else openFile(item); };})(name);
+    div.onclick=(function(nm){return function(e){ e.stopPropagation(); selectedName=nm; renderExplorer(); };})(name);
+    div.draggable=(item.type==='file');
+    div.ondragstart=function(e){ e.dataTransfer.setData('text',this.getAttribute('data-name')); };
+    if(item.type==='folder'){
+      div.ondragover=function(e){ e.preventDefault(); this.classList.add('drop'); };
+      div.ondragleave=function(){ this.classList.remove('drop'); };
+      div.ondrop=(function(nm){return function(e){ e.preventDefault(); this.classList.remove('drop'); var src=e.dataTransfer.getData('text'); if(src&&src!==nm) moveFileTo(src, explorerPath.concat([nm])); };})(name);
+    }
+    area.appendChild(div);
+  }
+}
+document.getElementById('filearea').onclick=function(){ selectedName=null; renderExplorer(); };
+function openFile(item){ if(item.kind==='txt') alert('文件内容：\n\n'+item.content); else alert('该类型文件虚拟机暂不支持预览。'); }
+function openSel(){ if(!selectedName){alert('请先单击选中项目。');return;} var n=getNodeByPath(explorerPath); var it=n.children[selectedName]; if(it.type==='folder'){explorerPath.push(selectedName);selectedName=null;renderExplorer();}else openFile(it); }
+function goUp(){ if(explorerPath.length>0){explorerPath.pop();selectedName=null;renderExplorer();} }
+function newFolder(){ var name=prompt('请输入新文件夹名称：','新建文件夹'); if(!name)return; var n=getNodeByPath(explorerPath); if(n.children[name]){alert('该位置已存在同名项目。');return;} n.children[name]={type:'folder',children:{}}; renderExplorer(); }
+function renameSel(){ if(!selectedName){alert('请先单击选中要重命名的项目。');return;} var name=prompt('重命名为：',selectedName); if(!name||name===selectedName)return; var n=getNodeByPath(explorerPath); if(n.children[name]){alert('该位置已存在同名项目。');return;} n.children[name]=n.children[selectedName]; delete n.children[selectedName]; selectedName=name; renderExplorer(); }
+function deleteSel(){ if(!selectedName){alert('请先单击选中要删除的项目。');return;} if(!confirm('确定删除“'+selectedName+'”吗？'))return; var n=getNodeByPath(explorerPath); delete n.children[selectedName]; selectedName=null; renderExplorer(); }
+function moveFileTo(srcName,targetArr){
+  var srcNode=getNodeByPath(explorerPath), targetNode=getNodeByPath(targetArr);
+  if(!srcNode||!targetNode)return;
+  if(targetNode.children[srcName]){alert('目标文件夹中已有同名项目。');return;}
+  var srcIsAncestor=false;
+  if(srcNode.children[srcName].type==='folder'){
+    if(targetArr.length>=explorerPath.length+1){
+      var same=true; for(var i=0;i<explorerPath.length;i++) if(targetArr[i]!==explorerPath[i]) same=false;
+      if(same&&targetArr[explorerPath.length]===srcName) srcIsAncestor=true;
+    }
+  }
+  if(srcIsAncestor){alert('不能把文件夹移动到它自己里面。');return;}
+  targetNode.children[srcName]=srcNode.children[srcName]; delete srcNode.children[srcName]; selectedName=null; renderExplorer();
+}
+function moveSel(){
+  if(!selectedName){alert('请先单击选中要移动的文件。');return;}
+  var paths=allFolderPaths(); var html='<select id="moveSelect" style="width:100%">';
+  for(var i=0;i<paths.length;i++) html+='<option value="'+paths[i]+'">'+paths[i]+'</option>';
+  html+='</select>';
+  document.getElementById('moveTarget').innerHTML='选择目标文件夹：<br>'+html+'<div style="font-size:12px;color:#777;margin-top:6px;">将移动：“'+selectedName+'”</div>';
+  document.getElementById('moveTitle').textContent='移动到…';
+  document.querySelector('#moveModal .btn-primary').onclick=doMove;
+  document.getElementById('moveModal').style.display='flex';
+}
+function closeMove(){ document.getElementById('moveModal').style.display='none'; }
+function doMove(){ var t=document.getElementById('moveSelect').value; moveFileTo(selectedName, t==='桌面'?[]:t.split('/')); closeMove(); }
+
+/* =================== WPS =================== */
+var wpsDoc={title:'',titleStyle:{fontSize:'一号',bold:false,align:'left'},body:''};
+function applyTitleStyle(){ wpsDoc.titleStyle.fontSize=document.getElementById('wpsSize').value; var t=document.getElementById('wpsTitle'); t.style.fontSize=wpsDoc.titleStyle.fontSize; t.style.fontWeight=wpsDoc.titleStyle.bold?'bold':'normal'; t.style.textAlign=wpsDoc.titleStyle.align; }
+function toggleBold(){ wpsDoc.titleStyle.bold=!wpsDoc.titleStyle.bold; document.getElementById('btnBold').classList.toggle('on',wpsDoc.titleStyle.bold); applyTitleStyle(); }
+function toggleCenter(){ wpsDoc.titleStyle.align=(wpsDoc.titleStyle.align==='center')?'left':'center'; document.getElementById('btnCenter').classList.toggle('on',wpsDoc.titleStyle.align==='center'); applyTitleStyle(); }
+function saveDoc(){
+  var paths=allFolderPaths(); var html='<select id="saveLoc" style="width:100%">';
+  for(var i=0;i<paths.length;i++) html+='<option value="'+paths[i]+'">'+paths[i]+'</option>';
+  html+='</select>';
+  document.getElementById('moveTarget').innerHTML='保存到位置：<br>'+html+'<br>文件名：<input id="saveName" value="作品.docx" style="width:100%">';
+  document.getElementById('moveTitle').textContent='保存到…';
+  document.getElementById('moveModal').style.display='flex';
+  document.querySelector('#moveModal .btn-primary').onclick=function(){
+    var loc=document.getElementById('saveLoc').value; var fname=document.getElementById('saveName').value.trim();
+    if(!fname){alert('请输入文件名');return;}
+    if(fname.indexOf('.')<0) fname+='.docx';
+    var node=getFolderByPathStr(loc==='桌面'?'':loc);
+    node.children[fname]={type:'file',kind:'docx',doc:{title:wpsDoc.title,titleStyle:{fontSize:wpsDoc.titleStyle.fontSize,bold:wpsDoc.titleStyle.bold,align:wpsDoc.titleStyle.align},body:wpsDoc.body}};
+    alert('已保存：“'+loc+' / '+fname+'”'); closeMove();
+  };
+}
+
+/* =================== 窗口管理 =================== */
+var zIndex=20;
+function openWin(id){ var w=document.getElementById('win-'+id); w.style.display='flex'; w.style.zIndex=(++zIndex); if(id==='explorer') renderExplorer(); }
+function closeWin(id){ document.getElementById('win-'+id).style.display='none'; }
+function makeDraggable(win,parent){
+  var bar=win.querySelector('.win-bar');
+  bar.onmousedown=function(e){
+    if(e.target.classList.contains('x')) return;
+    var pr=parent.getBoundingClientRect(), r=win.getBoundingClientRect();
+    var ox=e.clientX-r.left, oy=e.clientY-r.top;
+    function mv(ev){ var x=ev.clientX-pr.left-ox, y=ev.clientY-pr.top-oy; x=Math.max(0,Math.min(x,pr.width-win.offsetWidth)); y=Math.max(0,Math.min(y,pr.height-win.offsetHeight)); win.style.left=x+'px'; win.style.top=y+'px'; }
+    function up(){ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); }
+    document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+    win.style.zIndex=(++zIndex);
+  };
+}
+['explorer','wps','data'].forEach(function(id){ makeDraggable(document.getElementById('win-'+id), document.getElementById('opArea')); });
+
+/* =================== 评分（参数化，学生端与教师端共用） =================== */
+function scoreOp(fsArg,wpsArg,q){
+  var s1=0,fb1=[];
+  var f1=fsArg.children['四年级信息作业'];
+  if(f1&&f1.type==='folder'){ s1+=4; var d=f1.children['文档'],p=f1.children['图片'];
+    if(d&&d.type==='folder'){ s1+=2; if(p&&p.type==='folder'){s1+=2;}else fb1.push('“图片”子文件夹未创建'); }
+    else fb1.push('“文档”或“图片”子文件夹未创建');
+    if(d&&d.children['自我介绍.txt']){ s1+=4; } else fb1.push('“自我介绍.txt”未移动到“文档”文件夹');
+  } else fb1.push('未创建“四年级信息作业”文件夹');
+
+  var s2=0,fb2=[];
+  var f1b=fsArg.children['四年级信息作业'];
+  if(!f1b||!f1b.children['文档']){ fb2.push('未找到“四年级信息作业/文档”'); }
+  else { var d2=f1b.children['文档']; var doc=d2.children['作品.docx']||d2.children['作品'];
+    if(!doc||doc.kind!=='docx'){ fb2.push('未在“文档”文件夹保存“作品.docx”'); }
+    else { s2+=2; var t=doc.doc;
+      if(t.titleStyle.fontSize==='一号') s2+=2; else fb2.push('标题未设为“一号”');
+      if(t.titleStyle.bold) s2+=2; else fb2.push('标题未加粗');
+      if(t.titleStyle.align==='center') s2+=2; else fb2.push('标题未居中');
+      var to=t.title&&t.title.indexOf('我的信息科技小作品')>=0, bo=t.body&&t.body.indexOf('四年级，我要用数据说话！')>=0;
+      if(to&&bo) s2+=4; else { if(to) s2+=2; if(!to) fb2.push('标题缺“我的信息科技小作品”'); if(!bo) fb2.push('正文缺“四年级，我要用数据说话！”'); }
+    }
+  }
+  function sc(txt,rules){ var s=0; for(var i=0;i<rules.length;i++) if(rules[i].test(txt)) s+=rules[i].pts; return s; }
+  var s3a=sc(q.q1,[{test:function(s){return s.indexOf('草莓')>=0;},pts:2},{test:function(s){return s.indexOf('14')>=0||s.indexOf('十四')>=0;},pts:2}]);
+  var s3b=sc(q.q2,[{test:function(s){return s.indexOf('40')>=0;},pts:2},{test:function(s){return /(12|八).*(8|八)|(8|八).*(12|八)|(12|八).*(6|六)|(6|六).*(14|十四)/.test(s)||s.indexOf('+')>=0||s.indexOf('加')>=0;},pts:2}]);
+  var s3c=sc(q.q3,[{test:function(s){return (s.indexOf('14')>=0)&&(s.indexOf('12')>=0);},pts:2},{test:function(s){return (s.indexOf('草莓')>=0)&&(s.indexOf('更')>=0||s.indexOf('多')>=0||s.indexOf('受欢迎')>=0);},pts:2}]);
+  var s3d=sc(q.q4,[{test:function(s){return /(01|02|03|04|1号|2号|3号|4号|\d)/.test(s)&&(s.indexOf('苹果')>=0||s.indexOf('香蕉')>=0||s.indexOf('橘子')>=0||s.indexOf('草莓')>=0);},pts:2},{test:function(s){return s.length>6;},pts:2}]);
+  var s3=s3a+s3b+s3c+s3d;
+  return {op1:{score:s1,fb:fb1},op2:{score:s2,fb:fb2},op3:{score:s3,parts:[s3a,s3b,s3c,s3d]},opTotal:s1+s2+s3};
+}
+
+/* =================== 学生端提交 =================== */
+function collectState(){
+  var fill=[],choice=[],i;
+  for(i=0;i<10;i++) fill.push(document.getElementById('fill'+(i+1)).value.trim());
+  for(i=0;i<10;i++){ var sel=document.querySelector('input[name=ch'+(i+1)+']:checked'); choice.push(sel?sel.value:''); }
+  var q={q1:document.getElementById('q1').value,q2:document.getElementById('q2').value,q3:document.getElementById('q3').value,q4:document.getElementById('q4').value};
+  return { name:document.getElementById('stuName').value.trim(), class:document.getElementById('stuClass').value.trim(), no:document.getElementById('stuNo').value.trim(),
+    fill:fill, choice:choice, fs:JSON.parse(JSON.stringify(fs)), fsWps:wpsDoc, q:q };
+}
+function submitWork(){
+  if (/(?:^|[?&])preview=1(?:&|$)/.test(location.search) || localStorage.getItem('role') === 'TEACHER') {
+    alert('教师预览模式不可提交。');
+    return;
+  }
+  applyPlatformIdentity();
+  var st=collectState();
+  if(!st.name){ alert('未读取到登录账号，请返回课程地图重新进入。'); return; }
+  var op=scoreOp(st.fs, st.fsWps, st.q);
+  var cRight=0; for(var i=0;i<10;i++) if(st.choice[i]===CHOICE_KEY[i]) cRight++;
+  st.op=op; st.choiceRight=cRight;
+  st.className = st['class'];
+  var token = localStorage.getItem('token') || '';
+  if (!token) { alert('登录已失效，请重新登录后再提交。'); return; }
+  document.getElementById('submitBtn').disabled=true;
+  fetch('/api/learn/pretest/g4',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify(st)
+  })
+    .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, status:r.status, data:d }; }); })
+    .then(function(res){
+      if (res.status === 401) { alert('登录已过期，请重新登录。'); document.getElementById('submitBtn').disabled=false; return; }
+      if (!res.ok || (res.data && res.data.code && res.data.code !== 200)) {
+        alert((res.data && res.data.message) || '提交失败，请稍后重试。');
+        document.getElementById('submitBtn').disabled=false;
+        return;
+      }
+      var scored = (res.data && res.data.data) || {};
+      showStuResult(st, op, cRight, scored);
+    })
+    .catch(function(){ alert('提交失败：网络异常，请稍后重试。'); document.getElementById('submitBtn').disabled=false; });
+}
+function showStuResult(st,op,cRight,scored){
+  var fill = scored.fillScore != null ? scored.fillScore : '—';
+  var total = scored.totalScore != null ? scored.totalScore : '—';
+  var html='<b>提交成功！成绩已记入当前账号。</b><br>机判总分：'+total+' / 90<br>填空：'+fill+' / 20　选择：'+(cRight*3)+' / 30（答对 '+cRight+' / 10）　操作：'+op.opTotal+' / 40';
+  document.getElementById('stuResult').innerHTML=html;
+}
+function closeResult(){ document.getElementById('resultModal').style.display='none'; }
+
+/* =================== 教师端 =================== */
+var submissions=[];
+function switchRole(role){
+  if(role==='teacher'){
+    var pwd=prompt('请输入教师口令：','');
+    if(pwd!==TEACHER_CODE){ alert('口令错误，无法进入教师端。'); return; }
+    document.getElementById('student').style.display='none';
+    document.getElementById('teacher').style.display='block';
+    connectStream();
+  } else {
+    document.getElementById('teacher').style.display='none';
+    document.getElementById('student').style.display='block';
+  }
+}
+function connectStream(){
+  var es=new EventSource('/api/stream');
+  es.onopen=function(){ document.getElementById('tConn').textContent='连接状态：已连接'; };
+  es.onerror=function(){ document.getElementById('tConn').textContent='连接状态：断开（检查服务）'; };
+  es.onmessage=function(e){ try{ submissions=JSON.parse(e.data); renderTeacher(); }catch(_){} };
+}
+function fmtTime(ts){ var d=new Date(ts); return d.toLocaleTimeString('zh-CN'); }
+function renderTeacher(){
+  document.getElementById('tCount').textContent='已提交：'+submissions.length+' 人';
+  var full=submissions.filter(function(s){return s.op&&s.op.opTotal===40;}).length;
+  document.getElementById('tOpFull').textContent='操作满分：'+full+' 人';
+  var list=document.getElementById('teacherList');
+  if(submissions.length===0){ list.innerHTML='<div class="empty">等待学生提交…</div>'; return; }
+  var html='';
+  submissions.slice().reverse().forEach(function(s,idx){
+    var op=s.op||scoreOp(s.fs,s.fsWps,s.q);
+    var cRight=s.choiceRight!=null?s.choiceRight:0;
+    var badge=op.opTotal===40?'ok':'bad';
+    var badgeTxt='操作 '+op.opTotal+'/40';
+    html+='<div class="card"><div class="head" onclick="toggleCard('+idx+')">';
+    html+='<span class="name">'+(s.name||'未署名')+'</span><span class="sub">'+(s.class?(s.class+'班'):'')+' '+(s.no||'')+' · '+fmtTime(s.ts)+'</span>';
+    html+='<span class="badge '+badge+'">'+badgeTxt+'</span><span class="badge">选择 '+cRight+'/10</span>';
+    html+='</div><div class="detail" id="det'+idx+'">'+detailHtml(s,op)+'</div></div>';
+  });
+  list.innerHTML=html;
+}
+function detailHtml(s,op){
+  var h='';
+  // 填空
+  h+='<div class="grp"><b>一、填空题</b>（教师评定）</div>';
+  for(var i=0;i<10;i++){ var v=s.fill[i]||'（空）'; h+='<div class="ansline">'+(i+1)+'. 学生答：'+v+'　<span style="color:#999">参考答案：'+FILL_KEY[i]+'</span></div>'; }
+  // 选择
+  h+='<div class="grp"><b>二、选择题</b>（机判 '+s.choiceRight+'/10）</div>';
+  for(var j=0;j<10;j++){ var sv=s.choice[j]||'（空）'; var ok=sv===CHOICE_KEY[j]; h+='<div class="ansline">'+(j+1)+'. 学生选 '+sv+' '+(ok?'<span class="rk">✓</span>':'<span class="wr">✗ 应'+CHOICE_KEY[j]+'</span>')+'</div>'; }
+  // 操作
+  h+='<div class="grp"><b>三、操作题　合计 '+op.opTotal+'/40</b></div>';
+  h+='<div class="ansline">操作一 文件管理：<b>'+op.op1.score+'/12</b></div>'; op.op1.fb.forEach(function(f){h+='<div class="fb">· '+f+'</div>';});
+  h+='<div class="ansline">操作二 WPS文字：<b>'+op.op2.score+'/12</b></div>'; op.op2.fb.forEach(function(f){h+='<div class="fb">· '+f+'</div>';});
+  h+='<div class="ansline">操作三 数据小侦探：<b>'+op.op3.score+'/16</b>（第1题'+op.op3.parts[0]+'/4，第2题'+op.op3.parts[1]+'/4，第3题'+op.op3.parts[2]+'/4，第4题'+op.op3.parts[3]+'/4，建议教师复核）</div>';
+  return h;
+}
+function toggleCard(idx){ var d=document.getElementById('det'+idx); if(d) d.classList.toggle('open'); }
+function clearAll(){ if(!confirm('确定清空全部提交记录？'))return; fetch('/api/clear',{method:'POST'}).then(function(){ submissions=[]; renderTeacher(); }).catch(function(){alert('清空失败');}); }
+function exportCSV(){
+  if(submissions.length===0){alert('暂无数据');return;}
+  var rows=['姓名,班级,学号,提交时间,填空(教师看),选择答对,操作一,操作二,操作三,操作合计'];
+  submissions.forEach(function(s){
+    var op=s.op||scoreOp(s.fs,s.fsWps,s.q);
+    var fill=s.fill.map(function(x){return '"'+(x||'').replace(/"/g,'""')+'"';}).join('|');
+    rows.push([s.name||'',s.class||'',s.no||'',fmtTime(s.ts),fill,s.choiceRight||0,op.op1.score,op.op2.score,op.op3.score,op.opTotal].join(','));
+  });
+  var blob=new Blob(['﻿'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='四年级信息科技测试_提交汇总.csv'; a.click();
+}
+
+/* 初始化 */
+applyTitleStyle();
+renderExplorer();
+</script>
+</body>
+</html>

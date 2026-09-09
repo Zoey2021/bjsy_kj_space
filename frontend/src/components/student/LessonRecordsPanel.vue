@@ -4,13 +4,13 @@
       <h2>📚 我的学习记录</h2>
       <el-tag type="info" size="small">共 {{ totalLogCount }} 次提交</el-tag>
     </header>
-    <p class="panel-tip">展示本课各活动的提交情况，每次提交都会保留记录；每完成一个活动可获得 2 积分。</p>
+    <p class="panel-tip">展示本课各活动的提交情况；每完成一个环节可获得积分，完整拓展任务额外加分。</p>
 
     <div class="summary-row">
       <div class="summary-card">
         <span class="s-icon">🏆</span>
         <div>
-          <div class="s-val">{{ data.totalPoints || 0 }}</div>
+          <div class="s-val">{{ data.earnedPoints || data.totalPoints || 0 }}</div>
           <div class="s-label">排名积分</div>
         </div>
       </div>
@@ -55,7 +55,7 @@
     <div v-show="tab === 'points'" class="points-list">
       <div v-for="p in lessonPoints" :key="p.id" class="point-row">
         <span>{{ p.description }}</span>
-        <strong>+{{ p.points }}</strong>
+        <strong>{{ p.points > 0 ? '+' : '' }}{{ p.points }}</strong>
         <span class="time">{{ formatTime(p.createdAt) }}</span>
       </div>
       <el-empty v-if="!lessonPoints.length" description="本课暂无积分记录" :image-size="64" />
@@ -96,7 +96,7 @@ const totalLogCount = computed(() =>
 const lessonPoints = computed(() => {
   const lessonId = props.lessonId
   return (data.value.pointsHistory || []).filter((p) => {
-    if (p.sourceType !== 'ACTIVITY') return false
+    if (p.sourceType !== 'ACTIVITY' && p.sourceType !== 'BONUS') return false
     const sid = p.sourceId
     return sid && Math.floor(sid / 100) === lessonId
   })

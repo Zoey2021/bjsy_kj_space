@@ -1,68 +1,64 @@
 <template>
   <div class="cld-page" v-loading="loading">
     <header class="cld-header">
-      <div class="header-left">
+      <div class="header-row header-row-filters">
         <h1 class="header-title">
           <span class="title-icon">📊</span>
           全班学习情况看板
         </h1>
-      </div>
-      <div class="header-pills">
-        <div class="pill pill-select">
-          <span class="pill-label">年级</span>
-          <el-select
-            v-model="gradeId"
-            size="small"
-            class="filter-select grade-select"
-            placeholder="选择年级"
-            filterable
-            @change="onGradeChange"
-          >
-            <el-option v-for="g in grades" :key="g.id" :label="g.name" :value="g.id" />
-          </el-select>
-        </div>
-        <div class="pill pill-select">
-          <span class="pill-label">课程</span>
-          <el-select
-            v-model="lessonId"
-            size="small"
-            class="filter-select lesson-select"
-            placeholder="选择课时"
-            filterable
-            :disabled="!lessons.length"
-            @change="onLessonChange"
-          >
-            <el-option v-for="les in lessons" :key="les.id" :label="les.title" :value="les.id" />
-          </el-select>
-        </div>
-        <div class="pill pill-select">
-          <span class="pill-label">班级</span>
-          <el-select
-            v-model="classId"
-            size="small"
-            class="filter-select class-select"
-            placeholder="选择班级"
-            @change="onClassChange"
-          >
-            <el-option v-for="c in classes" :key="c.id" :label="c.name" :value="c.id" />
-          </el-select>
-        </div>
-        <div class="pill pill-code" v-if="classId">
-          <span class="pill-label">班级码</span>
-          <span class="pill-value code-val">{{ classLoginCode || (codeLoading ? '…' : '—') }}</span>
-          <button type="button" class="code-copy" title="复制班级码" :disabled="!classLoginCode" @click="copyLoginCode">⎘</button>
-          <button type="button" class="code-refresh" title="刷新班级码（随机6位，8小时有效）" @click="refreshLoginCode">↻</button>
-        </div>
-        <div class="pill">
-          <span class="pill-label">人数</span>
-          <span class="pill-value">{{ data.totalStudents || 0 }} 人</span>
-        </div>
-        <div class="pill">
-          <span class="pill-label">活动</span>
-          <span class="pill-value">{{ data.activityCount || 0 }} 个</span>
+        <div class="header-pills">
+          <div class="pill pill-select">
+            <span class="pill-label">年级</span>
+            <el-select
+              v-model="gradeId"
+              size="small"
+              class="filter-select grade-select"
+              placeholder="选择年级"
+              filterable
+              @change="onGradeChange"
+            >
+              <el-option v-for="g in grades" :key="g.id" :label="g.name" :value="g.id" />
+            </el-select>
+          </div>
+          <div class="pill pill-select">
+            <span class="pill-label">课程</span>
+            <el-select
+              v-model="lessonId"
+              size="small"
+              class="filter-select lesson-select"
+              placeholder="选择课时"
+              filterable
+              :disabled="!lessons.length"
+              @change="onLessonChange"
+            >
+              <el-option v-for="les in lessons" :key="les.id" :label="les.title" :value="les.id" />
+            </el-select>
+          </div>
+          <div class="pill pill-select">
+            <span class="pill-label">班级</span>
+            <el-select
+              v-model="classId"
+              size="small"
+              class="filter-select class-select"
+              placeholder="选择班级"
+              @change="onClassChange"
+            >
+              <el-option v-for="c in classes" :key="c.id" :label="c.name" :value="c.id" />
+            </el-select>
+          </div>
+          <div class="pill pill-code" v-if="classId">
+            <span class="pill-label">班级码</span>
+            <span class="pill-value code-val">{{ classLoginCode || (codeLoading ? '…' : '—') }}</span>
+            <button type="button" class="code-copy" title="复制班级码" :disabled="!classLoginCode" @click="copyLoginCode">⎘</button>
+            <button type="button" class="code-refresh" title="刷新班级码（随机6位，8小时有效）" @click="refreshLoginCode">↻</button>
+          </div>
+          <div class="pill">
+            <span class="pill-label">人数</span>
+            <span class="pill-value">{{ data.totalStudents || 0 }} 人</span>
+          </div>
         </div>
       </div>
-      <div class="header-actions">
+      <div class="header-row header-row-actions">
         <button
           v-if="classId && lessonId"
           type="button"
@@ -75,6 +71,8 @@
           class="action-btn teal"
           @click="broadcastCountdown"
         >⏱ 倒计时提醒</button>
+        <button type="button" class="action-btn indigo" @click="$router.push('/teacher/pretest/g4')">📝 四年级前测</button>
+        <button type="button" class="action-btn indigo" @click="$router.push('/teacher/pretest/g6')">📝 六年级前测</button>
         <button type="button" class="action-btn orange" @click="$router.push('/teacher/points')">🏆 班级积分榜单</button>
         <button type="button" class="action-btn pink" @click="$router.push('/teacher/ai-evaluation')">🤖 AI 课程评价</button>
         <button type="button" class="icon-btn" title="刷新" @click="loadData">↻</button>
@@ -981,15 +979,26 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
 }
 .cld-header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 16px;
+  flex-direction: column;
+  gap: 10px;
   padding: 14px 20px;
   background: linear-gradient(135deg, #5b4fc7 0%, #7c3aed 45%, #9333ea 100%);
   color: #fff;
   box-shadow: 0 4px 20px rgba(91, 79, 199, 0.35);
 }
-.header-left { flex: 0 0 auto; }
+.header-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.header-row-filters {
+  gap: 12px;
+}
+.header-row-actions {
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-left: 2px;
+}
 .header-title {
   margin: 0;
   font-size: 18px;
@@ -997,7 +1006,8 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .title-icon { font-size: 20px; }
 .live-tag { margin-left: 4px; }
@@ -1005,9 +1015,11 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
 .header-pills {
   flex: 1;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 8px;
   min-width: 0;
+  overflow: hidden;
 }
 .pill {
   display: flex;
@@ -1018,6 +1030,7 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
   border-radius: 999px;
   font-size: 12px;
   backdrop-filter: blur(4px);
+  flex-shrink: 0;
 }
 .pill-label { opacity: 0.85; white-space: nowrap; }
 .pill-value { font-weight: 600; white-space: nowrap; }
@@ -1053,10 +1066,8 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
   background: rgba(255, 255, 255, 0.95);
   box-shadow: none;
 }
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.header-row-actions .action-btn,
+.header-row-actions .icon-btn {
   flex-shrink: 0;
 }
 .action-btn {

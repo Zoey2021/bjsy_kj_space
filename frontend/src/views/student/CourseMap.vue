@@ -33,7 +33,15 @@
             >
               {{ gradeBadge(g.key).label }}
             </button>
-            <div class="grade-card-head">{{ g.cardTitle }}</div>
+            <div class="grade-card-head">
+              <button
+                v-if="showPretest(g.key)"
+                type="button"
+                class="pretest-btn"
+                @click.stop="openPretest(g.key)"
+              >前测</button>
+              <span>{{ g.cardTitle }}</span>
+            </div>
             <div class="dual-covers">
               <div
                 v-for="slot in g.slots"
@@ -181,6 +189,21 @@ const gradeBadge = (gradeKey) => getGradeBadge(enrollmentYear.value, gradeKey)
 
 const canOpenBook = (gradeKey) => canEnterGrade(enrollmentYear.value, gradeKey)
 
+const showPretest = (gradeKey) => {
+  const year = String(enrollmentYear.value)
+  if (gradeKey === '四年级') return year === '2023'
+  if (gradeKey === '六年级') return year === '2021'
+  return false
+}
+
+const openPretest = (gradeKey) => {
+  if (gradeKey === '六年级') {
+    router.push('/student/pretest/g6')
+    return
+  }
+  router.push('/student/pretest/g4')
+}
+
 const onBadgeClick = (group) => {
   if (gradeAccess(group.key) !== GRADE_ACCESS.COMPLETED) return
   openGradeResult(group)
@@ -204,6 +227,8 @@ onMounted(async () => {
   schoolBooks.value = school.data || []
   const profile = meRes.data || {}
   enrollmentYear.value = detectEnrollmentYear(profile)
+  if (profile.username) localStorage.setItem('username', profile.username)
+  if (profile.realName) localStorage.setItem('realName', profile.realName)
   if (profile.className) localStorage.setItem('className', profile.className)
   if (enrollmentYear.value) {
     localStorage.setItem('enrollmentYear', enrollmentYear.value)
@@ -355,6 +380,7 @@ const openInquirySlot = (slot) => {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 .grade-card-head {
+  position: relative;
   flex-shrink: 0;
   text-align: center;
   font-size: 14px;
@@ -363,6 +389,24 @@ const openInquirySlot = (slot) => {
   margin-bottom: 8px;
   padding-bottom: 6px;
   border-bottom: 1px dashed #94a3b8;
+}
+.pretest-btn {
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-70%);
+  border: none;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+.pretest-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
 }
 .grade-card-locked .grade-card-head {
   color: #64748b;

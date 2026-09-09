@@ -5,7 +5,7 @@ export const TEACHER_MODULES = [
     path: '/teacher/course-map',
     title: '课程地图',
     icon: 'MapLocation',
-    desc: '建课、排课、管理课时'
+    desc: '目录导航与电子教材'
   },
   {
     key: 'dashboard',
@@ -19,8 +19,7 @@ export const TEACHER_MODULES = [
     path: '/teacher/activity-editor',
     title: '活动编辑',
     icon: 'EditPen',
-    desc: '配置互动任务与提交方式',
-    shelved: true
+    desc: '编辑课时介绍、资源与探究活动'
   },
   {
     key: 'ai-evaluation',

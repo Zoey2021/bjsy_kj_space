@@ -195,7 +195,7 @@ CREATE TABLE learn_visit_log (
 CREATE TABLE learn_points (
   id            BIGINT   NOT NULL AUTO_INCREMENT,
   student_id    BIGINT   NOT NULL,
-  source_type   VARCHAR(20) NOT NULL COMMENT 'TASK/COMPLETE/BONUS',
+  source_type   VARCHAR(20) NOT NULL COMMENT 'TASK/ACTIVITY/BONUS/REDEEM',
   source_id     BIGINT   NULL,
   points        INT      NOT NULL,
   description   VARCHAR(200) NULL,
@@ -271,6 +271,48 @@ CREATE TABLE learn_park_access (
   UNIQUE KEY uk_park_student (student_id),
   KEY idx_park_class_status (class_id, status)
 ) ENGINE=InnoDB COMMENT='游学乐园访问申请与授权';
+
+CREATE TABLE learn_pretest_g4 (
+  id             BIGINT       NOT NULL AUTO_INCREMENT,
+  student_id     BIGINT       NOT NULL COMMENT '学生ID',
+  class_id       BIGINT       NULL COMMENT '班级ID',
+  student_name   VARCHAR(50)  NOT NULL COMMENT '提交时姓名',
+  class_name     VARCHAR(50)  NULL COMMENT '提交时班级名',
+  student_no     VARCHAR(20)  NULL COMMENT '学号（从账号解析）',
+  fill_score     INT          NOT NULL DEFAULT 0,
+  choice_right   INT          NOT NULL DEFAULT 0,
+  choice_score   INT          NOT NULL DEFAULT 0,
+  op_score       INT          NOT NULL DEFAULT 0,
+  total_score    INT          NOT NULL DEFAULT 0,
+  content_json   LONGTEXT     NOT NULL,
+  submitted_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_pretest_g4_student (student_id),
+  KEY idx_pretest_g4_class (class_id)
+) ENGINE=InnoDB COMMENT='四年级信息科技基础水平前测提交';
+
+CREATE TABLE learn_pretest_g6 (
+  id             BIGINT       NOT NULL AUTO_INCREMENT,
+  student_id     BIGINT       NOT NULL COMMENT '学生ID',
+  class_id       BIGINT       NULL COMMENT '班级ID',
+  student_name   VARCHAR(50)  NOT NULL COMMENT '提交时姓名',
+  class_name     VARCHAR(50)  NULL COMMENT '提交时班级名',
+  student_no     VARCHAR(20)  NULL COMMENT '学号（从账号解析）',
+  fill_score     INT          NOT NULL DEFAULT 0,
+  choice_right   INT          NOT NULL DEFAULT 0,
+  choice_score   INT          NOT NULL DEFAULT 0,
+  op_score       INT          NOT NULL DEFAULT 0,
+  att_score      INT          NOT NULL DEFAULT 0,
+  total_score    INT          NOT NULL DEFAULT 0,
+  level_code     VARCHAR(4)   NULL COMMENT 'A/B/C',
+  content_json   LONGTEXT     NOT NULL,
+  submitted_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_pretest_g6_student (student_id),
+  KEY idx_pretest_g6_class (class_id)
+) ENGINE=InnoDB COMMENT='六年级信息科技前测提交';
 
 -- ============================================================
 -- 表关系说明：
@@ -467,7 +509,57 @@ INSERT INTO course_resource (lesson_id, title, res_type, content_text, sort_orde
 INSERT INTO course_task (lesson_id, title, description, task_type, config_json, max_score, sort_order) VALUES
 (1, '课前思考', '想一想你每天会在哪些场景使用在线服务', 'FORM', '{"fields":[{"name":"content","label":"我的思考","type":"textarea","required":true}]}', 10, 1);
 
-INSERT INTO sys_config (config_key, config_value, description) VALUES ('site_name', '中小学信息科技学习空间', '网站名称'), ('points_per_task', '5', '每完成一个任务奖励积分');
+INSERT INTO sys_config (config_key, config_value, description) VALUES
+('site_name', '中小学信息科技学习空间', '网站名称'),
+('points_per_task', '5', '每完成一个任务奖励积分'),
+('points_per_activity', '2', '每完成一个探究环节奖励积分'),
+('points_extension_bonus', '1', '完整完成拓展任务额外积分');
+
+-- 积分商城
+CREATE TABLE IF NOT EXISTS learn_mall_item (
+  id         BIGINT       NOT NULL AUTO_INCREMENT,
+  code       VARCHAR(40)  NOT NULL,
+  name       VARCHAR(80)  NOT NULL,
+  icon       VARCHAR(20)  NOT NULL,
+  cost       INT          NOT NULL,
+  sort_order INT          NOT NULL DEFAULT 0,
+  enabled    INT          NOT NULL DEFAULT 1,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_mall_item_code (code)
+) ENGINE=InnoDB COMMENT='积分商城奖品';
+
+CREATE TABLE IF NOT EXISTS learn_mall_order (
+  id         BIGINT       NOT NULL AUTO_INCREMENT,
+  student_id BIGINT       NOT NULL,
+  class_id   BIGINT       NULL,
+  item_id    BIGINT       NOT NULL,
+  item_name  VARCHAR(80)  NOT NULL,
+  item_icon  VARCHAR(20)  NULL,
+  points     INT          NOT NULL,
+  status     VARCHAR(20)  NOT NULL DEFAULT 'APPLIED',
+  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_mall_order_student (student_id),
+  KEY idx_mall_order_class (class_id)
+) ENGINE=InnoDB COMMENT='积分兑换申请';
+
+CREATE TABLE IF NOT EXISTS learn_mall_class (
+  id         BIGINT   NOT NULL AUTO_INCREMENT,
+  class_id   BIGINT   NOT NULL,
+  apply_open INT      NOT NULL DEFAULT 0,
+  opened_by  BIGINT   NULL,
+  updated_at DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_mall_class (class_id)
+) ENGINE=InnoDB COMMENT='班级是否开放兑换申请';
+
+INSERT INTO learn_mall_item (code, name, icon, cost, sort_order, enabled) VALUES
+('star_future_2', '星未来积分2', '🌟', 10, 1, 1),
+('snack', '零食1份', '🍪', 20, 2, 1),
+('stationery', '文具1份', '✏️', 20, 3, 1),
+('praise_letter', '表扬信', '💌', 20, 4, 1),
+('milk_tea', '奶茶1份', '🧋', 50, 5, 1),
+('info_blindbox', '信息盲盒小礼物', '🎁', 20, 6, 1);
 
 -- 五年级下册第8课：飞象探究单（试点）
 INSERT INTO course_resource (lesson_id, title, res_type, content_url, content_text, sort_order)

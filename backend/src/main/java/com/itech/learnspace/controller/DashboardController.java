@@ -41,9 +41,6 @@ public class DashboardController {
     public ApiResponse<List<SysClass>> classes() {
         checkTeacher();
         SysUser user = authService.currentUser();
-        if ("ADMIN".equals(user.getRole())) {
-            return ApiResponse.ok(new java.util.ArrayList<SysClass>());
-        }
         return ApiResponse.ok(dashboardService.getTeacherClasses(user.getId()));
     }
 

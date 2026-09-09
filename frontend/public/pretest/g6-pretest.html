@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>六年级信息科技前测系统 · 学习准备度诊断</title>
+<style>
+  * { box-sizing:border-box; }
+  body { font-family:"Microsoft YaHei","PingFang SC",sans-serif; color:#1f2d3d; line-height:1.7; margin:0; background:#eef2f7; }
+  .topbar { position:sticky; top:0; z-index:50; background:#16314f; color:#fff; display:flex; align-items:center; gap:12px; padding:10px 18px; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+  .topbar h1 { font-size:17px; margin:0; flex:1; font-weight:700; }
+  #identityBar { font-size:13px; white-space:nowrap; opacity:.92; }
+  .topbar button { background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.3); padding:7px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
+  .topbar button.active { background:#2b7de9; border-color:#2b7de9; }
+  .wrap { max-width:880px; margin:18px auto; background:#fff; padding:24px 30px; border-radius:12px; box-shadow:0 3px 14px rgba(0,0,0,.08); }
+  #teacher { display:none; }
+  h2.sec { font-size:17px; color:#1f4e79; border-left:5px solid #2b7de9; padding-left:10px; margin:22px 0 10px; }
+  .meta { display:flex; gap:16px; flex-wrap:wrap; border:1px solid #d8e0ea; border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:14px; }
+  .meta label { display:flex; align-items:center; gap:6px; }
+  .meta input { border:none; border-bottom:1px solid #9fb3c8; padding:2px 4px; font-size:14px; width:120px; }
+  .tip { font-size:12.5px; color:#8190a3; background:#f3f7fc; border-left:3px solid #9cc2ec; padding:6px 10px; border-radius:0 6px 6px 0; margin:8px 0; }
+  .q { margin:9px 0; } .q .stem { font-weight:600; }
+  .pts { float:right; font-size:12px; color:#2b7de9; font-weight:700; }
+  .fib { width:78px; border:1px solid #b9c7d6; border-radius:5px; padding:2px 5px; font-size:14px; }
+  .opts label { display:block; margin:3px 0 3px 22px; cursor:pointer; }
+  .task { border:1px solid #e1e8f0; border-radius:10px; padding:12px 16px; margin:12px 0; background:#fcfdff; }
+  .task h3 { font-size:15px; color:#1f4e79; margin:0 0 6px; }
+  .step { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid #cfdae6; border-radius:8px; padding:8px 10px; margin:6px 0; cursor:grab; user-select:none; }
+  .step.dragging { opacity:.4; }
+  .step .no { width:26px; height:26px; flex:0 0 26px; border-radius:50%; background:#2b7de9; color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+  .step .txt { flex:1; }
+  .step .mv { display:flex; flex-direction:column; }
+  .step .mv button { border:none; background:#eef3f8; color:#365; width:26px; height:20px; border-radius:5px; cursor:pointer; font-size:11px; margin:1px 0; }
+  .step.branch { border-color:#e0a32e; background:#fff8ec; }
+  .btn { display:inline-block; margin:8px 6px 2px 0; padding:8px 16px; background:#2b7de9; color:#fff; border:none; border-radius:8px; font-size:14px; cursor:pointer; }
+  .btn.alt { background:#eef3f8; color:#1f4e79; }
+  .btn:active { transform:translateY(1px); }
+  .flow { margin-top:8px; }
+  .flow .node { display:inline-flex; flex-direction:column; align-items:center; }
+  .flow .box { background:#eaf2fb; border:2px solid #2b7de9; border-radius:8px; padding:6px 12px; font-size:13px; }
+  .flow .arr { color:#2b7de9; font-size:18px; line-height:1; margin:2px 0; }
+  .choose { display:flex; gap:10px; flex-wrap:wrap; margin:8px 0; }
+  .choose button { border:2px solid #cfdae6; background:#fff; border-radius:8px; padding:8px 16px; cursor:pointer; font-size:14px; }
+  .choose button.sel { border-color:#2b7de9; background:#eaf2fb; }
+  table.t3 { border-collapse:collapse; margin:8px 0; font-size:14px; }
+  table.t3 th, table.t3 td { border:1px solid #cfdae6; padding:6px 14px; text-align:center; }
+  table.t3 th { background:#eaf2fb; }
+  /* 教师端 */
+  .pill { display:inline-block; background:#eaf2fb; color:#1f4e79; border-radius:14px; padding:5px 14px; font-size:13px; margin:0 6px 8px 0; font-weight:600; }
+  .pill.a { background:#e6f6ec; color:#2e9e5b; } .pill.b { background:#fdf3e0; color:#c8881a; } .pill.c { background:#fdeaea; color:#d9534f; }
+  .card { border:1px solid #d8e0ea; border-radius:10px; margin:8px 0; overflow:hidden; }
+  .card .head { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; background:#f7fafd; }
+  .card .head:hover { background:#eef4fb; }
+  .card .name { font-weight:700; } .card .sub { color:#8190a3; font-size:13px; }
+  .lv { padding:2px 10px; border-radius:12px; font-size:12px; font-weight:700; color:#fff; }
+  .lvA{background:#2e9e5b;} .lvB{background:#e0a32e;} .lvC{background:#d9534f;}
+  .card .detail { display:none; padding:12px 16px; border-top:1px solid #eef2f7; font-size:14px; }
+  .card .detail.open { display:block; }
+  .fb { font-size:13px; margin:3px 0; } .fb .ok{color:#2e9e5b;font-weight:700;} .fb .no{color:#d9534f;font-weight:700;}
+  .empty { color:#9aa7b6; text-align:center; padding:30px; }
+  .modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:100; align-items:center; justify-content:center; }
+  .modal-bg.show { display:flex; }
+  .modal { background:#fff; border-radius:12px; padding:20px 24px; max-width:520px; width:92%; max-height:84vh; overflow:auto; }
+  .modal h3 { margin:0 0 8px; color:#16314f; }
+  .scorebig { font-size:30px; font-weight:800; color:#2b7de9; }
+  @media print { .topbar{display:none;} .wrap{box-shadow:none;} }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>六年级信息科技前测系统 · 学习准备度诊断（100分 / 30分钟）</h1>
+  <div id="identityBar" style="font-size:13px;white-space:nowrap;">正在读取账号…</div>
+</div>
+
+<!-- ============ 学生端 ============ -->
+<div class="wrap" id="student">
+  <input type="hidden" id="stuName">
+  <input type="hidden" id="stuClass">
+  <input type="hidden" id="stuNo">
+  <div class="tip">说明：这份卷子不是考你“会不会编程”，而是看看你为学习“用算法解决问题”准备好了哪些本领。填空、选择、操作题都在这一页完成，做完点“提交作业”即可。</div>
+
+  <h2 class="sec">一、填空题（每空 2 分，共 20 分）</h2>
+  <div id="fillArea"></div>
+
+  <h2 class="sec">二、选择题（每题 3 分，共 30 分）</h2>
+  <div id="choiceArea"></div>
+
+  <h2 class="sec">三、操作题（共 40 分，可交互）</h2>
+
+  <div class="task">
+    <h3><span class="pts">12 分</span>操作一 · 泡一杯茶</h3>
+    <p>步骤顺序打乱了，请<b>拖动卡片</b>（或用 ▲▼）排成正确先后次序；排好后点"生成我的流程图"。</p>
+    <div id="list1"></div>
+    <button class="btn alt" onclick="genFlow()">生成我的流程图</button>
+    <div class="flow" id="flow1"></div>
+  </div>
+
+  <div class="task">
+    <h3><span class="pts">14 分</span>操作二 · 过马路</h3>
+    <p>先<b>拖动卡片</b>排出过马路步骤；再<b>点一下</b>哪一步是"判断 / 分支"，并选择它在流程图里的图形。</p>
+    <div id="list2"></div>
+    <div style="margin-top:8px;">① 哪一步是"判断 / 分支"？<span id="branchPick" style="color:#8190a3;font-size:13px;">（点上面卡片选择）</span></div>
+    <div style="margin-top:8px;">② 这一步在流程图里通常用什么图形表示？</div>
+    <div class="choose" id="shapeChoose">
+      <button data-shape="矩形">矩形</button>
+      <button data-shape="菱形">菱形</button>
+      <button data-shape="圆形">圆形</button>
+    </div>
+  </div>
+
+  <div class="task">
+    <h3><span class="pts">14 分</span>操作三 · 用 Excel 帮班级投票</h3>
+    <p>六(1)班投票"最喜欢的水果"：苹果 12、香蕉 8、橘子 6、草莓 14（人）。在"小 Excel"里点按钮看看能算出什么：</p>
+    <table class="t3"><tr><th>水果</th><th>苹果</th><th>香蕉</th><th>橘子</th><th>草莓</th></tr><tr><td>人数</td><td>12</td><td>8</td><td>6</td><td>14</td></tr></table>
+    <div class="choose" id="excelBtns">
+      <button data-act="sum">算总人数</button>
+      <button data-act="max">找最多人喜欢的水果</button>
+      <button data-act="count">数一数有几种水果</button>
+    </div>
+    <div id="excelOut" style="font-size:14px;color:#1f4e79;min-height:22px;"></div>
+    <p style="margin-bottom:2px;">(1) 一共有多少人参加投票？请写出算式：</p>
+    <input id="q31" style="width:60%;padding:6px;border:1px solid #cfdae6;border-radius:6px;" placeholder="例如：12+8+6+14=40">
+    <p style="margin-bottom:2px;">(2) 你用了什么方法很快算出"总人数"和"喜欢最多的是哪种水果"？</p>
+    <input id="q32" style="width:80%;padding:6px;border:1px solid #cfdae6;border-radius:6px;" placeholder="例如：求和 / 比较大小 / COUNT">
+    <p style="margin-bottom:2px;">(3) 用数据证明"草莓最受欢迎"，应该选哪个水果？</p>
+    <div class="choose" id="fruitChoose">
+      <button data-fruit="苹果">苹果</button>
+      <button data-fruit="香蕉">香蕉</button>
+      <button data-fruit="橘子">橘子</button>
+      <button data-fruit="草莓">草莓</button>
+    </div>
+  </div>
+
+  <h2 class="sec">四、学习情感态度（10 分）</h2>
+  <div class="tip">情感态度题按"完成度"计 10 分（每题作答即给分），教师端会看到你的具体选择，用于了解学习态度，不按对错扣分。</div>
+  <div id="attArea"></div>
+
+  <button class="btn" id="submitBtn" onclick="submitWork()">提交作业</button>
+  <span id="submitHint" style="color:#8190a3;font-size:13px;margin-left:10px;"></span>
+</div>
+
+<!-- ============ 教师端 ============ -->
+<div class="wrap" id="teacher">
+  <div>
+    <span class="pill" id="tCount">已提交：0 人</span>
+    <span class="pill a" id="tA">A：0</span>
+    <span class="pill b" id="tB">B：0</span>
+    <span class="pill c" id="tC">C：0</span>
+    <span class="pill" id="tConn">连接状态：—</span>
+    <button class="btn alt" onclick="exportCSV()">导出 CSV</button>
+    <button class="btn alt" onclick="clearAll()">清空全部</button>
+  </div>
+  <div id="teacherList"><div class="empty">等待学生提交…（请先运行 node server.js 启动服务）</div></div>
+</div>
+
+<!-- 学生提交结果弹窗 -->
+<div class="modal-bg" id="resultModal">
+  <div class="modal">
+    <h3>提交成功！你的准备度得分</h3>
+    <div id="resultBody"></div>
+    <div style="text-align:right;margin-top:12px;"><button class="btn" onclick="closeResult()">知道了</button></div>
+  </div>
+</div>
+
+<script>
+/* ============== 题库（对标《课标》"身边的算法"模块·入口能力） ============== */
+var FILL = [
+  {q:'按照一定______一步一步完成的事情，常常可以看作一种“算法”。', blanks:1, key:[['顺序','步骤']], pts:2},
+  {q:'描述算法常用的方法有：自然语言、______图和伪代码。', blanks:1, key:[['流程']], pts:2},
+  {q:'算法一般有三个特点：______（有头有尾、能结束）、______（每步明确）、有输入和______。', blanks:3, key:[['有限','有穷'],['确定'],['输出']], pts:2},
+  {q:'“先刷牙，再洗脸，最后睡觉”这样的先后次序，在算法里叫做______结构。', blanks:1, key:[['顺序']], pts:2},
+  {q:'“如果下雨就带伞，否则不带”这样的情形，在算法里叫做______结构（也叫选择结构）。', blanks:1, key:[['分支','选择']], pts:2},
+  {q:'重复做同一件事，比如“每天读10分钟书，读7天”，在算法里叫做______结构。', blanks:1, key:[['循环']], pts:2},
+  {q:'在 Excel 中，要很快算出“一组数里有多少个”，可以用______函数。', blanks:1, key:[['count','计数','统计']], pts:2},
+  {q:'把一个大问题拆成几个小问题来想，这种方法叫______。', blanks:1, key:[['分解']], pts:2},
+  {q:'用简单的词或符号代替一个复杂的东西，这种方法叫______。', blanks:1, key:[['抽象']], pts:2},
+  {q:'在 Excel 中，要算一组数的平均数，可以用______函数。', blanks:1, key:[['average','平均','均值']], pts:2}
+];
+var CHOICE = [
+  {q:'下面哪件事最像一个“算法”？', opts:['随手涂鸦','按食谱一步步做蛋糕','发呆','听一首歌'], ans:'B'},
+  {q:'“先开机，再打开软件，最后开始打字”主要体现了算法的什么特点？', opts:['随机','有顺序','很难','没用'], ans:'B'},
+  {q:'流程图中，表示“做一件事 / 处理”的常用图形是？', opts:['圆角矩形','矩形','菱形','箭头'], ans:'B'},
+  {q:'流程图中，表示“判断 / 选择”的常用图形是？', opts:['矩形','平行四边形','菱形','椭圆形'], ans:'C'},
+  {q:'下面哪个是“分支结构”的例子？', opts:['从头读到尾','如果得分≥60就及格，否则不及格','把课文抄一遍','排队领饭'], ans:'B'},
+  {q:'下面哪个是“循环结构”的例子？', opts:['起床穿衣服','把作业写一遍','每天做5道口算题，连做7天','吃早饭'], ans:'C'},
+  {q:'用 Excel 统计“喜欢苹果的同学有几人”，最适合用？', opts:['求和','计数','排序','画图'], ans:'B'},
+  {q:'把“怎样借一本书”写成一步一步的话，这叫用______描述算法。', opts:['自然语言','音乐','颜色','舞蹈'], ans:'A'},
+  {q:'想让电脑帮我们“从1数到100，找出其中的偶数”，合适的做法是？', opts:['一个一个判断','随便猜一个','不做了','直接问别人答案'], ans:'A'},
+  {q:'关于算法，下面说法正确的是？', opts:['只有电脑才用算法','人做事也常常用到算法思想','算法没有顺序','算法很难，没有用'], ans:'B'}
+];
+var ATT = [
+  {q:'遇到不会的题，你的做法是？', opts:['马上放弃','先自己想想，再问','立刻问别人要答案','假装会了']},
+  {q:'你对“用电脑或程序帮我们解决问题”感兴趣吗？', opts:['很感兴趣','有点兴趣','无所谓','不感兴趣']},
+  {q:'你愿意尝试用人工智能（AI）工具帮助自己学习吗？', opts:['很愿意','可以试试','不太确定','不愿意']},
+  {q:'你觉得“按步骤、有顺序地做事”重要吗？', opts:['很重要','比较重要','不太重要','不重要']}
+];
+
+/* 操作题数据 */
+var T1 = [{id:'a',t:'把茶叶放进杯子'},{id:'b',t:'倒水冲泡'},{id:'c',t:'准备一个干净杯子'},{id:'d',t:'等一会儿，茶泡好了'},{id:'e',t:'洗净杯子'}];
+var T1_correct = ['c','e','a','b','d'];
+var T2 = [{id:'s1',t:'到路口'},{id:'s2',t:'看红绿灯，判断红绿'},{id:'s3',t:'绿灯就过马路，红灯就等待'},{id:'s4',t:'过马路'},{id:'s5',t:'到家'}];
+var T2_correct = ['s1','s2','s3','s4','s5'];
+var T2_branch = 's2';
+var order1 = T1.map(function(x){return x.id;}), order2 = T2.map(function(x){return x.id;});
+var branchPick=null, shapePick=null, fruitPick=null, flowGen=false;
+
+/* ============== 渲染：填空 / 选择 / 情感 ============== */
+function renderFill(){
+  var box=document.getElementById('fillArea'); box.innerHTML='';
+  FILL.forEach(function(f,i){
+    var html='<div class="q"><span class="pts">'+f.pts+'分</span>'+(i+1)+'. '+f.q.replace(/_{3,}/g,function(){return '<input class="fib" data-q="'+i+'" style="width:70px">';})+ '</div>';
+    box.insertAdjacentHTML('beforeend', html);
+  });
+}
+function renderChoice(){
+  var box=document.getElementById('choiceArea'); box.innerHTML='';
+  CHOICE.forEach(function(c,i){
+    var html='<div class="q"><span class="pts">3分</span>'+(i+1)+'. '+c.q+'<div class="opts">';
+    c.opts.forEach(function(o,k){ var L=String.fromCharCode(65+k); html+='<label><input type="radio" name="c'+(i+1)+'" value="'+L+'"> '+L+'. '+o+'</label>'; });
+    html+='</div></div>'; box.insertAdjacentHTML('beforeend', html);
+  });
+}
+function renderAtt(){
+  var box=document.getElementById('attArea'); box.innerHTML='';
+  ATT.forEach(function(a,i){
+    var html='<div class="q"><span class="pts">2分</span>'+(i+1)+'. '+a.q+'<div class="opts">';
+    a.opts.forEach(function(o,k){ var L=String.fromCharCode(65+k); html+='<label><input type="radio" name="a'+(i+1)+'" value="'+L+'"> '+L+'. '+o+'</label>'; });
+    html+='</div></div>'; box.insertAdjacentHTML('beforeend', html);
+  });
+}
+
+/* ============== 操作题交互 ============== */
+function renderList(listEl, data, order){
+  listEl.innerHTML='';
+  order.forEach(function(id, idx){
+    var d=data.find(function(x){return x.id===id;});
+    var div=document.createElement('div'); div.className='step'; div.draggable=true; div.dataset.id=id;
+    div.innerHTML='<div class="no">'+(idx+1)+'</div><div class="txt">'+d.t+'</div>'+
+      '<div class="mv"><button onclick="move(\''+listEl.id+'\',\''+id+'\',-1)">▲</button>'+
+      '<button onclick="move(\''+listEl.id+'\',\''+id+'\',1)">▼</button></div>';
+    div.addEventListener('dragstart',function(e){ e.dataTransfer.setData('text',id); div.classList.add('dragging'); });
+    div.addEventListener('dragend',function(){ div.classList.remove('dragging'); });
+    div.addEventListener('dragover',function(e){ e.preventDefault(); });
+    div.addEventListener('drop',function(e){
+      e.preventDefault(); var from=e.dataTransfer.getData('text'), to=id; if(from===to) return;
+      var arr=(listEl.id==='list1')?order1:order2; var fi=arr.indexOf(from), ti=arr.indexOf(to);
+      arr.splice(ti,0,arr.splice(fi,1)[0]); if(listEl.id==='list1') order1=arr; else order2=arr;
+      renderList(listEl,data,arr);
+    });
+    if(listEl.id==='list2'){
+      div.addEventListener('click',function(){
+        branchPick=id; document.getElementById('branchPick').textContent='已选：'+d.t;
+        Array.prototype.forEach.call(listEl.children,function(c){c.classList.remove('branch');}); div.classList.add('branch');
+      });
+    }
+    listEl.appendChild(div);
+  });
+}
+function move(listId,id,dir){
+  var arr=(listId==='list1')?order1:order2; var i=arr.indexOf(id), j=i+dir; if(j<0||j>=arr.length) return;
+  arr.splice(j,0,arr.splice(i,1)[0]); if(listId==='list1') order1=arr; else order2=arr;
+  renderList(document.getElementById(listId),(listId==='list1')?T1:T2,arr);
+}
+function genFlow(){
+  flowGen=true; var html='';
+  order1.forEach(function(id,i){ var d=T1.find(function(x){return x.id===id;}); if(i>0) html+='<div class="arr">↓</div>'; html+='<div class="node"><div class="box">'+d.t+'</div></div>'; });
+  document.getElementById('flow1').innerHTML=html;
+}
+document.getElementById('shapeChoose').addEventListener('click',function(e){ if(e.target.tagName!=='BUTTON')return; shapePick=e.target.dataset.shape; Array.prototype.forEach.call(this.children,function(b){b.classList.remove('sel');}); e.target.classList.add('sel'); });
+document.getElementById('excelBtns').addEventListener('click',function(e){
+  if(e.target.tagName!=='BUTTON')return; var act=e.target.dataset.act, out='';
+  if(act==='sum') out='总人数 = 12 + 8 + 6 + 14 = 40（人）';
+  if(act==='max') out='人数最多的是：草莓（14 人）→ 最受欢迎';
+  if(act==='count') out='一共有 4 种水果';
+  document.getElementById('excelOut').textContent=out;
+});
+document.getElementById('fruitChoose').addEventListener('click',function(e){ if(e.target.tagName!=='BUTTON')return; fruitPick=e.target.dataset.fruit; Array.prototype.forEach.call(this.children,function(b){b.classList.remove('sel');}); e.target.classList.add('sel'); });
+
+/* ============== 统一评分（学生端与教师端共用；教师端对提交快照重算） ============== */
+function matchAny(val, keys){ val=(val||'').toLowerCase(); return keys.some(function(k){ return val.indexOf(k.toLowerCase())>=0; }); }
+function gradeFill(fillAns){
+  var score=0, detail=[];
+  FILL.forEach(function(f,i){
+    var ans=fillAns[i]||[]; var okCount=0;
+    for(var b=0;b<f.blanks;b++){ if(matchAny(ans[b], f.key[b])) okCount++; }
+    var sc = (f.blanks===1) ? (okCount>=1?f.pts:0) : Math.round(f.pts*okCount/f.blanks);
+    score+=sc;
+    detail.push({q:i+1, score:sc, max:f.pts, ok:(sc===f.pts), ans:ans.join('/')});
+  });
+  return {score:score, detail:detail};
+}
+function gradeChoice(choiceAns){
+  var score=0, detail=[];
+  CHOICE.forEach(function(c,i){ var v=choiceAns[i]||''; var ok=(v===c.ans); if(ok) score+=3; detail.push({q:i+1, ans:v, correct:c.ans, ok:ok}); });
+  return {score:score, detail:detail};
+}
+function gradeOp(op){
+  var c1=0; op.order1.forEach(function(id,i){ if(T1_correct[i]===id) c1++; });
+  var s11=c1*2;
+  var s12=op.flowGenerated?2:0;
+  var c2=0; op.order2.forEach(function(id,i){ if(T2_correct[i]===id) c2++; });
+  var s21=Math.round(8*c2/5);
+  var s22a=(op.branchPick===T2_branch)?3:0;
+  var s22b=(op.shapePick==='菱形')?3:0;
+  var s22=s22a+s22b;
+  var s31=(/\b40\b/.test(op.q31)||/12\s*\+\s*8\s*\+\s*6\s*\+\s*14/.test(op.q31))?4:0;
+  var s32=(/求和|计数|比较|最大|max|sum|count|加|多/i.test(op.q32))?6:0;
+  var s33=(op.fruitPick==='草莓')?4:0;
+  var parts=[
+    {name:'操作一(1) 泡茶排序', score:s11, max:10, ok:c1===5, msg:c1===5?'顺序完全正确！':'有 '+(5-c1)+' 个步骤位置不对。正确：准备杯子→洗净杯子→放茶叶→倒水冲泡→等一会儿。'},
+    {name:'操作一(2) 画流程图', score:s12, max:2, ok:s12===2, msg:s12?'已生成流程图，很好。':'点“生成我的流程图”展示步骤。'},
+    {name:'操作二(1) 过马路步骤', score:s21, max:8, ok:c2===5, msg:c2===5?'步骤顺序正确！':'有 '+(5-c2)+' 步位置不对。正确：到路口→看红绿灯判断→绿灯行红灯等→过马路→到家。'},
+    {name:'操作二(2) 判断/分支', score:s22, max:6, ok:s22===6, msg:(s22a?'找对“判断”步骤。':'“判断/分支”应是“看红绿灯，判断红绿”。')+' '+(s22b?'流程图用菱形，正确！':'表示“判断”要用菱形。')},
+    {name:'操作三(1) 总人数算式', score:s31, max:4, ok:s31===4, msg:s31?'对，总人数是 40 人。':'算式应为 12+8+6+14=40。'},
+    {name:'操作三(2) 方法', score:s32, max:6, ok:s32===6, msg:s32?'能借助求和/计数/比较大小找结论，很好。':'可写：用“求和”算总人数，用“比较大小/最大值”找最受欢迎。'},
+    {name:'操作三(3) 用数据证明', score:s33, max:4, ok:s33===4, msg:s33?'正确，草莓14人最多，最受欢迎。':'应看数据：草莓14人最多→最受欢迎。'}
+  ];
+  var total=s11+s12+s21+s22+s31+s32+s33;
+  return {score:total, max:40, parts:parts, c1:c1, s22:s22, s32:s32};
+}
+
+function computeLevel(total, fillAns, choiceAns, op){
+  var c1=op.c1, s22=op.s22, s32=op.s32;
+  var conceptFuzzy = !matchAny(fillAns[0]&&fillAns[0][0], FILL[0].key[0]) && (choiceAns[0]!==CHOICE[0].ans);
+  var noSequence = (c1<=1);
+  if(total>=85 && c1===5 && s22===6 && s32===6) return 'A';
+  if(total<65 || conceptFuzzy || noSequence) return 'C';
+  return 'B';
+}
+function gradeAtt(att){
+  var n=(att||[]).filter(function(x){return x;}).length;
+  return Math.round(n/4*10);
+}
+function gradeAll(sub){
+  var f=gradeFill(sub.fill), c=gradeChoice(sub.choice), o=gradeOp(sub.op), a=gradeAtt(sub.att);
+  var total=f.score+c.score+o.score+a;
+  var level=computeLevel(total, sub.fill, sub.choice, o);
+  return {fill:f, choice:c, op:o, att:a, total:total, level:level};
+}
+
+/* ============== 收集与提交 ============== */
+function collectFill(){
+  var out=[]; for(var i=0;i<FILL.length;i++){ var arr=[]; document.querySelectorAll('.fib[data-q="'+i+'"]').forEach(function(inp){ arr.push(inp.value.trim()); }); out.push(arr); } return out;
+}
+function collectChoice(){ var out=[]; for(var i=0;i<CHOICE.length;i++){ var el=document.querySelector('input[name="c'+(i+1)+'"]:checked'); out.push(el?el.value:''); } return out; }
+function collectAtt(){ var out=[]; for(var i=0;i<ATT.length;i++){ var el=document.querySelector('input[name="a'+(i+1)+'"]:checked'); out.push(el?el.value:''); } return out; }
+
+function readPlatformIdentity(){
+  var name = localStorage.getItem('realName') || '';
+  var className = localStorage.getItem('className') || '';
+  var username = localStorage.getItem('username') || '';
+  var no = '';
+  var m = String(username).match(/20\d{2}(\d{2})(\d{2})$/);
+  if (m) no = String(parseInt(m[2], 10));
+  return { name: name, className: className, no: no, username: username };
+}
+function applyPlatformIdentity(){
+  var id = readPlatformIdentity();
+  document.getElementById('stuName').value = id.name;
+  document.getElementById('stuClass').value = id.className;
+  document.getElementById('stuNo').value = id.no;
+  var bar = document.getElementById('identityBar');
+  if (bar) {
+    bar.textContent = (id.name || '未登录') + (id.className ? ' · ' + id.className : '') + (id.no ? ' · 学号 ' + id.no : '');
+  }
+  var preview = /(?:^|[?&])preview=1(?:&|$)/.test(location.search) || localStorage.getItem('role') === 'TEACHER';
+  if (preview) {
+    var btn = document.getElementById('submitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '教师预览（不可提交）'; }
+  }
+}
+function submitWork(){
+  if (/(?:^|[?&])preview=1(?:&|$)/.test(location.search) || localStorage.getItem('role') === 'TEACHER') {
+    alert('教师预览模式不可提交。');
+    return;
+  }
+  applyPlatformIdentity();
+  var name=document.getElementById('stuName').value.trim();
+  var cls=document.getElementById('stuClass').value.trim();
+  var no=document.getElementById('stuNo').value.trim();
+  if(!name){ alert('未读取到登录账号，请返回课程地图重新进入。'); return; }
+  var token = localStorage.getItem('token') || '';
+  if (!token) { alert('登录已失效，请重新登录后再提交。'); return; }
+  var sub={ name:name, class:cls, className:cls, no:no,
+    fill:collectFill(), choice:collectChoice(), att:collectAtt(),
+    op:{ order1:order1.slice(), order2:order2.slice(), branchPick:branchPick, shapePick:shapePick, flowGenerated:flowGen, q31:document.getElementById('q31').value, q32:document.getElementById('q32').value, fruitPick:fruitPick } };
+  var g=gradeAll(sub);
+  var choiceRight = (g.choice.detail||[]).filter(function(d){return d.ok;}).length;
+  sub.scores = { fill:g.fill.score, choice:g.choice.score, choiceRight:choiceRight, op:g.op.score, att:g.att, total:g.total, level:g.level };
+  document.getElementById('submitBtn').disabled=true;
+  fetch('/api/learn/pretest/g6',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify(sub)
+  })
+    .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, status:r.status, data:d }; }); })
+    .then(function(res){
+      if (res.status === 401) { alert('登录已过期，请重新登录。'); document.getElementById('submitBtn').disabled=false; return; }
+      if (!res.ok || (res.data && res.data.code && res.data.code !== 200)) {
+        alert((res.data && res.data.message) || '提交失败，请稍后重试。');
+        document.getElementById('submitBtn').disabled=false;
+        return;
+      }
+      document.getElementById('submitHint').textContent='已提交，教师端可看到你的作答。';
+      showStudentResult(sub,g);
+    })
+    .catch(function(){ alert('提交失败：网络异常，请稍后重试。'); document.getElementById('submitBtn').disabled=false; });
+}
+function showStudentResult(sub,g){
+  var h='<div>填空 <b>'+g.fill.score+'/20</b> · 选择 <b>'+g.choice.score+'/30</b> · 操作 <b>'+g.op.score+'/40</b> · 情感 <b>'+g.att+'/10</b></div>';
+  h+='<div style="margin:8px 0;">总准备度得分：<span class="scorebig">'+g.total+'</span> / 100　等级参考：<span class="lv lv'+g.level+'">'+g.level+'</span></div>';
+  h+='<div class="fb">'+ (g.level==='A'?'准备度很好，可以进入“用算法解决真实问题”的学习。': g.level==='B'?'基本能跟上，个别地方再练练就更稳了。':'概念还比较模糊，需要从生活实例多练，老师会给你更多脚手架。') +'</div>';
+  document.getElementById('resultBody').innerHTML=h;
+  document.getElementById('resultModal').classList.add('show');
+}
+function closeResult(){ document.getElementById('resultModal').classList.remove('show'); }
+
+/* ============== 角色切换 ============== */
+var TEACHER_CODE='8888';
+function switchRole(role){
+  if(role==='teacher'){ var pwd=prompt('请输入教师口令：'); if(pwd!==TEACHER_CODE){ alert('口令错误，无法进入教师端。'); return; }
+    document.getElementById('student').style.display='none'; document.getElementById('teacher').style.display='block';
+    document.getElementById('btnStudent').classList.remove('active'); document.getElementById('btnTeacher').classList.add('active');
+    connectStream();
+  } else {
+    document.getElementById('teacher').style.display='none'; document.getElementById('student').style.display='block';
+    document.getElementById('btnTeacher').classList.remove('active'); document.getElementById('btnStudent').classList.add('active');
+  }
+}
+
+/* ============== 教师端：实时 + 渲染 ============== */
+var submissions=[];
+function connectStream(){
+  if(typeof EventSource==='undefined'){ document.getElementById('tConn').textContent='连接状态：浏览器不支持'; return; }
+  var es=new EventSource('/api/stream');
+  document.getElementById('tConn').textContent='连接状态：连接中…';
+  es.onopen=function(){ document.getElementById('tConn').textContent='连接状态：已连接'; };
+  es.onerror=function(){ document.getElementById('tConn').textContent='连接状态：未连接（请确认服务已启动）'; };
+  es.onmessage=function(e){ try{ submissions=JSON.parse(e.data); renderTeacher(); }catch(_){} };
+}
+function fmtTime(ts){ var d=new Date(ts); return d.toLocaleTimeString('zh-CN'); }
+function renderTeacher(){
+  var n=submissions.length, a=0,b=0,c=0;
+  submissions.forEach(function(s){ var g=gradeAll(s); if(g.level==='A')a++; else if(g.level==='B')b++; else c++; });
+  document.getElementById('tCount').textContent='已提交：'+n+' 人';
+  document.getElementById('tA').textContent='A：'+a; document.getElementById('tB').textContent='B：'+b; document.getElementById('tC').textContent='C：'+c;
+  if(n===0){ document.getElementById('teacherList').innerHTML='<div class="empty">等待学生提交…</div>'; return; }
+  var html='';
+  submissions.forEach(function(s,idx){
+    var g=gradeAll(s);
+    html+='<div class="card"><div class="head" onclick="toggleCard('+idx+')">';
+    html+='<span class="name">'+(s.name||'未署名')+'</span><span class="sub">'+(s.class||'')+' '+(s.no||'')+' · '+fmtTime(s.ts)+'</span>';
+    html+='<span style="flex:1"></span><span>得分 '+g.total+'</span> <span class="lv lv'+g.level+'">'+g.level+'</span></div>';
+    html+='<div class="detail" id="det'+idx+'">'+detailHtml(s,g)+'</div></div>';
+  });
+  document.getElementById('teacherList').innerHTML=html;
+}
+function toggleCard(i){ var d=document.getElementById('det'+i); d.classList.toggle('open'); }
+function detailHtml(s,g){
+  var h='<div class="fb"><b>填空 '+g.fill.score+'/20</b>　<b>选择 '+g.choice.score+'/30</b>　<b>操作 '+g.op.score+'/40</b>　<b>情感 '+g.att+'/10</b>　|　总分 <b>'+g.total+'</b>　等级 <span class="lv lv'+g.level+'">'+g.level+'</span></div>';
+  h+='<div style="margin-top:6px;"><b>填空题：</b></div>';
+  g.fill.detail.forEach(function(d){ h+='<div class="fb">第'+d.q+'题：学生填「'+(d.ans||'空')+'」 <span class="'+(d.ok?'ok':'no')+'">'+(d.ok?'✓':'✗')+'</span></div>'; });
+  h+='<div style="margin-top:6px;"><b>选择题（✓答对 / ✗答错，括注正确答案）：</b></div>';
+  g.choice.detail.forEach(function(d){ h+='<div class="fb">第'+d.q+'题：学生选 '+d.ans+' <span class="'+(d.ok?'ok':'no')+'">'+(d.ok?'✓':'✗ 正确'+d.correct)+'</span></div>'; });
+  h+='<div style="margin-top:6px;"><b>操作题：</b></div>';
+  g.op.parts.forEach(function(p){ h+='<div class="fb">'+p.name+'：'+p.score+'/'+p.max+' <span class="'+(p.ok?'ok':'no')+'">'+(p.ok?'✓':'✗')+'</span> '+p.msg+'</div>'; });
+  h+='<div style="margin-top:6px;"><b>学习情感态度：</b></div><div class="fb">第1题 '+ (s.att[0]||'-') +'　第2题 '+ (s.att[1]||'-') +'　第3题 '+ (s.att[2]||'-') +'　第4题 '+ (s.att[3]||'-') +'</div>';
+  return h;
+}
+function exportCSV(){
+  var rows=[['姓名','班级','学号','填空','选择','操作','情感','总分','等级','提交时间']];
+  submissions.forEach(function(s){ var g=gradeAll(s); rows.push([s.name,s.class,s.no,g.fill.score,g.choice.score,g.op.score,10,g.total,g.level,fmtTime(s.ts)]); });
+  var csv='\uFEFF'+rows.map(function(r){ return r.map(function(x){ return '"'+String(x).replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
+  var a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='六年级前测_成绩.csv'; a.click();
+}
+function clearAll(){ if(!confirm('确定清空全部学生提交数据？')) return; fetch('/api/clear',{method:'POST'}).then(function(){ submissions=[]; renderTeacher(); }); }
+
+/* 初始化 */
+if(document.readyState!=='loading') applyPlatformIdentity();
+else document.addEventListener('DOMContentLoaded', applyPlatformIdentity);
+renderFill(); renderChoice(); renderAtt();
+renderList(document.getElementById('list1'), T1, order1);
+renderList(document.getElementById('list2'), T2, order2);
+</script>
+</body>
+</html>

@@ -103,6 +103,9 @@ public class LearnService {
     /** 记录学生访问课时 */
     @Transactional
     public void recordVisit(VisitRequest req, Long studentId) {
+        if (req == null || req.getLessonId() == null || studentId == null) {
+            return;
+        }
         LearnVisitLog log = new LearnVisitLog();
         log.setStudentId(studentId);
         log.setLessonId(req.getLessonId());
@@ -115,6 +118,9 @@ public class LearnService {
 
     /** 避免并发访问记录导致 uk_student_lesson 唯一键冲突 */
     private void upsertProgress(Long studentId, Long lessonId, Integer durationSec) {
+        if (studentId == null || lessonId == null) {
+            return;
+        }
         LearnProgress progress = progressRepository
                 .findByStudentIdAndLessonId(studentId, lessonId)
                 .orElse(null);
@@ -204,15 +210,26 @@ public class LearnService {
     }
 
     private int pointsPerTask() {
-        int points = 5;
-        SysConfig config = configRepository.findByConfigKey("points_per_task").orElse(null);
+        return readConfigInt("points_per_task", 5);
+    }
+
+    private int pointsPerActivity() {
+        return readConfigInt("points_per_activity", 2);
+    }
+
+    private int extensionBonusPoints() {
+        return readConfigInt("points_extension_bonus", 1);
+    }
+
+    private int readConfigInt(String key, int fallback) {
+        SysConfig config = configRepository.findByConfigKey(key).orElse(null);
         if (config != null) {
             try {
-                points = Integer.parseInt(config.getConfigValue());
+                return Integer.parseInt(config.getConfigValue().trim());
             } catch (Exception ignored) {
             }
         }
-        return points;
+        return fallback;
     }
 
     private void appendSubmissionLog(Long studentId, CourseTask task, String contentJson,
@@ -268,7 +285,7 @@ public class LearnService {
         }
     }
 
-    /** 每节课每完成一个活动奖励 2 积分 */
+    /** 每完成一个环节奖励积分；完整拓展任务额外加分 */
     private void awardActivityPoints(Long studentId, Long lessonId, String contentJson) {
         if (!StringUtils.hasText(contentJson)) {
             return;
@@ -291,6 +308,10 @@ public class LearnService {
                 String lessonTitle = lesson != null ? lesson.getTitle() : "课时";
                 grantActivityPointsOnce(studentId, lessonId, activityIndex,
                         "完成探究" + activityIndex + "：" + lessonTitle);
+                if (isExtensionActivity(lessonId, activityIndex)) {
+                    grantBonusOnce(studentId, lessonId, activityIndex,
+                            "完整完成拓展任务：" + lessonTitle);
+                }
             }
         } catch (Exception ignored) {
         }
@@ -301,7 +322,65 @@ public class LearnService {
         if (pointsRepository.existsByStudentIdAndSourceTypeAndSourceId(studentId, "ACTIVITY", sourceId)) {
             return;
         }
-        addPoints(studentId, sourceId, desc, "ACTIVITY", sourceId, 2);
+        addPoints(studentId, sourceId, desc, "ACTIVITY", sourceId, pointsPerActivity());
+    }
+
+    private void grantBonusOnce(Long studentId, Long lessonId, int slot, String desc) {
+        int bonus = extensionBonusPoints();
+        if (bonus <= 0) {
+            return;
+        }
+        long sourceId = lessonId * 100L + slot;
+        if (pointsRepository.existsByStudentIdAndSourceTypeAndSourceId(studentId, "BONUS", sourceId)) {
+            return;
+        }
+        addPoints(studentId, sourceId, desc, "BONUS", sourceId, bonus);
+    }
+
+    private boolean isExtensionActivity(Long lessonId, int activityIndex) {
+        JsonNode activities = loadWorkspaceActivities(lessonId);
+        if (activities == null || !activities.isArray() || activities.size() == 0) {
+            return false;
+        }
+        boolean anyTagged = false;
+        int lastIndex = 0;
+        JsonNode matched = null;
+        for (JsonNode act : activities) {
+            int idx = act.path("index").asInt(0);
+            if (idx > lastIndex) {
+                lastIndex = idx;
+            }
+            String title = act.path("title").asText("");
+            if (title.contains("拓展")) {
+                anyTagged = true;
+            }
+            if (idx == activityIndex) {
+                matched = act;
+            }
+        }
+        if (matched == null) {
+            return false;
+        }
+        if (anyTagged) {
+            return matched.path("title").asText("").contains("拓展");
+        }
+        return activityIndex == lastIndex;
+    }
+
+    private JsonNode loadWorkspaceActivities(Long lessonId) {
+        for (CourseTask task : taskRepository.findByLessonIdOrderBySortOrderAsc(lessonId)) {
+            if (!"EXTERNAL".equals(task.getTaskType()) || !StringUtils.hasText(task.getConfigJson())) {
+                continue;
+            }
+            try {
+                JsonNode cfg = objectMapper.readTree(task.getConfigJson());
+                if ("student_workspace".equals(cfg.path("layout").asText()) && cfg.has("activities")) {
+                    return cfg.get("activities");
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return null;
     }
 
     /** 本课学习记录：活动完成情况 + 每次提交历史 */
@@ -377,7 +456,8 @@ public class LearnService {
                         if (node.has("quizScore") || "quiz".equals(node.path("type").asText())) {
                             completed.add(99);
                         }
-                        if ("reading".equals(node.path("type").asText())) {
+                        if ("reading".equals(node.path("type").asText())
+                                || node.path("readingCompleted").asBoolean(false)) {
                             completed.add(0);
                         }
                         if ("evaluation".equals(node.path("type").asText()) || node.has("evaluationAnswers")) {
@@ -417,7 +497,9 @@ public class LearnService {
         result.put("lessonTitle", lesson.getTitle());
         result.put("activities", activityRows);
         result.put("submissionLogs", logs);
-        result.put("totalPoints", pointsRepository.sumPointsByStudentId(studentId));
+        result.put("totalPoints", nz(pointsRepository.sumPointsByStudentId(studentId)));
+        result.put("earnedPoints", nz(pointsRepository.sumEarnedByStudentId(studentId)));
+        result.put("redeemablePoints", nz(pointsRepository.sumPointsByStudentId(studentId)));
         result.put("pointsHistory", pointsRepository.findByStudentIdOrderByCreatedAtDesc(studentId));
         return result;
     }
@@ -428,8 +510,14 @@ public class LearnService {
         result.put("progress", progressRepository.findByStudentId(studentId));
         result.put("submissions", submissionRepository.findByStudentId(studentId));
         result.put("submissionLogs", submissionLogRepository.findByStudentIdOrderByCreatedAtDesc(studentId));
-        result.put("totalPoints", pointsRepository.sumPointsByStudentId(studentId));
+        result.put("totalPoints", nz(pointsRepository.sumPointsByStudentId(studentId)));
+        result.put("earnedPoints", nz(pointsRepository.sumEarnedByStudentId(studentId)));
+        result.put("redeemablePoints", nz(pointsRepository.sumPointsByStudentId(studentId)));
         result.put("pointsHistory", pointsRepository.findByStudentIdOrderByCreatedAtDesc(studentId));
         return result;
+    }
+
+    private static int nz(Integer n) {
+        return n == null ? 0 : n;
     }
 }

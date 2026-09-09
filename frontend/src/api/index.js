@@ -19,6 +19,16 @@ export const getNotifications = (since) =>
   request.get('/learn/notifications', { params: since ? { since } : {} })
 export const getParkStatus = () => request.get('/learn/park/status')
 export const applyParkAccess = () => request.post('/learn/park/apply')
+export const submitPretestG4 = (data) => request.post('/learn/pretest/g4', data)
+export const getMyPretestG4 = () => request.get('/learn/pretest/g4/mine')
+export const teacherGetPretestG4 = (classId) =>
+  request.get('/teacher/pretest/g4', { params: { classId } })
+export const submitPretestG6 = (data) => request.post('/learn/pretest/g6', data)
+export const getMyPretestG6 = () => request.get('/learn/pretest/g6/mine')
+export const teacherGetPretestG6 = (classId) =>
+  request.get('/teacher/pretest/g6', { params: { classId } })
+export const teacherClearPretestG6 = (classId) =>
+  request.delete('/teacher/pretest/g6', { params: { classId } })
 export const getParkApplications = (classId) =>
   request.get('/teacher/park/applications', { params: { classId } })
 export const reviewParkAccess = (data) => request.post('/teacher/park/review', data)
@@ -38,6 +48,7 @@ export const manageDeleteClass = (id) => request.delete(`/teacher/manage/classes
 export const manageListStudents = (classId) =>
   request.get('/teacher/manage/students', { params: classId ? { classId } : {} })
 export const manageCreateStudent = (data) => request.post('/teacher/manage/students', data)
+export const manageBatchCreateStudents = (data) => request.post('/teacher/manage/students/batch', data)
 export const manageUpdateStudent = (id, data) => request.put(`/teacher/manage/students/${id}`, data)
 export const manageDeleteStudent = (id) => request.delete(`/teacher/manage/students/${id}`)
 export const manageResetStudentPassword = (id) => request.put(`/teacher/manage/students/${id}/reset-password`)
@@ -51,6 +62,15 @@ export const getLessonActivityDashboard = (lessonId, classId) =>
 export const getDashboard = (classId) => request.get(`/dashboard/data/${classId}`)
 export const getMatrix = (classId) => request.get(`/dashboard/matrix/${classId}`)
 export const getRanking = (classId) => request.get(`/dashboard/ranking/${classId}`)
+export const getClassScreen = (lessonId) =>
+  request.get('/learn/class-screen', { params: { lessonId } })
+export const getStudentMall = () => request.get('/learn/mall')
+export const redeemMallItem = (itemId) => request.post('/learn/mall/redeem', { itemId })
+export const getTeacherPointsRules = () => request.get('/teacher/points/rules')
+export const saveTeacherPointsRules = (data) => request.put('/teacher/points/rules', data)
+export const getTeacherMall = (classId) =>
+  request.get('/teacher/mall', { params: classId ? { classId } : {} })
+export const setMallApplyOpen = (data) => request.put('/teacher/mall/open', data)
 export const getUsers = () => request.get('/admin/users')
 export const createUser = (data) => request.post('/admin/users', data)
 export const toggleUser = (id) => request.put(`/admin/users/${id}/toggle`)

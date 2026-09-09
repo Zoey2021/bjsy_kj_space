@@ -2,7 +2,7 @@
   <div class="map-page">
     <header class="page-header">
       <h1 class="page-title">课程地图</h1>
-      <p class="page-sub">选择配套或校本教材，在线阅读电子课本，或进入建课管理</p>
+      <p class="page-sub">选择配套或校本教材，查看目录或在线阅读电子课本</p>
     </header>
 
     <div class="map-body">
@@ -11,7 +11,15 @@
       <el-row :gutter="12" class="grade-row">
         <el-col v-for="g in mainGradeGroups" :key="g.key" :span="6">
           <div class="grade-card">
-            <div class="grade-card-head">{{ g.cardTitle }}</div>
+            <div class="grade-card-head">
+              <button
+                v-if="g.key === '四年级' || g.key === '六年级'"
+                type="button"
+                class="pretest-btn"
+                @click.stop="openPretest(g.key)"
+              >前测</button>
+              <span>{{ g.cardTitle }}</span>
+            </div>
             <div class="dual-covers">
               <div
                 v-for="slot in g.slots"
@@ -126,6 +134,10 @@ const openGrade = (gradeId) => {
   router.push(`/teacher/course-map/grade/${gradeId}`)
 }
 
+const openPretest = (gradeKey) => {
+  router.push(gradeKey === '六年级' ? '/teacher/pretest/g6' : '/teacher/pretest/g4')
+}
+
 const openInquirySlot = (slot) => {
   router.push(slot.teacherRoute)
 }
@@ -232,6 +244,7 @@ onMounted(async () => {
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12);
 }
 .grade-card-head {
+  position: relative;
   flex-shrink: 0;
   text-align: center;
   font-size: 14px;
@@ -240,6 +253,24 @@ onMounted(async () => {
   margin-bottom: 8px;
   padding-bottom: 6px;
   border-bottom: 1px dashed #94a3b8;
+}
+.pretest-btn {
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-70%);
+  border: none;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+.pretest-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
 }
 .dual-covers {
   flex: 1;

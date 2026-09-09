@@ -143,9 +143,12 @@ const createForm = ref({ unitId: null, title: '', content: '' })
 const resourceDialogVisible = ref(false)
 const resourceForm = ref({ title: '', resType: 'TEXT', contentText: '', contentUrl: '' })
 
-const goMap = () => router.push('/teacher/course-map')
+const goMap = () => router.push('/teacher/activity-editor')
 const goActivityEditor = (lessonId) => {
-  router.push({ path: '/teacher/activity-editor', query: { lessonId } })
+  router.push({
+    path: `/teacher/lesson/${lessonId}`,
+    query: { gradeId: String(gradeId) }
+  })
 }
 
 const loadOutline = async () => {

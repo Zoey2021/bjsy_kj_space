@@ -12,10 +12,6 @@
         <TextbookDirectory v-if="tree" :tree="tree" mode="teacher" @lesson-click="goLesson" />
       </el-tab-pane>
 
-      <el-tab-pane label="课程管理" name="manage" lazy>
-        <TeacherGradeManage embedded />
-      </el-tab-pane>
-
       <el-tab-pane label="电子教材" name="pdf" lazy>
         <div class="pdf-pane">
           <PdfViewer :src="pdfUrl" />
@@ -30,7 +26,6 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PdfViewer from '../../components/PdfViewer.vue'
 import TextbookDirectory from '../../components/textbook/TextbookDirectory.vue'
-import TeacherGradeManage from './TeacherGradeManage.vue'
 import { teacherGetOutline } from '../../api'
 import { resolveTextbookPdfUrl } from '../../utils/textbookPdf'
 
@@ -52,6 +47,10 @@ const goLesson = (lesson) => {
 }
 
 onMounted(async () => {
+  if (route.query.tab === 'manage') {
+    router.replace(`/teacher/activity-editor/grade/${gradeId}`)
+    return
+  }
   const res = await teacherGetOutline(gradeId)
   const data = res.data || {}
   tree.value = data
@@ -59,9 +58,7 @@ onMounted(async () => {
   textbookType.value = data.textbookType || 'MAIN'
   pdfUrl.value = resolveTextbookPdfUrl(data)
   ready.value = true
-  if (route.query.tab === 'manage') {
-    activeTab.value = 'manage'
-  } else if (route.query.tab === 'pdf') {
+  if (route.query.tab === 'pdf') {
     activeTab.value = 'pdf'
   }
 })

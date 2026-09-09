@@ -8,23 +8,12 @@
 
       <div class="menu-list">
         <button
-          v-if="hasTextbook"
           type="button"
           class="menu-item"
-          :class="{ active: activePanel === 'reading', locked: !isTeacherPreview && !readingUnlocked }"
-          @click="openReading"
-        >
-          <span class="menu-label">阅读教材</span>
-          <span v-if="readingCompleted" class="done-tag">✓</span>
-        </button>
-        <button
-          type="button"
-          class="menu-item"
-          :class="{ active: activePanel === 'intro', locked: !introUnlocked }"
+          :class="{ active: activePanel === 'intro' }"
           @click="openIntro"
         >
           <span class="menu-label">课程介绍</span>
-          <span v-if="!introUnlocked" class="lock-tag">需解锁</span>
         </button>
         <button
           v-for="act in workspacePlan.activities || []"
@@ -57,17 +46,28 @@
           <span v-if="!quizUnlocked" class="lock-tag">需解锁</span>
           <span v-else-if="quizSubmitted" class="done-tag">已完成</span>
         </button>
+        <button
+          v-if="hasTextbook"
+          type="button"
+          class="menu-item menu-item-optional"
+          :class="{ active: activePanel === 'reading' }"
+          @click="openReading"
+        >
+          <span class="menu-label">阅读教材</span>
+          <span class="optional-tag">选读</span>
+          <span v-if="readingCompleted" class="done-tag">✓</span>
+        </button>
       </div>
 
       <div v-if="!isTeacherPreview" class="feature-row">
-        <button type="button" class="feature-btn" @click="ElMessage.info('班级学习大屏即将开放')">班级学习大屏</button>
-        <button type="button" class="feature-btn" @click="router.push('/student/ai')">AI评价中心</button>
+        <button type="button" class="feature-btn" @click="showClassScreen = true">班级学习大屏</button>
+        <button type="button" class="feature-btn" @click="router.push('/student/mall')">兑换商城</button>
       </div>
 
       <template v-if="!isTeacherPreview">
         <div class="points-row">
-          <span>排名积分 <strong>{{ totalPoints }}</strong></span>
-          <span>可兑奖 <strong>{{ totalPoints }}</strong></span>
+          <span>排名积分 <strong>{{ earnedPoints }}</strong></span>
+          <span>可兑奖 <strong>{{ redeemablePoints }}</strong></span>
         </div>
         <button type="button" class="signin-btn" :class="{ done: signedToday }" @click="toggleSignIn">
           {{ signedToday ? '今日已签到' : '今日签到' }}
@@ -87,23 +87,23 @@
     </aside>
 
     <main class="studio-right">
-      <section v-show="activePanel === 'reading'" class="content-panel reading-panel">
+      <section v-if="activePanel === 'reading'" class="content-panel reading-panel">
         <header class="activity-panel-head reading-head">
           <h2>阅读教材</h2>
-          <p>请先阅读与本课对应的电子课本，了解核心概念后再进入后续学习环节。</p>
+          <p>电子课本可随时查阅，不作为进入后续学习的前置条件。</p>
         </header>
         <div class="reading-body">
           <PdfViewer v-if="textbookPdfUrl" :src="textbookPdfUrl" />
           <el-empty v-else description="暂无关联教材" :image-size="88" />
         </div>
-        <footer v-if="!isTeacherPreview" class="reading-footer">
+        <footer class="reading-footer">
           <el-button
             type="primary"
             size="large"
             :loading="submitting === externalTask?.id"
             @click="completeReading"
           >
-            已阅读，继续
+            返回课程介绍
           </el-button>
         </footer>
       </section>
@@ -162,10 +162,7 @@
       </section>
     </main>
 
-    <el-dialog v-model="showRanking" title="积分榜（本班）" width="420px">
-      <p class="rank-hint">当前积分：<strong>{{ totalPoints }}</strong> 分</p>
-      <el-button type="primary" link @click="router.push('/student/records')">查看学习记录 →</el-button>
-    </el-dialog>
+    <ClassLearningScreen v-model:visible="showClassScreen" :lesson-id="visitLessonId" />
   </div>
 
   <!-- 同步发布：左侧导航 + 右侧内容（旧版五板块） -->
@@ -231,12 +228,13 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getLesson, submitTask, recordVisit, getMyRecords, getMe } from '../../api'
+import { getLesson, submitTask, recordVisit, getMyRecords, getMe, getMyPretestG6 } from '../../api'
 import LessonClassQuiz from '../../components/student/LessonClassQuiz.vue'
 import LessonSelfEvaluation from '../../components/student/LessonSelfEvaluation.vue'
 import LessonQuickNav from '../../components/lesson/LessonQuickNav.vue'
 import LessonRecordsPanel from '../../components/student/LessonRecordsPanel.vue'
 import LessonIntroMindMap from '../../components/student/LessonIntroMindMap.vue'
+import ClassLearningScreen from '../../components/student/ClassLearningScreen.vue'
 import PdfViewer from '../../components/PdfViewer.vue'
 import { buildLessonIntroMap } from '../../utils/buildLessonIntroMap'
 
@@ -259,17 +257,29 @@ const submitting = ref(null)
 const taskSubmitted = ref(false)
 const activePanel = ref('intro')
 const totalPoints = ref(0)
+const earnedPoints = ref(0)
+const redeemablePoints = ref(0)
 const studentNo = ref('')
 const studentName = ref('')
 const className = ref('')
 const signedToday = ref(false)
-const showRanking = ref(false)
+const showClassScreen = ref(false)
 const recordsPanelRef = ref(null)
 const completedActivities = ref(new Set())
 const quizSubmitted = ref(false)
 const evaluationSubmitted = ref(false)
+const pretestLevel = ref('')
 let startTime = Date.now()
 let visitTimer = null
+const visitLessonId = Number(route.params.id)
+const sendVisit = (durationSec) => {
+  if (!Number.isFinite(visitLessonId) || visitLessonId <= 0) return
+  recordVisit({
+    lessonId: visitLessonId,
+    pageUrl: `/student/lesson/${visitLessonId}`,
+    durationSec
+  }).catch(() => {})
+}
 
 const MSG_TYPE = 'LEARN_SPACE_SUBMIT'
 
@@ -285,12 +295,6 @@ const parseExternalPath = (task) => {
 const externalTask = computed(() => tasks.value.find((t) => t.taskType === 'EXTERNAL'))
 
 const hasTextbook = computed(() => !!textbookPdfUrl.value)
-
-const readingUnlocked = computed(() => isTeacherPreview.value || hasTextbook.value)
-
-const introUnlocked = computed(() =>
-  isTeacherPreview.value || !hasTextbook.value || readingCompleted.value
-)
 
 const workspacePlan = computed(() => {
   const task = externalTask.value
@@ -351,18 +355,31 @@ const currentActivityTitle = computed(() => {
   return activityMenuLabel(act)
 })
 
+const scaffoldLevel = computed(() => {
+  const q = String(route.query.scaffold || '').toUpperCase()
+  if (q === 'A' || q === 'B' || q === 'C') return q
+  const lv = String(pretestLevel.value || '').toUpperCase()
+  if (lv === 'A' || lv === 'B' || lv === 'C') return lv
+  return 'B'
+})
+
+const appendActivityParams = (path, act) => {
+  if (!path) return ''
+  const step = act.step || act.index
+  const sep = path.includes('?') ? '&' : '?'
+  const preview = isTeacherPreview.value ? '&preview=1' : ''
+  return `${path}${sep}step=${step}&activityIndex=${act.index}&embedded=1&scaffold=${scaffoldLevel.value}${preview}`
+}
+
 const currentIframeSrc = computed(() => {
   const act = currentActivity.value
   if (!act?.path) return ''
-  const step = act.step || act.index
-  const sep = act.path.includes('?') ? '&' : '?'
-  return `${act.path}${sep}step=${step}&activityIndex=${act.index}&embedded=1`
+  return appendActivityParams(act.path, act)
 })
 
 const isActivityUnlocked = (act) => {
   if (!act) return false
   if (isTeacherPreview.value) return !!act.path
-  if (hasTextbook.value && !readingCompleted.value) return false
   if (act.unlocked === false) {
     const prev = act.index - 1
     return prev < 1 || completedActivities.value.has(prev)
@@ -397,19 +414,9 @@ const inquiryActivityLabel = (index) => `探究${chineseNum(index)}`
 
 const activityMenuLabel = (act) => `${inquiryActivityLabel(act.index)}：${act.title}`
 
-const activityIframeSrc = (act) => {
-  const path = act.path || ''
-  const step = act.step || act.index
-  const sep = path.includes('?') ? '&' : '?'
-  return `${path}${sep}step=${step}&activityIndex=${act.index}&embedded=1`
-}
+const activityIframeSrc = (act) => appendActivityParams(act.path || '', act)
 
 const selectActivity = (act) => {
-  if (hasTextbook.value && !readingCompleted.value && !isTeacherPreview.value) {
-    ElMessage.info('请先完成教材阅读')
-    activePanel.value = 'reading'
-    return
-  }
   if (!isActivityUnlocked(act)) {
     ElMessage.info('请先完成前面的活动')
     return
@@ -418,16 +425,11 @@ const selectActivity = (act) => {
 }
 
 const openReading = () => {
-  if (!readingUnlocked.value) return
+  if (!hasTextbook.value) return
   activePanel.value = 'reading'
 }
 
 const openIntro = () => {
-  if (!introUnlocked.value) {
-    ElMessage.info('请先完成教材阅读')
-    activePanel.value = 'reading'
-    return
-  }
   activePanel.value = 'intro'
 }
 
@@ -451,12 +453,12 @@ const quickNavKey = computed(() => {
   if (activePanel.value === 'intro') return 'intro'
   if (activePanel.value === 'records') return 'records'
   if (activePanel.value === 'profile') return 'profile'
-  if (showRanking.value) return 'ranking'
+  if (showClassScreen.value) return 'ranking'
   return ''
 })
 
 const onQuickNav = (key) => {
-  showRanking.value = false
+  showClassScreen.value = false
   if (key === 'intro') activePanel.value = 'intro'
   else if (key === 'records') {
     if (isTeacherPreview.value) {
@@ -471,7 +473,7 @@ const onQuickNav = (key) => {
       ElMessage.info('积分榜仅学生端可见')
       return
     }
-    showRanking.value = true
+    showClassScreen.value = true
   }
 }
 
@@ -494,25 +496,18 @@ const goActivityFromRecords = (act) => {
 
 const refreshPoints = async () => {
   const recordsRes = await getMyRecords().catch(() => ({ data: { totalPoints: 0 } }))
-  totalPoints.value = recordsRes.data?.totalPoints || 0
+  const d = recordsRes.data || {}
+  earnedPoints.value = d.earnedPoints ?? d.totalPoints ?? 0
+  redeemablePoints.value = d.redeemablePoints ?? d.totalPoints ?? 0
+  totalPoints.value = redeemablePoints.value
   recordsPanelRef.value?.reload?.()
 }
 
 const openEvaluation = () => {
-  if (hasTextbook.value && !readingCompleted.value && !isTeacherPreview.value) {
-    ElMessage.info('请先完成教材阅读')
-    activePanel.value = 'reading'
-    return
-  }
   activePanel.value = 'evaluation'
 }
 
 const openQuiz = () => {
-  if (hasTextbook.value && !readingCompleted.value && !isTeacherPreview.value) {
-    ElMessage.info('请先完成教材阅读')
-    activePanel.value = 'reading'
-    return
-  }
   if (!quizUnlocked.value) {
     ElMessage.info('课堂小测尚未开放')
     return
@@ -562,7 +557,9 @@ const toggleSignIn = () => {
   if (signedToday.value) return
   localStorage.setItem(signinKey(), '1')
   signedToday.value = true
-  totalPoints.value += 2
+  earnedPoints.value += 2
+  redeemablePoints.value += 2
+  totalPoints.value = redeemablePoints.value
   ElMessage.success('签到成功，+2 积分')
 }
 
@@ -690,14 +687,20 @@ onMounted(async () => {
   tasks.value.forEach((t) => { answers[t.id] = {} })
 
   if (!isTeacherPreview.value) {
-    const [meRes, recordsRes] = await Promise.all([
+    const [meRes, recordsRes, pretestRes] = await Promise.all([
       getMe().catch(() => ({ data: {} })),
-      getMyRecords().catch(() => ({ data: { totalPoints: 0 } }))
+      getMyRecords().catch(() => ({ data: { totalPoints: 0 } })),
+      getMyPretestG6().catch(() => ({ data: null }))
     ])
+    const lv = String(pretestRes?.data?.level || '').toUpperCase()
+    pretestLevel.value = (lv === 'A' || lv === 'B' || lv === 'C') ? lv : ''
     studentNo.value = meRes.data?.username || localStorage.getItem('username') || ''
     studentName.value = meRes.data?.realName || localStorage.getItem('realName') || ''
     className.value = meRes.data?.className || ''
-    totalPoints.value = recordsRes.data?.totalPoints || 0
+    const d = recordsRes.data || {}
+    earnedPoints.value = d.earnedPoints ?? d.totalPoints ?? 0
+    redeemablePoints.value = d.redeemablePoints ?? d.totalPoints ?? 0
+    totalPoints.value = redeemablePoints.value
     signedToday.value = localStorage.getItem(signinKey()) === '1'
   } else {
     studentName.value = localStorage.getItem('realName') || '教师'
@@ -715,12 +718,10 @@ onMounted(async () => {
       if (!Number.isNaN(idx) && idx >= 1) {
         activePanel.value = 'act-' + idx
       } else if (String(stepQuery) === 'intro') {
-        activePanel.value = introUnlocked.value ? 'intro' : 'reading'
+        activePanel.value = 'intro'
       } else if (String(stepQuery) === 'reading') {
         activePanel.value = 'reading'
       }
-    } else if (hasTextbook.value && !readingCompleted.value && !isTeacherPreview.value) {
-      activePanel.value = 'reading'
     } else {
       activePanel.value = 'intro'
     }
@@ -729,10 +730,8 @@ onMounted(async () => {
   }
 
   if (!isTeacherPreview.value) {
-    recordVisit({ lessonId: Number(route.params.id), pageUrl: route.path, durationSec: 0 })
-    visitTimer = setInterval(() => {
-      recordVisit({ lessonId: Number(route.params.id), pageUrl: route.path, durationSec: 30 })
-    }, 30000)
+    sendVisit(0)
+    visitTimer = setInterval(() => sendVisit(30), 30000)
   }
 })
 
@@ -741,7 +740,7 @@ onUnmounted(() => {
   if (visitTimer) clearInterval(visitTimer)
   if (!isTeacherPreview.value) {
     const sec = Math.floor((Date.now() - startTime) / 1000)
-    recordVisit({ lessonId: Number(route.params.id), pageUrl: route.path, durationSec: sec })
+    sendVisit(sec)
   }
 })
 </script>
@@ -822,6 +821,18 @@ onUnmounted(() => {
   font-size: 11px;
   color: #10b981;
   font-weight: 700;
+}
+.optional-tag {
+  font-size: 11px;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.menu-item-optional {
+  border-style: dashed;
 }
 .feature-row {
   display: grid;

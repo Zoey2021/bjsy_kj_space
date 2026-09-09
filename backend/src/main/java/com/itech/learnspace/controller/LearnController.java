@@ -1,15 +1,20 @@
 package com.itech.learnspace.controller;
 
 import com.itech.learnspace.dto.ApiResponse;
+import com.itech.learnspace.dto.MallRedeemRequest;
 import com.itech.learnspace.dto.SubmitRequest;
 import com.itech.learnspace.dto.VisitRequest;
 import com.itech.learnspace.entity.LearnSubmission;
 import com.itech.learnspace.entity.SysUser;
 import com.itech.learnspace.exception.BusinessException;
 import com.itech.learnspace.service.AuthService;
+import com.itech.learnspace.service.DashboardService;
 import com.itech.learnspace.service.LearnService;
 import com.itech.learnspace.service.NotificationService;
 import com.itech.learnspace.service.ParkService;
+import com.itech.learnspace.service.PointsMallService;
+import com.itech.learnspace.service.PretestG4Service;
+import com.itech.learnspace.service.PretestG6Service;
 import com.itech.learnspace.service.SseService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -26,16 +31,26 @@ public class LearnController {
     private final AuthService authService;
     private final NotificationService notificationService;
     private final ParkService parkService;
+    private final PretestG4Service pretestG4Service;
+    private final PretestG6Service pretestG6Service;
     private final SseService sseService;
+    private final DashboardService dashboardService;
+    private final PointsMallService pointsMallService;
 
     public LearnController(LearnService learnService, AuthService authService,
                            NotificationService notificationService, ParkService parkService,
-                           SseService sseService) {
+                           PretestG4Service pretestG4Service, PretestG6Service pretestG6Service,
+                           SseService sseService, DashboardService dashboardService,
+                           PointsMallService pointsMallService) {
         this.learnService = learnService;
         this.authService = authService;
         this.notificationService = notificationService;
         this.parkService = parkService;
+        this.pretestG4Service = pretestG4Service;
+        this.pretestG6Service = pretestG6Service;
         this.sseService = sseService;
+        this.dashboardService = dashboardService;
+        this.pointsMallService = pointsMallService;
     }
 
     @PostMapping("/submit")
@@ -121,5 +136,72 @@ public class LearnController {
             throw new BusinessException(403, "仅学生可申请");
         }
         return ApiResponse.ok("申请已提交", parkService.apply(user.getId()));
+    }
+
+    @PostMapping("/pretest/g4")
+    public ApiResponse<Map<String, Object>> submitPretestG4(@RequestBody(required = false) Map<String, Object> body) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可提交前测");
+        }
+        return ApiResponse.ok("提交成功", pretestG4Service.submit(user, body));
+    }
+
+    @GetMapping("/pretest/g4/mine")
+    public ApiResponse<Map<String, Object>> myPretestG4() {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可查看");
+        }
+        return ApiResponse.ok(pretestG4Service.mySubmission(user.getId()));
+    }
+
+    @PostMapping("/pretest/g6")
+    public ApiResponse<Map<String, Object>> submitPretestG6(@RequestBody(required = false) Map<String, Object> body) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可提交前测");
+        }
+        return ApiResponse.ok("提交成功", pretestG6Service.submit(user, body));
+    }
+
+    @GetMapping("/pretest/g6/mine")
+    public ApiResponse<Map<String, Object>> myPretestG6() {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可查看");
+        }
+        return ApiResponse.ok(pretestG6Service.mySubmission(user.getId()));
+    }
+
+    /** 班级学习大屏：本班排行 + 本课环节完成人数 */
+    @GetMapping("/class-screen")
+    public ApiResponse<Map<String, Object>> classScreen(@RequestParam Long lessonId) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可查看");
+        }
+        if (user.getClassId() == null) {
+            throw new BusinessException("当前账号未绑定班级");
+        }
+        return ApiResponse.ok(dashboardService.buildStudentClassScreen(user.getClassId(), lessonId, user.getId()));
+    }
+
+    @GetMapping("/mall")
+    public ApiResponse<Map<String, Object>> mall() {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可查看");
+        }
+        return ApiResponse.ok(pointsMallService.studentMall(user));
+    }
+
+    @PostMapping("/mall/redeem")
+    public ApiResponse<Map<String, Object>> mallRedeem(@RequestBody MallRedeemRequest request) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可兑换");
+        }
+        return ApiResponse.ok("申请成功", pointsMallService.redeem(user, request));
     }
 }

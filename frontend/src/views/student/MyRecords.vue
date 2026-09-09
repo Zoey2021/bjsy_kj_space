@@ -3,10 +3,10 @@
     <h2>📚 我的学习记录</h2>
     <el-row :gutter="20">
       <el-col :span="8">
-        <el-statistic title="总积分" :value="totalPoints" />
+        <el-statistic title="累计获得" :value="earnedPoints" />
       </el-col>
       <el-col :span="8">
-        <el-statistic title="已完成课时" :value="completedCount" />
+        <el-statistic title="可兑奖积分" :value="totalPoints" />
       </el-col>
       <el-col :span="8">
         <el-statistic title="提交次数" :value="submissionLogs.length" />
@@ -50,7 +50,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getMyRecords } from '../../api'
 
@@ -58,8 +58,7 @@ const progress = ref([])
 const submissionLogs = ref([])
 const pointsHistory = ref([])
 const totalPoints = ref(0)
-
-const completedCount = computed(() => progress.value.filter((p) => p.status === 'COMPLETED').length)
+const earnedPoints = ref(0)
 
 onMounted(async () => {
   try {
@@ -68,7 +67,8 @@ onMounted(async () => {
     progress.value = data.progress || []
     submissionLogs.value = data.submissionLogs || []
     pointsHistory.value = data.pointsHistory || []
-    totalPoints.value = data.totalPoints || 0
+    totalPoints.value = data.redeemablePoints ?? data.totalPoints ?? 0
+    earnedPoints.value = data.earnedPoints ?? data.totalPoints ?? 0
   } catch {
     ElMessage.error('加载学习记录失败，请稍后重试')
   }

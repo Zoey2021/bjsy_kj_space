@@ -69,14 +69,15 @@ const iconMap = {
 }
 
 const activeMenu = computed(() => {
+  if (route.path.startsWith('/teacher/pretest')) return '/teacher/course-map'
   const hit = TEACHER_MODULES.find((m) => route.path.startsWith(m.path))
   return hit ? hit.path : route.path
 })
 
 const mainClass = computed(() => ({
-  'main-flush': route.path.includes('/activity-editor') || route.path.includes('/course-map/grade/'),
-  'main-lesson': /^\/teacher\/lesson\/\d+$/.test(route.path),
-  'main-map': route.path === '/teacher/course-map'
+  'main-flush': route.path.includes('/activity-editor/grade/') || route.path.includes('/course-map/grade/') || /^\/teacher\/pretest\/g[46]$/.test(route.path),
+  'main-lesson': /^\/teacher\/lesson\/\d+$/.test(route.path) || /\/teacher\/pretest\/g[46]\/paper$/.test(route.path),
+  'main-map': route.path === '/teacher/course-map' || route.path === '/teacher/activity-editor'
 }))
 
 const logout = () => {

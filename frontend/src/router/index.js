@@ -14,7 +14,10 @@ const routes = [
       { path: 'lesson/:id', component: () => import('../views/student/LessonDetail.vue') },
       { path: 'records', component: () => import('../views/student/MyRecords.vue') },
       { path: 'ai', component: () => import('../views/ai/AiCenter.vue') },
-      { path: 'park', component: () => import('../views/student/StudyPark.vue') }
+      { path: 'mall', component: () => import('../views/student/PointsMall.vue') },
+      { path: 'park', component: () => import('../views/student/StudyPark.vue') },
+      { path: 'pretest/g4', component: () => import('../views/student/PretestG4.vue') },
+      { path: 'pretest/g6', component: () => import('../views/student/PretestG6.vue') }
     ]
   },
   {
@@ -24,17 +27,22 @@ const routes = [
     children: [
       { path: '', redirect: '/teacher/course-map' },
       { path: 'course-map', component: () => import('../views/teacher/TeacherCourseMap.vue') },
+      { path: 'pretest/g4', component: () => import('../views/teacher/TeacherPretestG4.vue') },
+      { path: 'pretest/g4/paper', component: () => import('../views/teacher/TeacherPretestG4Paper.vue') },
+      { path: 'pretest/g6', component: () => import('../views/teacher/TeacherPretestG6.vue') },
+      { path: 'pretest/g6/paper', component: () => import('../views/teacher/TeacherPretestG6Paper.vue') },
       { path: 'pbl', component: () => import('../views/teacher/PblTeacherWorkspace.vue') },
       { path: 'interdisciplinary', component: () => import('../views/teacher/InterdisciplinaryTeacherWorkspace.vue') },
       { path: 'course-map/grade/:gradeId', component: () => import('../views/teacher/TeacherTextbookHub.vue') },
       { path: 'lesson/:id', component: () => import('../views/student/LessonDetail.vue'), meta: { teacherPreview: true } },
-      { path: 'activity-editor', component: () => import('../views/teacher/ActivityEditorShelved.vue') },
+      { path: 'activity-editor', component: () => import('../views/teacher/ActivityEditorHub.vue') },
+      { path: 'activity-editor/grade/:gradeId', component: () => import('../views/teacher/TeacherGradeManage.vue') },
       { path: 'dashboard', component: () => import('../views/teacher/ClassDashboard.vue') },
       { path: 'ai-evaluation', component: () => import('../views/teacher/AiEvaluation.vue') },
       { path: 'points', component: () => import('../views/teacher/PointsManage.vue') },
       { path: 'settings', component: () => import('../views/teacher/TeacherSettings.vue') },
       { path: 'lesson/:lessonId/stats', component: () => import('../views/teacher/LessonStats.vue') },
-      { path: 'course-editor', redirect: '/teacher/course-map' },
+      { path: 'course-editor', redirect: '/teacher/activity-editor' },
       { path: 'matrix', redirect: { path: '/teacher/dashboard', query: { tab: 'matrix' } } },
       { path: 'ranking', redirect: { path: '/teacher/points', query: { tab: 'ranking' } } }
     ]
