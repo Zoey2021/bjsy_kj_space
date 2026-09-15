@@ -80,13 +80,30 @@
           </el-select>
           <el-button type="primary" @click="openStudentDialog()">新增学生</el-button>
           <el-button type="success" @click="openBatchDialog">批量添加学生</el-button>
+          <el-input
+            v-model="studentKeyword"
+            clearable
+            placeholder="搜索姓名 / 学号 / 账号"
+            style="width: 220px"
+            @keyup.enter="loadStudents"
+            @clear="loadStudents"
+          />
+          <el-button :disabled="!filterClassId && !studentKeyword" @click="loadStudents">刷新</el-button>
           <el-button :disabled="!filterClassId" @click="downloadStudentRoster">下载学生名单</el-button>
-          <el-button :disabled="!filterClassId" @click="loadStudents">刷新</el-button>
         </div>
         <p v-if="selectedClass" class="roster-hint">
           当前班级：<strong>{{ selectedClass.name }}</strong>
           共 <strong>{{ students.length }}</strong> 人
+          <span v-if="missingNos.length"> · 缺少学号 {{ missingNos.join('、') }}</span>
         </p>
+        <el-alert
+          v-if="missingNos.length"
+          type="warning"
+          show-icon
+          :closable="false"
+          style="margin-bottom: 10px"
+          :title="`本班还没有学号 ${missingNos.join('、')}。点「新增学生」补录，学号填 ${missingNos[0]}，再填姓名即可。`"
+        />
         <p v-else class="roster-hint">请先选择班级，再查看该班全部学生名单。</p>
         <el-table
           :data="students"
@@ -94,7 +111,7 @@
           border
           size="small"
           v-loading="loadingStudents"
-          :empty-text="filterClassId ? '该班暂无学生' : '请先选择班级'"
+          :empty-text="filterClassId || studentKeyword ? '没有匹配的学生，可换个班级或用姓名搜索' : '请先选择班级'"
         >
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="username" label="账号" min-width="140" />
@@ -195,11 +212,14 @@
     <!-- 学生弹窗 -->
     <el-dialog v-model="studentVisible" :title="studentForm.id ? '编辑学生' : '新增学生'" width="440px">
       <el-form :model="studentForm" label-width="88px">
-        <el-form-item label="账号/学号" required>
-          <el-input v-model="studentForm.username" />
+        <el-form-item label="学号" required>
+          <el-input v-model="studentForm.studentNo" placeholder="如 45" />
         </el-form-item>
         <el-form-item label="姓名" required>
-          <el-input v-model="studentForm.realName" />
+          <el-input v-model="studentForm.realName" placeholder="如 杨子齐" />
+        </el-form-item>
+        <el-form-item v-if="studentForm.id" label="账号">
+          <el-input v-model="studentForm.username" />
         </el-form-item>
         <el-form-item label="班级" required>
           <el-select v-model="studentForm.classId" filterable placeholder="选择班级" style="width:100%">
@@ -295,7 +315,19 @@ const loadingTeachers = ref(false)
 const loadingClasses = ref(false)
 const loadingStudents = ref(false)
 const filterClassId = ref(null)
-const selectedClass = computed(() => classes.value.find((c) => c.id === filterClassId.value) || null)
+const studentKeyword = ref('')
+const selectedClass = computed(() => classes.value.find((c) => Number(c.id) === Number(filterClassId.value)) || null)
+const missingNos = computed(() => {
+  const have = new Set(
+    students.value.map((s) => Number(s.studentNo)).filter((n) => Number.isFinite(n) && n > 0)
+  )
+  const max = Math.max(0, ...have, students.value.length)
+  const miss = []
+  for (let i = 1; i <= max + 1; i++) {
+    if (!have.has(i)) miss.push(i)
+  }
+  return miss.slice(0, 8)
+})
 
 const teacherVisible = ref(false)
 const classVisible = ref(false)
@@ -306,7 +338,7 @@ const batchResult = ref(null)
 
 const teacherForm = ref({ id: null, username: '', realName: '', password: '', status: 1 })
 const classForm = ref({ id: null, name: '', gradeName: '', teacherId: null })
-const studentForm = ref({ id: null, username: '', realName: '', password: '', classId: null, status: 1 })
+const studentForm = ref({ id: null, username: '', realName: '', password: '', classId: null, status: 1, studentNo: '' })
 
 const moreBlocks = [
   {
@@ -360,13 +392,14 @@ const loadClasses = async () => {
 }
 
 const loadStudents = async () => {
-  if (!filterClassId.value) {
+  const kw = String(studentKeyword.value || '').trim()
+  if (!filterClassId.value && !kw) {
     students.value = []
     return
   }
   loadingStudents.value = true
   try {
-    const res = await manageListStudents(filterClassId.value)
+    const res = await manageListStudents(filterClassId.value, kw)
     students.value = res.data || []
   } catch (e) {
     ElMessage.error(e?.message || '加载学生失败')
@@ -545,7 +578,8 @@ const openStudentDialog = async (row) => {
       realName: row.realName,
       password: '',
       classId: row.classId,
-      status: row.status
+      status: row.status,
+      studentNo: row.studentNo || ''
     }
   } else {
     studentForm.value = {
@@ -554,15 +588,20 @@ const openStudentDialog = async (row) => {
       realName: '',
       password: '',
       classId: filterClassId.value || (classes.value[0]?.id ?? null),
-      status: 1
+      status: 1,
+      studentNo: missingNos.value[0] ? String(missingNos.value[0]) : ''
     }
   }
   studentVisible.value = true
 }
 
 const saveStudent = async () => {
-  if (!studentForm.value.username?.trim() || !studentForm.value.realName?.trim() || !studentForm.value.classId) {
-    ElMessage.warning('请填写账号、姓名并选择班级')
+  if (!studentForm.value.realName?.trim() || !studentForm.value.classId) {
+    ElMessage.warning('请填写姓名并选择班级')
+    return
+  }
+  if (!studentForm.value.id && !studentForm.value.studentNo?.trim() && !studentForm.value.username?.trim()) {
+    ElMessage.warning('请填写学号')
     return
   }
   saving.value = true
@@ -571,7 +610,8 @@ const saveStudent = async () => {
       username: studentForm.value.username.trim(),
       realName: studentForm.value.realName.trim(),
       classId: studentForm.value.classId,
-      status: studentForm.value.status
+      status: studentForm.value.status,
+      studentNo: studentForm.value.studentNo?.trim() || undefined
     }
     if (studentForm.value.password) payload.password = studentForm.value.password
     if (studentForm.value.id) {
@@ -579,9 +619,16 @@ const saveStudent = async () => {
       ElMessage.success('已保存')
     } else {
       const res = await manageCreateStudent(payload)
-      showPwd(res, '创建成功')
+      const no = res.data?.studentNo || payload.studentNo || ''
+      const name = res.data?.realName || payload.realName
+      ElMessage.success(res.data?.updatedExisting
+        ? `已把 ${no} 号 ${name} 核对进本班`
+        : `已添加 ${no} 号 ${name}`)
+      if (res.data?.initialPassword) showPwd(res, '创建成功')
     }
     studentVisible.value = false
+    filterClassId.value = payload.classId
+    studentKeyword.value = ''
     await loadStudents()
     await loadClasses()
   } catch (e) {

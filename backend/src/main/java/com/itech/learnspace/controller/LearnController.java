@@ -1,6 +1,7 @@
 package com.itech.learnspace.controller;
 
 import com.itech.learnspace.dto.ApiResponse;
+import com.itech.learnspace.dto.HintUsedRequest;
 import com.itech.learnspace.dto.MallRedeemRequest;
 import com.itech.learnspace.dto.SubmitRequest;
 import com.itech.learnspace.dto.VisitRequest;
@@ -15,6 +16,7 @@ import com.itech.learnspace.service.ParkService;
 import com.itech.learnspace.service.PointsMallService;
 import com.itech.learnspace.service.PretestG4Service;
 import com.itech.learnspace.service.PretestG6Service;
+import com.itech.learnspace.service.ScaffoldService;
 import com.itech.learnspace.service.SseService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -36,12 +38,13 @@ public class LearnController {
     private final SseService sseService;
     private final DashboardService dashboardService;
     private final PointsMallService pointsMallService;
+    private final ScaffoldService scaffoldService;
 
     public LearnController(LearnService learnService, AuthService authService,
                            NotificationService notificationService, ParkService parkService,
                            PretestG4Service pretestG4Service, PretestG6Service pretestG6Service,
                            SseService sseService, DashboardService dashboardService,
-                           PointsMallService pointsMallService) {
+                           PointsMallService pointsMallService, ScaffoldService scaffoldService) {
         this.learnService = learnService;
         this.authService = authService;
         this.notificationService = notificationService;
@@ -51,6 +54,7 @@ public class LearnController {
         this.sseService = sseService;
         this.dashboardService = dashboardService;
         this.pointsMallService = pointsMallService;
+        this.scaffoldService = scaffoldService;
     }
 
     @PostMapping("/submit")
@@ -194,6 +198,24 @@ public class LearnController {
             throw new BusinessException(403, "仅学生可查看");
         }
         return ApiResponse.ok(pointsMallService.studentMall(user));
+    }
+
+    @GetMapping("/lesson-content")
+    public ApiResponse<Map<String, Object>> lessonContent(@RequestParam Long lessonId) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可查看");
+        }
+        return ApiResponse.ok(scaffoldService.studentLessonContent(user, lessonId));
+    }
+
+    @PostMapping("/hint-used")
+    public ApiResponse<Map<String, Object>> hintUsed(@RequestBody HintUsedRequest request) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可上报");
+        }
+        return ApiResponse.ok(scaffoldService.hintUsed(user, request));
     }
 
     @PostMapping("/mall/redeem")

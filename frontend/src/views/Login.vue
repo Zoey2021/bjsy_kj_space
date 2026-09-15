@@ -109,26 +109,33 @@
       class="student-picker-dialog"
       :close-on-click-modal="false"
     >
-      <p v-if="pickerClassName" class="picker-class">班级：{{ pickerClassName }}</p>
+      <p v-if="pickerClassName" class="picker-class">班级：{{ pickerClassName }} · 共 {{ pickerStudents.length }} 人</p>
+      <el-input
+        v-model="pickerKeyword"
+        clearable
+        placeholder="输入姓名或学号查找"
+        style="margin-bottom: 12px"
+      />
       <div v-loading="pickerLoading" class="student-grid">
         <button
-          v-for="stu in pickerStudents"
+          v-for="stu in visiblePickerStudents"
           :key="stu.studentId"
           type="button"
           class="student-chip"
           :disabled="pickLoading"
           @click="confirmStudent(stu)"
         >
+          <span v-if="stu.studentNo" class="chip-no">{{ stu.studentNo }}</span>
           {{ stu.realName }}
         </button>
       </div>
-      <el-empty v-if="!pickerLoading && !pickerStudents.length" description="该班级暂无学生" :image-size="64" />
+      <el-empty v-if="!pickerLoading && !visiblePickerStudents.length" description="没有匹配的姓名，请核对班级码或联系老师" :image-size="64" />
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login, getClassCodeStudents, classCodeLogin } from '../api'
@@ -149,7 +156,20 @@ const pickerVisible = ref(false)
 const pickerStudents = ref([])
 const pickerClassName = ref('')
 const pickerLoading = ref(false)
+const pickerKeyword = ref('')
 const pendingCode = ref('')
+
+const visiblePickerStudents = computed(() => {
+  const kw = String(pickerKeyword.value || '').trim().toLowerCase()
+  const list = pickerStudents.value || []
+  if (!kw) return list
+  return list.filter((s) => {
+    const name = String(s.realName || '').toLowerCase()
+    const no = String(s.studentNo || '')
+    const username = String(s.username || '').toLowerCase()
+    return name.includes(kw) || no.includes(kw) || username.includes(kw)
+  })
+})
 
 const clearAuthStorage = () => {
   ;['token', 'role', 'realName', 'userId', 'username', 'classId', 'className', 'enrollmentYear'].forEach((key) => {
@@ -234,7 +254,8 @@ const openStudentPicker = async () => {
   codeLoading.value = true
   pickerLoading.value = true
   pickerVisible.value = true
-  pickerStudents.value = []
+    pickerStudents.value = []
+    pickerKeyword.value = ''
   pickerClassName.value = ''
   try {
     const res = await getClassCodeStudents(code)
@@ -539,10 +560,18 @@ const confirmStudent = async (stu) => {
   transition: all 0.15s ease;
   min-height: 56px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   line-height: 1.25;
+  gap: 2px;
+}
+.chip-no {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.04em;
 }
 .student-chip:hover:not(:disabled) {
   background: rgba(37, 99, 235, 0.92);

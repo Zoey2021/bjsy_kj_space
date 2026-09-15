@@ -12,6 +12,15 @@ dify:
   interactive-api-key: ${DIFY_INTERACTIVE_API_KEY:}
   interactive-app-mode: workflow
 
+ai:
+  api-key: ${AI_API_KEY:}
+  app-id: ${AI_APP_ID:aa1496e342e14d439f8ecb8fe378b11e}
+  app-base-url: ${AI_APP_BASE_URL:https://dashscope.aliyuncs.com/api/v1}
+  pass-biz-params: ${AI_PASS_BIZ_PARAMS:true}
+  base-url: ${AI_BASE_URL:}
+  model: ${AI_MODEL:}
+
 learn-space:
   activity:
     html-output-dir: /app/lesson-generated
+    lesson-html-dir: /app/lessons

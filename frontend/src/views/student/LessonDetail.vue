@@ -1,6 +1,6 @@
 <template>
   <!-- 学生工作台：左侧课程信息 + 右侧内容（六年级上第1课等） -->
-  <div v-if="workspacePlan" class="lesson-studio">
+  <div v-if="workspacePlan" class="lesson-studio" :class="{ 'studio-play-fs': playFullscreen }">
     <aside class="studio-left">
       <div class="lesson-title-bar">{{ workspacePlan.lessonTitle || lesson?.title }}</div>
 
@@ -116,14 +116,35 @@
       >
         <header v-if="currentActivity" class="activity-panel-head">
           <h2>{{ activityMenuLabel(currentActivity) }}</h2>
+          <el-button
+            v-if="currentIframeSrc"
+            type="primary"
+            plain
+            size="small"
+            @click="togglePlayFullscreen"
+          >
+            {{ playFullscreen ? '退出全屏' : '全屏操作' }}
+          </el-button>
         </header>
-        <iframe
-          v-if="currentIframeSrc"
-          :key="currentIframeSrc"
-          :src="currentIframeSrc"
-          class="content-frame"
-          :title="currentActivityTitle"
+        <ActivityScaffoldPanel
+          v-if="currentScaffoldContent && !playFullscreen"
+          :lesson-id="visitLessonId"
+          :activity-index="currentActivity.index"
+          :content="currentScaffoldContent"
         />
+        <div ref="playStageRef" class="play-stage" :class="{ 'is-fs': playFullscreen }">
+          <div v-if="playFullscreen" class="play-fs-bar">
+            <span>{{ currentActivityTitle }}</span>
+            <el-button type="primary" size="small" @click="togglePlayFullscreen">退出全屏</el-button>
+          </div>
+          <iframe
+            v-if="currentIframeSrc"
+            :key="currentIframeSrc"
+            :src="currentIframeSrc"
+            class="content-frame"
+            :title="currentActivityTitle"
+          />
+        </div>
       </section>
       <section v-show="activePanel === 'records'" class="content-panel records-panel-wrap">
         <el-empty v-if="isTeacherPreview" description="学习记录仅学生端可见" :image-size="88" />
@@ -225,16 +246,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getLesson, submitTask, recordVisit, getMyRecords, getMe, getMyPretestG6 } from '../../api'
+import { getLesson, submitTask, recordVisit, getMyRecords, getMe, getMyPretestG6, getLessonContent } from '../../api'
 import LessonClassQuiz from '../../components/student/LessonClassQuiz.vue'
 import LessonSelfEvaluation from '../../components/student/LessonSelfEvaluation.vue'
 import LessonQuickNav from '../../components/lesson/LessonQuickNav.vue'
 import LessonRecordsPanel from '../../components/student/LessonRecordsPanel.vue'
 import LessonIntroMindMap from '../../components/student/LessonIntroMindMap.vue'
 import ClassLearningScreen from '../../components/student/ClassLearningScreen.vue'
+import ActivityScaffoldPanel from '../../components/student/ActivityScaffoldPanel.vue'
 import PdfViewer from '../../components/PdfViewer.vue'
 import { buildLessonIntroMap } from '../../utils/buildLessonIntroMap'
 
@@ -269,6 +291,9 @@ const completedActivities = ref(new Set())
 const quizSubmitted = ref(false)
 const evaluationSubmitted = ref(false)
 const pretestLevel = ref('')
+const lessonContent = ref({ published: false, activities: [] })
+const playFullscreen = ref(false)
+const playStageRef = ref(null)
 let startTime = Date.now()
 let visitTimer = null
 const visitLessonId = Number(route.params.id)
@@ -363,13 +388,58 @@ const scaffoldLevel = computed(() => {
   return 'B'
 })
 
+const currentScaffoldContent = computed(() => {
+  if (!lessonContent.value?.published || !currentActivity.value) return null
+  const idx = currentActivity.value.index
+  const list = lessonContent.value.activities || []
+  const item = list.find((a) => Number(a.activityIndex) === Number(idx))
+  if (!item) return null
+  const hints = Array.isArray(item.hints) ? item.hints.filter(Boolean) : []
+  const traces = Array.isArray(item.traceQuestions) ? item.traceQuestions : []
+  const hasText = String(item.task || '').trim() || String(item.extraText || '').trim()
+  if (!hasText && !hints.length && !traces.length) return null
+  return item
+})
+
 const appendActivityParams = (path, act) => {
   if (!path) return ''
   const step = act.step || act.index
   const sep = path.includes('?') ? '&' : '?'
   const preview = isTeacherPreview.value ? '&preview=1' : ''
+  if (lessonContent.value?.published) {
+    return `${path}${sep}step=${step}&activityIndex=${act.index}&embedded=1${preview}`
+  }
   return `${path}${sep}step=${step}&activityIndex=${act.index}&embedded=1&scaffold=${scaffoldLevel.value}${preview}`
 }
+
+const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement
+const exitNativeFs = () => {
+  const exit = document.exitFullscreen || document.webkitExitFullscreen
+  if (fsElement() && exit) return exit.call(document)
+  return Promise.resolve()
+}
+const togglePlayFullscreen = async () => {
+  if (playFullscreen.value) {
+    playFullscreen.value = false
+    try { await exitNativeFs() } catch { /* ignore */ }
+    return
+  }
+  playFullscreen.value = true
+  const el = playStageRef.value
+  const req = el && (el.requestFullscreen || el.webkitRequestFullscreen)
+  if (req) {
+    try { await req.call(el) } catch { /* 浏览器拒绝时仍用页面内全屏 */ }
+  }
+}
+const onFsChange = () => {
+  if (!fsElement()) playFullscreen.value = false
+}
+
+watch(activePanel, () => {
+  if (!playFullscreen.value) return
+  playFullscreen.value = false
+  exitNativeFs().catch(() => {})
+})
 
 const currentIframeSrc = computed(() => {
   const act = currentActivity.value
@@ -678,6 +748,8 @@ const submit = async (task) => {
 
 onMounted(async () => {
   window.addEventListener('message', onLearnMessage)
+  document.addEventListener('fullscreenchange', onFsChange)
+  document.addEventListener('webkitfullscreenchange', onFsChange)
 
   const lessonRes = await getLesson(route.params.id)
   lesson.value = lessonRes.data.lesson
@@ -687,13 +759,15 @@ onMounted(async () => {
   tasks.value.forEach((t) => { answers[t.id] = {} })
 
   if (!isTeacherPreview.value) {
-    const [meRes, recordsRes, pretestRes] = await Promise.all([
+    const [meRes, recordsRes, pretestRes, contentRes] = await Promise.all([
       getMe().catch(() => ({ data: {} })),
       getMyRecords().catch(() => ({ data: { totalPoints: 0 } })),
-      getMyPretestG6().catch(() => ({ data: null }))
+      getMyPretestG6().catch(() => ({ data: null })),
+      getLessonContent(visitLessonId).catch(() => ({ data: { published: false } }))
     ])
     const lv = String(pretestRes?.data?.level || '').toUpperCase()
     pretestLevel.value = (lv === 'A' || lv === 'B' || lv === 'C') ? lv : ''
+    lessonContent.value = contentRes?.data || { published: false, activities: [] }
     studentNo.value = meRes.data?.username || localStorage.getItem('username') || ''
     studentName.value = meRes.data?.realName || localStorage.getItem('realName') || ''
     className.value = meRes.data?.className || ''
@@ -737,6 +811,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('message', onLearnMessage)
+  document.removeEventListener('fullscreenchange', onFsChange)
+  document.removeEventListener('webkitfullscreenchange', onFsChange)
+  if (playFullscreen.value) exitNativeFs().catch(() => {})
   if (visitTimer) clearInterval(visitTimer)
   if (!isTeacherPreview.value) {
     const sec = Math.floor((Date.now() - startTime) / 1000)
@@ -905,6 +982,9 @@ onUnmounted(() => {
   flex-direction: column;
   min-height: 0;
 }
+.reading-head {
+  display: block;
+}
 .reading-head p {
   margin: 6px 0 0;
   font-size: 13px;
@@ -935,17 +1015,54 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
 }
+.iframe-panel :deep(.scaffold-panel) {
+  flex-shrink: 0;
+  max-height: 28%;
+  overflow: auto;
+}
 .activity-panel-head {
   flex-shrink: 0;
-  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
   background: linear-gradient(90deg, #f8fafc 0%, #fff 100%);
   border-bottom: 1px solid #e2e8f0;
 }
 .activity-panel-head h2 {
   margin: 0;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
   color: #1e3a8a;
+}
+.play-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+.play-stage.is-fs {
+  background: #0f172a;
+}
+.play-fs-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  color: #fff;
+  background: #1e293b;
+  font-size: 14px;
+  font-weight: 600;
+}
+.studio-play-fs .studio-left {
+  display: none;
+}
+.studio-play-fs .activity-panel-head {
+  display: none;
 }
 .content-frame {
   flex: 1;

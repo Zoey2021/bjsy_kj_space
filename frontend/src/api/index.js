@@ -45,8 +45,8 @@ export const manageCreateClass = (data) => request.post('/teacher/manage/classes
 export const manageUpdateClass = (id, data) => request.put(`/teacher/manage/classes/${id}`, data)
 export const manageDeleteClass = (id) => request.delete(`/teacher/manage/classes/${id}`)
 
-export const manageListStudents = (classId) =>
-  request.get('/teacher/manage/students', { params: classId ? { classId } : {} })
+export const manageListStudents = (classId, q) =>
+  request.get('/teacher/manage/students', { params: { classId: classId || undefined, q: q || undefined } })
 export const manageCreateStudent = (data) => request.post('/teacher/manage/students', data)
 export const manageBatchCreateStudents = (data) => request.post('/teacher/manage/students/batch', data)
 export const manageUpdateStudent = (id, data) => request.put(`/teacher/manage/students/${id}`, data)
@@ -111,3 +111,21 @@ export const teacherUploadFeixiang = (lessonId, file, slotIndex) => {
     timeout: 60000
   })
 }
+
+/** 分层脚手架工作台 */
+export const teacherGetScaffoldTemplates = () => request.get('/teacher/scaffold/templates')
+export const teacherSaveScaffoldTemplate = (data) => request.post('/teacher/scaffold/templates', data)
+export const teacherGetLessonScaffold = (lessonId) => request.get(`/teacher/scaffold/${lessonId}`)
+export const teacherSaveLessonScaffold = (lessonId, data) =>
+  request.post(`/teacher/scaffold/${lessonId}`, data)
+export const teacherPublishLessonScaffold = (lessonId, data) =>
+  request.post(`/teacher/scaffold/${lessonId}/publish`, data)
+export const teacherGenerateScaffold = (data, config = {}) =>
+  request.post('/teacher/scaffold/generate', data, { timeout: 360000, ...config })
+export const teacherGetTiers = (classId) => request.get('/teacher/tiers', { params: { classId } })
+export const teacherOverrideTier = (data) => request.post('/teacher/tiers/override', data)
+
+/** 学生端按档课时内容（响应不含档位字段） */
+export const getLessonContent = (lessonId) =>
+  request.get('/learn/lesson-content', { params: { lessonId } })
+export const reportHintUsed = (data) => request.post('/learn/hint-used', data)

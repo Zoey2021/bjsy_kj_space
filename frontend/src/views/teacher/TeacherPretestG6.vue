@@ -4,7 +4,7 @@
       <div>
         <el-button link type="primary" @click="router.push('/teacher/course-map')">← 返回课程地图</el-button>
         <h1>六年级前测 · 提交监控</h1>
-        <p>仅显示 2021 级班级。A 准备度很好（总分≥85 且操作关键项满分），B 基本能跟上，C 需要脚手架（总分&lt;65 或概念较模糊）。满分 100。</p>
+        <p>仅显示 2021 级班级。A：总分≥85 且操作关键项满分；B：总分≥65；C：总分&lt;65。打开本页会按此规则重算已提交记录。</p>
       </div>
       <div class="pt-actions">
         <el-select v-model="classId" placeholder="选择2021级班级" filterable style="width: 220px" @change="loadData">
@@ -19,9 +19,12 @@
     <div class="pt-stat" v-if="overview">
       <span class="pill">班级 {{ overview.className }}</span>
       <span class="pill">已提交 {{ overview.submittedCount }} / {{ overview.totalStudents }}</span>
-      <span class="pill pill-a">A {{ levelCount.A }} 人</span>
-      <span class="pill pill-b">B {{ levelCount.B }} 人</span>
-      <span class="pill pill-c">C {{ levelCount.C }} 人</span>
+      <span class="pill pill-a">前测 A {{ levelCount.A }} 人</span>
+      <span class="pill pill-b">前测 B {{ levelCount.B }} 人</span>
+      <span class="pill pill-c">前测 C {{ levelCount.C }} 人</span>
+      <span class="pill pill-a">课堂 A {{ classTierCount.A }} 人</span>
+      <span class="pill pill-b">课堂 B {{ classTierCount.B }} 人</span>
+      <span class="pill pill-c">课堂 C {{ classTierCount.C }} 人</span>
     </div>
     <p v-else-if="!classes.length" class="empty-hint">当前账号下没有 2021 级班级，无法查看六年级前测。</p>
 
@@ -51,6 +54,24 @@
             {{ classifyLevel(row) }}
           </el-tag>
           <span v-else>—</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="课堂档位" width="200">
+        <template #default="{ row }">
+          <el-select
+            :model-value="row.tierOverride || 'FOLLOW'"
+            size="small"
+            style="width: 128px"
+            @change="(v) => changeTier(row, v)"
+          >
+            <el-option label="跟随前测" value="FOLLOW" />
+            <el-option label="指定 A" value="A" />
+            <el-option label="指定 B" value="B" />
+            <el-option label="指定 C" value="C" />
+          </el-select>
+          <el-tag v-if="row.effectiveTier" size="small" class="eff-tag" :type="tierTagType(row.effectiveTier)">
+            当前 {{ row.effectiveTier }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="提交时间" min-width="160">
@@ -94,7 +115,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getClasses, teacherGetPretestG6, teacherClearPretestG6 } from '../../api'
+import { getClasses, teacherGetPretestG6, teacherClearPretestG6, teacherGetTiers, teacherOverrideTier } from '../../api'
 import { filterClassesByCohort } from '../../utils/classCohort'
 
 const FILL_HINT = ['顺序/步骤', '流程', '有限/有穷、确定、输出', '顺序', '分支/选择', '循环', 'COUNT/计数', '分解', '抽象', 'AVERAGE/平均']
@@ -105,6 +126,7 @@ const loading = ref(false)
 const classes = ref([])
 const classId = ref(null)
 const overview = ref(null)
+const classTierCount = ref({ A: 0, B: 0, C: 0 })
 const detailVisible = ref(false)
 const detail = ref(null)
 const detailTitle = ref('')
@@ -112,12 +134,24 @@ const detailTitle = ref('')
 const rows = computed(() => overview.value?.students || [])
 const submittedCount = computed(() => Number(overview.value?.submittedCount || 0))
 
+const T1_CORRECT = ['c', 'e', 'a', 'b', 'd']
+
+const opKeyFull = (row) => {
+  const op = row?.detail?.op || {}
+  const order1 = Array.isArray(op.order1) ? op.order1 : []
+  let c1 = 0
+  T1_CORRECT.forEach((id, i) => { if (order1[i] === id) c1++ })
+  const s22 = op.branchPick === 's2' && op.shapePick === '菱形'
+  const s32 = /求和|计数|比较|最大|max|sum|count|加|多/i.test(String(op.q32 || ''))
+  if (row?.detail?.op) return c1 === 5 && s22 && s32
+  return Number(row?.opScore) === 40
+}
+
 const classifyLevel = (row) => {
-  const lv = String(row?.level || '').toUpperCase()
-  if (lv === 'A' || lv === 'B' || lv === 'C') return lv
+  if (!row?.submitted) return ''
   const n = Number(row?.totalScore)
   if (!Number.isFinite(n)) return ''
-  if (n >= 85) return 'A'
+  if (n >= 85 && opKeyFull(row)) return 'A'
   if (n >= 65) return 'B'
   return 'C'
 }
@@ -149,18 +183,67 @@ const formatFill = (ans) => {
   return ans || '（空）'
 }
 
+const tierTagType = (lv) => {
+  if (lv === 'A') return 'success'
+  if (lv === 'B') return 'warning'
+  return 'danger'
+}
+
+const mergeTiers = (pretest, tiers) => {
+  const byId = {}
+  for (const s of tiers?.students || []) {
+    byId[s.studentId] = s
+  }
+  const students = pretest?.students || []
+  const counts = { A: 0, B: 0, C: 0 }
+  for (const row of students) {
+    const t = byId[row.studentId]
+    row.tierOverride = t?.tierOverride || null
+    if (row.tierOverride) {
+      row.effectiveTier = t.effectiveTier
+    } else {
+      row.effectiveTier = classifyLevel(row) || t?.effectiveTier || 'B'
+    }
+    const lv = row.effectiveTier
+    if (counts[lv] != null) counts[lv] += 1
+  }
+  classTierCount.value = counts
+}
+
 const loadData = async () => {
   if (!classId.value) {
     overview.value = null
+    classTierCount.value = { A: 0, B: 0, C: 0 }
     return
   }
   loading.value = true
   try {
     const res = await teacherGetPretestG6(classId.value)
     overview.value = res.data || null
+    const tiersRes = await teacherGetTiers(classId.value).catch(() => ({ data: null }))
+    mergeTiers(overview.value, tiersRes.data)
   } finally {
     loading.value = false
   }
+}
+
+const changeTier = async (row, value) => {
+  const next = value === 'FOLLOW' ? null : value
+  try {
+    await ElMessageBox.confirm(
+      '调整后学生将收到不同难度的任务，确定？',
+      '调整课堂档位',
+      { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' }
+    )
+  } catch {
+    return
+  }
+  await teacherOverrideTier({
+    studentId: row.studentId,
+    tier: next || 'CLEAR'
+  })
+  ElMessage.success('档位已更新')
+  await loadData()
 }
 
 const openPaper = () => {
@@ -260,9 +343,11 @@ onMounted(async () => {
 }
 .pt-stat {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 10px;
 }
+.eff-tag { margin-left: 6px; }
 .empty-hint {
   color: #b45309;
   font-size: 13px;

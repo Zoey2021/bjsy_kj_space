@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itech.learnspace.entity.*;
 import com.itech.learnspace.exception.BusinessException;
 import com.itech.learnspace.repository.*;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -22,13 +23,15 @@ public class DashboardService {
     private final CourseTaskRepository taskRepository;
     private final LearnSubmissionRepository submissionRepository;
     private final LearnPointsRepository pointsRepository;
+    private final ScaffoldService scaffoldService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public DashboardService(SysUserRepository userRepository, SysClassRepository classRepository,
                             CourseGradeRepository gradeRepository, CourseUnitRepository unitRepository,
                             CourseLessonRepository lessonRepository, CourseTaskRepository taskRepository,
                             LearnSubmissionRepository submissionRepository,
-                            LearnPointsRepository pointsRepository) {
+                            LearnPointsRepository pointsRepository,
+                            @Lazy ScaffoldService scaffoldService) {
         this.userRepository = userRepository;
         this.classRepository = classRepository;
         this.gradeRepository = gradeRepository;
@@ -37,6 +40,7 @@ public class DashboardService {
         this.taskRepository = taskRepository;
         this.submissionRepository = submissionRepository;
         this.pointsRepository = pointsRepository;
+        this.scaffoldService = scaffoldService;
     }
 
     /** 本校教师共用全部班级，不按任课教师字段隔离 */
@@ -293,6 +297,8 @@ public class DashboardService {
 
         List<Map<String, Object>> activityDefs = buildActivityDefinitions(workspaceConfig);
         Map<Long, LearnSubmission> subByStudent = loadClassSubmissions(students, workspaceTask);
+        Map<Long, String> tierByStudent = scaffoldService.effectiveTiers(students);
+        Map<String, Integer> hintCounts = scaffoldService.hintCountByStudentActivity(lessonId);
 
         List<Map<String, Object>> activities = new ArrayList<Map<String, Object>>();
         for (Map<String, Object> def : activityDefs) {
@@ -336,6 +342,20 @@ public class DashboardService {
             act.put("submitRate", rate);
             act.put("submittedStudents", submittedStudents);
             act.put("unsubmittedStudents", unsubmittedStudents);
+            final String doneType = actType;
+            final boolean doneUnlocked = unlocked;
+            act.put("tierStats", scaffoldService.buildActivityTierSlice(
+                    index, students, tierByStudent, subByStudent, hintCounts,
+                    (student, sub) -> {
+                        int maxIndex = parseMaxActivityIndex(sub);
+                        if ("QUIZ".equals(doneType)) {
+                            return doneUnlocked && hasQuizSubmission(sub);
+                        }
+                        if ("EVALUATION".equals(doneType)) {
+                            return doneUnlocked && hasEvaluationSubmission(sub);
+                        }
+                        return doneUnlocked && maxIndex >= index;
+                    }));
             activities.add(act);
         }
 

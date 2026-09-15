@@ -30,6 +30,11 @@ public class SysUser {
     @Column(name = "class_id")
     private Long classId;
 
+    /** 教师手动覆盖档位；学生接口不得回传该字段 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "tier_override", length = 4)
+    private String tierOverride;
+
     @Column(nullable = false)
     private Integer status = 1;
 

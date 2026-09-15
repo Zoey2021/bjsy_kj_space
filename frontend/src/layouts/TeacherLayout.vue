@@ -50,7 +50,8 @@ import {
   DataAnalysis,
   MagicStick,
   Trophy,
-  Setting
+  Setting,
+  Notebook
 } from '@element-plus/icons-vue'
 import { TEACHER_MODULES } from '../constants/teacherModules'
 
@@ -65,7 +66,8 @@ const iconMap = {
   DataAnalysis,
   MagicStick,
   Trophy,
-  Setting
+  Setting,
+  Notebook
 }
 
 const activeMenu = computed(() => {
@@ -75,7 +77,7 @@ const activeMenu = computed(() => {
 })
 
 const mainClass = computed(() => ({
-  'main-flush': route.path.includes('/activity-editor/grade/') || route.path.includes('/course-map/grade/') || /^\/teacher\/pretest\/g[46]$/.test(route.path),
+  'main-flush': route.path.includes('/activity-editor/grade/') || route.path.includes('/course-map/grade/') || /^\/teacher\/pretest\/g[46]$/.test(route.path) || route.path.startsWith('/teacher/scaffold-workbench'),
   'main-lesson': /^\/teacher\/lesson\/\d+$/.test(route.path) || /\/teacher\/pretest\/g[46]\/paper$/.test(route.path),
   'main-map': route.path === '/teacher/course-map' || route.path === '/teacher/activity-editor'
 }))

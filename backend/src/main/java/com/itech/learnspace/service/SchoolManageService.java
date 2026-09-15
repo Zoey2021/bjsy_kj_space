@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import javax.persistence.EntityManager;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,13 +29,19 @@ public class SchoolManageService {
     private final SysUserRepository userRepository;
     private final SysClassRepository classRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EntityManager entityManager;
+    private final ClassMembershipService classMembershipService;
 
     public SchoolManageService(SysUserRepository userRepository,
                                SysClassRepository classRepository,
-                               PasswordEncoder passwordEncoder) {
+                               PasswordEncoder passwordEncoder,
+                               EntityManager entityManager,
+                               ClassMembershipService classMembershipService) {
         this.userRepository = userRepository;
         this.classRepository = classRepository;
         this.passwordEncoder = passwordEncoder;
+        this.entityManager = entityManager;
+        this.classMembershipService = classMembershipService;
     }
 
     // ---------- 教师 ----------
@@ -199,13 +206,23 @@ public class SchoolManageService {
     // ---------- 学生 ----------
 
     public List<Map<String, Object>> listStudents(Long classId) {
+        return listStudents(classId, null);
+    }
+
+    public List<Map<String, Object>> listStudents(Long classId, String keyword) {
+        String q = keyword == null ? "" : keyword.trim();
         List<SysUser> list;
-        if (classId == null) {
+        if (StringUtils.hasText(q) && classId == null) {
+            list = searchStudents(q);
+        } else if (classId == null) {
             return Collections.emptyList();
+        } else {
+            list = loadStudentsOfClass(classId);
+            if (StringUtils.hasText(q)) {
+                String needle = q.toLowerCase();
+                list = list.stream().filter(u -> studentMatches(u, needle)).collect(Collectors.toList());
+            }
         }
-        list = userRepository.findByClassId(classId).stream()
-                .filter(u -> "STUDENT".equals(u.getRole()))
-                .collect(Collectors.toList());
         Map<Long, String> classNames = classRepository.findAll().stream()
                 .collect(Collectors.toMap(SysClass::getId, SysClass::getName, (a, b) -> a));
         return list.stream()
@@ -221,36 +238,151 @@ public class SchoolManageService {
                 .collect(Collectors.toList());
     }
 
+    private List<SysUser> searchStudents(String keyword) {
+        String needle = keyword.toLowerCase();
+        return userRepository.findByRole("STUDENT").stream()
+                .filter(u -> studentMatches(u, needle))
+                .collect(Collectors.toList());
+    }
+
+    private boolean studentMatches(SysUser u, String keyword) {
+        if (u == null || !StringUtils.hasText(keyword)) {
+            return true;
+        }
+        String needle = keyword.toLowerCase();
+        String name = u.getRealName() == null ? "" : u.getRealName();
+        String username = u.getUsername() == null ? "" : u.getUsername().toLowerCase();
+        String no = PretestG4Service.parseStudentNo(u.getUsername());
+        return name.contains(keyword) || name.toLowerCase().contains(needle)
+                || username.contains(needle)
+                || (StringUtils.hasText(no) && (no.contains(keyword) || no.contains(needle)));
+    }
+
+    public List<SysUser> loadStudentsOfClass(Long classId) {
+        LinkedHashSet<Long> ids = new LinkedHashSet<Long>();
+        for (SysUser u : userRepository.findByClassId(classId)) {
+            if ("STUDENT".equals(u.getRole())) {
+                ids.add(u.getId());
+            }
+        }
+        try {
+            List<Number> extra = userRepository.findStudentIdsInClass(classId);
+            if (extra != null) {
+                for (Number n : extra) {
+                    if (n != null) {
+                        ids.add(n.longValue());
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        List<SysUser> users = userRepository.findAllById(ids);
+        for (SysUser u : users) {
+            if (!"STUDENT".equals(u.getRole())) {
+                continue;
+            }
+            if (u.getClassId() == null || !classId.equals(u.getClassId())) {
+                u.setClassId(classId);
+                userRepository.save(u);
+            }
+        }
+        return users.stream()
+                .filter(u -> "STUDENT".equals(u.getRole()))
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public Map<String, Object> createStudent(StudentSaveRequest req) {
-        requireText(req.getUsername(), "账号不能为空");
         requireText(req.getRealName(), "姓名不能为空");
         if (req.getClassId() == null) {
             throw new BusinessException("请选择班级");
         }
-        classRepository.findById(req.getClassId())
+        SysClass clazz = classRepository.findById(req.getClassId())
                 .orElseThrow(() -> new BusinessException("班级不存在"));
+        String realName = req.getRealName().trim();
+        String username = req.getUsername() == null ? "" : req.getUsername().trim();
+        Integer studentNo = parseOptionalStudentNo(req.getStudentNo());
+        if (username.matches("\\d{1,2}") && studentNo == null) {
+            studentNo = Integer.parseInt(username);
+            username = "";
+        }
+        if (!StringUtils.hasText(username)) {
+            if (studentNo == null) {
+                throw new BusinessException("请填写学号");
+            }
+            username = buildStudentUsername(realName, clazz.getName(), studentNo);
+        }
+
+        SysUser existing = findExistingStudent(req.getClassId(), username, studentNo, realName);
+        if (existing != null) {
+            existing.setRealName(realName);
+            existing.setRole("STUDENT");
+            existing.setStatus(1);
+            existing.setClassId(req.getClassId());
+            existing = userRepository.saveAndFlush(existing);
+            classMembershipService.replace(existing.getId(), req.getClassId());
+            Map<String, Object> out = toUserMap(existing);
+            out.put("studentNo", studentNo != null ? String.valueOf(studentNo)
+                    : PretestG4Service.parseStudentNo(existing.getUsername()));
+            out.put("updatedExisting", true);
+            return out;
+        }
+
         ensureClassCapacity(req.getClassId(), 1);
-        if (userRepository.findByUsername(req.getUsername().trim()).isPresent()) {
-            throw new BusinessException("账号已存在");
+        if (userRepository.findByUsername(username).isPresent()) {
+            throw new BusinessException("账号已存在：" + username);
         }
         boolean auto = !StringUtils.hasText(req.getPassword());
         String raw = auto ? generatePassword(6) : req.getPassword().trim();
 
         SysUser user = new SysUser();
-        user.setUsername(req.getUsername().trim());
+        user.setUsername(username);
         user.setPassword(passwordEncoder.encode(raw));
-        user.setRealName(req.getRealName().trim());
+        user.setRealName(realName);
         user.setRole("STUDENT");
         user.setClassId(req.getClassId());
         user.setStatus(req.getStatus() != null ? req.getStatus() : 1);
-        user = userRepository.save(user);
+        user = userRepository.saveAndFlush(user);
+        try {
+            classMembershipService.replace(user.getId(), user.getClassId());
+        } catch (Exception e) {
+            // 班级对照表失败时仍保留学生账号，避免整笔回滚后“提示成功但名单没有”
+        }
 
         Map<String, Object> out = toUserMap(user);
+        out.put("studentNo", PretestG4Service.parseStudentNo(user.getUsername()));
         if (auto) {
             out.put("initialPassword", raw);
         }
         return out;
+    }
+
+    private SysUser findExistingStudent(Long classId, String username, Integer studentNo, String realName) {
+        if (StringUtils.hasText(username)) {
+            SysUser byName = userRepository.findByUsername(username).orElse(null);
+            if (byName != null && "STUDENT".equals(byName.getRole())) {
+                return byName;
+            }
+        }
+        if (studentNo != null) {
+            String want = String.valueOf(studentNo);
+            for (SysUser u : loadStudentsOfClass(classId)) {
+                if (want.equals(PretestG4Service.parseStudentNo(u.getUsername()))) {
+                    return u;
+                }
+            }
+        }
+        if (StringUtils.hasText(realName)) {
+            for (SysUser u : userRepository.findByRole("STUDENT")) {
+                if (!realName.equals(u.getRealName())) {
+                    continue;
+                }
+                if (u.getClassId() == null || classId.equals(u.getClassId())) {
+                    return u;
+                }
+            }
+        }
+        return null;
     }
 
     @Transactional
@@ -282,13 +414,17 @@ public class SchoolManageService {
         if (StringUtils.hasText(req.getPassword())) {
             user.setPassword(passwordEncoder.encode(req.getPassword().trim()));
         }
-        return toUserMap(userRepository.save(user));
+        user = userRepository.save(user);
+        classMembershipService.replace(user.getId(), user.getClassId());
+        return toUserMap(user);
     }
 
     @Transactional
     public void deleteStudent(Long id) {
         SysUser user = requireStudent(id);
+        deleteStudentRelatedRows(id);
         userRepository.delete(user);
+        userRepository.flush();
     }
 
     @Transactional
@@ -397,6 +533,7 @@ public class SchoolManageService {
             user.setClassId(classId);
             user.setStatus(1);
             user = userRepository.save(user);
+            classMembershipService.replace(user.getId(), classId);
             existingNos.get(classId).add(studentNo);
             incomingCount.put(classId, incomingCount.getOrDefault(classId, 0) + 1);
 
@@ -416,6 +553,40 @@ public class SchoolManageService {
     }
 
     // ---------- helpers ----------
+
+    private void deleteStudentRelatedRows(Long studentId) {
+        deleteFromTableIfExists("learn_mall_order", "student_id", studentId);
+        deleteFromTableIfExists("learn_pretest_g4", "student_id", studentId);
+        deleteFromTableIfExists("learn_pretest_g6", "student_id", studentId);
+        deleteFromTableIfExists("learn_hint_log", "student_id", studentId);
+        deleteFromTableIfExists("learn_park_access", "student_id", studentId);
+        deleteFromTableIfExists("learn_notification", "target_student_id", studentId);
+        deleteFromTableIfExists("learn_submission_log", "student_id", studentId);
+        deleteFromTableIfExists("learn_submission", "student_id", studentId);
+        deleteFromTableIfExists("learn_progress", "student_id", studentId);
+        deleteFromTableIfExists("learn_visit_log", "student_id", studentId);
+        deleteFromTableIfExists("learn_points", "student_id", studentId);
+        deleteFromTableIfExists("student_grade_report", "student_id", studentId);
+        deleteFromTableIfExists("student_school_grade_record", "student_id", studentId);
+        deleteFromTableIfExists("sys_class_student", "student_id", studentId);
+    }
+
+    private void deleteFromTableIfExists(String table, String column, Long studentId) {
+        if (studentId == null || !tableExists(table)) {
+            return;
+        }
+        entityManager.createNativeQuery("DELETE FROM " + table + " WHERE " + column + " = ?1")
+                .setParameter(1, studentId)
+                .executeUpdate();
+    }
+
+    private boolean tableExists(String table) {
+        Number count = (Number) entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?1")
+                .setParameter(1, table)
+                .getSingleResult();
+        return count != null && count.intValue() > 0;
+    }
 
     private SysUser requireTeacher(Long id) {
         SysUser user = userRepository.findById(id)
@@ -485,6 +656,23 @@ public class SchoolManageService {
         m.put("realName", realName);
         m.put("reason", reason);
         return m;
+    }
+
+    private static Integer parseOptionalStudentNo(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            return null;
+        }
+        try {
+            int n = Integer.parseInt(raw.trim().replaceFirst("^0+(?=\\d)", ""));
+            if (n < 1 || n > MAX_CLASS_SIZE) {
+                throw new BusinessException("学号须在 1～" + MAX_CLASS_SIZE + " 之间");
+            }
+            return n;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException("学号必须是数字");
+        }
     }
 
     private static int parseStudentNoOrder(Object raw) {

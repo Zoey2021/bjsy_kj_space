@@ -43,8 +43,13 @@ request.interceptors.response.use(
         router.push('/login')
       }
       ElMessage.error(serverMsg || '登录已过期，请重新登录')
+    } else if (err.code === 'ERR_CANCELED' || err.name === 'CanceledError') {
+      return Promise.reject(err)
     } else if (err.code === 'ECONNABORTED' || (err.message && err.message.includes('timeout'))) {
-      ElMessage.error('请求超时，AI 生成较慢时请稍候再试（活动推荐最多等待 3 分钟）')
+      const slowAi = reqUrl.includes('/scaffold/generate') || reqUrl.includes('/ai/') || reqUrl.includes('/generate-activities')
+      ElMessage.error(slowAi
+        ? '百炼工作流超时，请稍候再试（最多等待 3 分钟）'
+        : '服务器响应超时，请稍后重试。若连续失败，请联系管理员重启后端。')
     } else if (serverMsg) {
       ElMessage.error(serverMsg)
     } else {

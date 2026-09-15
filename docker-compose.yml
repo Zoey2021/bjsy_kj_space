@@ -36,16 +36,21 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       DIFY_RECOMMEND_API_KEY: ${DIFY_RECOMMEND_API_KEY:-}
       DIFY_INTERACTIVE_API_KEY: ${DIFY_INTERACTIVE_API_KEY:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_APP_ID: aa1496e342e14d439f8ecb8fe378b11e
+      AI_APP_BASE_URL: "https://dashscope.aliyuncs.com/api/v1"
+      AI_PASS_BIZ_PARAMS: "true"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - lesson_generated:/app/lesson-generated
+      - ./frontend/public/lessons:/app/lessons:ro
 
   frontend:
     build: ./frontend
     container_name: learn-frontend
     ports:
-      - "80:80"
+      - "8088:80"
     depends_on:
       - backend
     volumes:

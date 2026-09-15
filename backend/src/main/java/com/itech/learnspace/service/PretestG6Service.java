@@ -57,9 +57,9 @@ public class PretestG6Service {
         int opScore = clamp(scores.path("op").asInt(0), 0, 40);
         int attScore = clamp(scores.path("att").asInt(0), 0, 10);
         int total = clamp(scores.path("total").asInt(fillScore + choiceScore + opScore + attScore), 0, 100);
-        String level = normalizeLevel(scores.path("level").asText(""));
-
         ObjectNode stored = (ObjectNode) node;
+        String level = computeLevel(total, stored);
+
         stored.put("name", student.getRealName());
         stored.put("className", className);
         stored.put("no", studentNo);
@@ -93,6 +93,7 @@ public class PretestG6Service {
                 .orElse(null);
     }
 
+    @Transactional
     public Map<String, Object> classOverview(Long teacherId, String role, Long classId) {
         if (!"ADMIN".equals(role)) {
             dashboardService.checkTeacherOwnsClass(teacherId, classId);
@@ -129,7 +130,8 @@ public class PretestG6Service {
                 item.put("opScore", row.getOpScore());
                 item.put("attScore", row.getAttScore());
                 item.put("totalScore", row.getTotalScore());
-                item.put("level", row.getLevelCode());
+                String level = refreshLevel(row);
+                item.put("level", level);
                 item.put("submittedAt", row.getSubmittedAt());
                 item.put("detail", parseContent(row.getContentJson()));
             } else {
@@ -191,14 +193,56 @@ public class PretestG6Service {
         }
     }
 
-    private static int clamp(int n, int min, int max) {
-        return Math.max(min, Math.min(max, n));
+    private String refreshLevel(LearnPretestG6 row) {
+        JsonNode content;
+        try {
+            content = objectMapper.readTree(row.getContentJson() == null ? "{}" : row.getContentJson());
+        } catch (Exception e) {
+            content = objectMapper.createObjectNode();
+        }
+        int total = row.getTotalScore() == null ? 0 : row.getTotalScore();
+        String level = computeLevel(total, content);
+        if (!level.equals(row.getLevelCode())) {
+            row.setLevelCode(level);
+            pretestRepository.save(row);
+        }
+        return level;
     }
 
-    private static String normalizeLevel(String raw) {
-        if ("A".equalsIgnoreCase(raw) || "B".equalsIgnoreCase(raw) || "C".equalsIgnoreCase(raw)) {
-            return raw.toUpperCase();
+    /**
+     * A：总分≥85 且操作关键项满分；B：总分≥65；C：总分&lt;65。
+     */
+    public static String computeLevel(int total, JsonNode content) {
+        if (total < 65) {
+            return "C";
+        }
+        if (content == null) {
+            return "B";
+        }
+        JsonNode op = content.path("op");
+        int c1 = countOrder(op.path("order1"), new String[] {"c", "e", "a", "b", "d"});
+        int s22a = "s2".equals(op.path("branchPick").asText("")) ? 3 : 0;
+        int s22b = "菱形".equals(op.path("shapePick").asText("")) ? 3 : 0;
+        int s22 = s22a + s22b;
+        String q32 = op.path("q32").asText("");
+        int s32 = q32.matches("(?i).*(求和|计数|比较|最大|max|sum|count|加|多).*") ? 6 : 0;
+        if (total >= 85 && c1 == 5 && s22 == 6 && s32 == 6) {
+            return "A";
         }
         return "B";
+    }
+
+    private static int countOrder(JsonNode order, String[] correct) {
+        int n = 0;
+        for (int i = 0; i < correct.length; i++) {
+            if (i < order.size() && correct[i].equals(order.path(i).asText(""))) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    private static int clamp(int n, int min, int max) {
+        return Math.max(min, Math.min(max, n));
     }
 }

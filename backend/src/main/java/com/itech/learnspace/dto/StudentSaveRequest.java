@@ -9,4 +9,6 @@ public class StudentSaveRequest {
     private String realName;
     private Long classId;
     private Integer status;
+    /** 学号，新增时可只填学号，由系统生成账号 */
+    private String studentNo;
 }

@@ -6,6 +6,7 @@ import com.itech.learnspace.dto.MallOpenRequest;
 import com.itech.learnspace.dto.ParkReviewRequest;
 import com.itech.learnspace.dto.PointsRulesRequest;
 import com.itech.learnspace.dto.SetCurrentLessonRequest;
+import com.itech.learnspace.dto.TierOverrideRequest;
 import com.itech.learnspace.entity.LearnNotification;
 import com.itech.learnspace.entity.SysUser;
 import com.itech.learnspace.exception.BusinessException;
@@ -15,6 +16,7 @@ import com.itech.learnspace.service.ParkService;
 import com.itech.learnspace.service.PointsMallService;
 import com.itech.learnspace.service.PretestG4Service;
 import com.itech.learnspace.service.PretestG6Service;
+import com.itech.learnspace.service.ScaffoldService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,16 +32,19 @@ public class TeacherController {
     private final PretestG6Service pretestG6Service;
     private final AuthService authService;
     private final PointsMallService pointsMallService;
+    private final ScaffoldService scaffoldService;
 
     public TeacherController(NotificationService notificationService, ParkService parkService,
                              PretestG4Service pretestG4Service, PretestG6Service pretestG6Service,
-                             AuthService authService, PointsMallService pointsMallService) {
+                             AuthService authService, PointsMallService pointsMallService,
+                             ScaffoldService scaffoldService) {
         this.notificationService = notificationService;
         this.parkService = parkService;
         this.pretestG4Service = pretestG4Service;
         this.pretestG6Service = pretestG6Service;
         this.authService = authService;
         this.pointsMallService = pointsMallService;
+        this.scaffoldService = scaffoldService;
     }
 
     private SysUser checkTeacher() {
@@ -115,6 +120,18 @@ public class TeacherController {
     public ApiResponse<Map<String, Object>> mall(@RequestParam(required = false) Long classId) {
         checkTeacher();
         return ApiResponse.ok(pointsMallService.teacherMall(classId));
+    }
+
+    @GetMapping("/tiers")
+    public ApiResponse<Map<String, Object>> classTiers(@RequestParam Long classId) {
+        SysUser teacher = checkTeacher();
+        return ApiResponse.ok(scaffoldService.classTiers(teacher.getId(), teacher.getRole(), classId));
+    }
+
+    @PostMapping("/tiers/override")
+    public ApiResponse<Map<String, Object>> overrideTier(@RequestBody TierOverrideRequest request) {
+        SysUser teacher = checkTeacher();
+        return ApiResponse.ok("档位已更新", scaffoldService.overrideTier(teacher.getId(), teacher.getRole(), request));
     }
 
     @PutMapping("/mall/open")

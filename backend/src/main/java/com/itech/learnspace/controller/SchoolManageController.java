@@ -100,9 +100,10 @@ public class SchoolManageController {
 
     @GetMapping("/students")
     public ApiResponse<List<Map<String, Object>>> students(
-            @RequestParam(required = false) Long classId) {
+            @RequestParam(required = false) Long classId,
+            @RequestParam(required = false) String q) {
         checkTeacherOrAdmin();
-        return ApiResponse.ok(schoolManageService.listStudents(classId));
+        return ApiResponse.ok(schoolManageService.listStudents(classId, q));
     }
 
     @PostMapping("/students")

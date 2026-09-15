@@ -29,15 +29,18 @@ public class AuthService {
     private final SysClassRepository classRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final SchoolManageService schoolManageService;
 
     public AuthService(SysUserRepository userRepository,
                        SysClassRepository classRepository,
                        PasswordEncoder passwordEncoder,
-                       JwtUtil jwtUtil) {
+                       JwtUtil jwtUtil,
+                       SchoolManageService schoolManageService) {
         this.userRepository = userRepository;
         this.classRepository = classRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.schoolManageService = schoolManageService;
     }
 
     /**
@@ -79,14 +82,23 @@ public class AuthService {
     /** 学生：凭班级码获取本班学生名单 */
     public Map<String, Object> getStudentsByClassCode(String code) {
         SysClass cls = findValidClassByCode(code);
-        List<Map<String, Object>> students = userRepository.findByClassId(cls.getId()).stream()
-                .filter(u -> "STUDENT".equals(u.getRole()) && u.getStatus() == 1)
-                .sorted(Comparator.comparing(SysUser::getRealName))
+        List<Map<String, Object>> students = schoolManageService.loadStudentsOfClass(cls.getId()).stream()
+                .filter(u -> Integer.valueOf(1).equals(u.getStatus()))
+                .sorted(Comparator
+                        .comparingInt((SysUser u) -> {
+                            try {
+                                return Integer.parseInt(PretestG4Service.parseStudentNo(u.getUsername()));
+                            } catch (Exception e) {
+                                return Integer.MAX_VALUE;
+                            }
+                        })
+                        .thenComparing(u -> u.getRealName() == null ? "" : u.getRealName()))
                 .map(u -> {
                     Map<String, Object> row = new HashMap<String, Object>();
                     row.put("studentId", u.getId());
                     row.put("realName", u.getRealName());
                     row.put("username", u.getUsername());
+                    row.put("studentNo", PretestG4Service.parseStudentNo(u.getUsername()));
                     return row;
                 })
                 .collect(Collectors.toList());
@@ -106,11 +118,17 @@ public class AuthService {
         if (!"STUDENT".equals(user.getRole())) {
             throw new BusinessException("仅学生可使用班级码登录");
         }
-        if (user.getStatus() != 1) {
+        if (user.getStatus() == null || user.getStatus() != 1) {
             throw new BusinessException("账号已被禁用");
         }
         if (user.getClassId() == null || !user.getClassId().equals(cls.getId())) {
-            throw new BusinessException("该学生不属于此班级");
+            boolean inClass = schoolManageService.loadStudentsOfClass(cls.getId()).stream()
+                    .anyMatch(u -> studentId.equals(u.getId()));
+            if (!inClass) {
+                throw new BusinessException("该学生不属于此班级");
+            }
+            user.setClassId(cls.getId());
+            userRepository.save(user);
         }
         return buildLoginResult(user);
     }

@@ -214,6 +214,7 @@
                 <el-tag v-if="!act.unlocked" size="small" type="info">需解锁</el-tag>
               </div>
               <div class="act-meta">{{ act.submittedCount || 0 }} / {{ data.totalStudents || 0 }} 人已提交</div>
+              <div v-if="act.tierStats" class="act-tiers">{{ formatTierStats(act.tierStats) }}</div>
             </div>
             <div class="act-progress">
               <el-progress
@@ -239,6 +240,7 @@
             </div>
             <div class="grid-title">{{ activityLabel(act) }}</div>
             <div class="grid-count">{{ act.submittedCount || 0 }} / {{ data.totalStudents || 0 }}</div>
+            <div v-if="act.tierStats" class="grid-tiers">{{ formatTierStats(act.tierStats) }}</div>
             <el-progress
               :percentage="act.submitRate || 0"
               :stroke-width="8"
@@ -460,6 +462,15 @@ const activityLabel = (act) => {
   if (act.type === 'EVALUATION') return '学习评价'
   if (act.type === 'QUIZ') return '课堂小测'
   return `探究活动${chineseNum(act.index)}：${act.title}`
+}
+
+const formatTierStats = (stats) => {
+  if (!stats) return ''
+  const line = (code) => {
+    const t = stats[code] || {}
+    return `${code} ${t.count || 0}人 · 完成 ${t.rate || 0}% · 提示均 ${t.hintAvg ?? 0} 次`
+  }
+  return [line('A'), line('B'), line('C')].join(' ｜ ')
 }
 
 const buildQuizRadarValues = () => {
@@ -1234,6 +1245,12 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
 }
 .act-title { font-weight: 600; font-size: 14px; color: #334155; display: flex; align-items: center; gap: 6px; }
 .act-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.act-tiers, .grid-tiers {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+  line-height: 1.5;
+}
 .act-rate { font-weight: 700; color: #5b4fc7; font-size: 14px; text-align: right; }
 .act-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .act-btn {

@@ -51,9 +51,13 @@ public class PretestG4Service {
         if (username == null) {
             return "";
         }
-        Matcher m = USERNAME_NO.matcher(username);
+        String raw = username.trim();
+        Matcher m = USERNAME_NO.matcher(raw);
         if (m.find()) {
             return String.valueOf(Integer.parseInt(m.group(2)));
+        }
+        if (raw.matches("\\d{1,2}")) {
+            return String.valueOf(Integer.parseInt(raw));
         }
         return "";
     }

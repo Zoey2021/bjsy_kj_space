@@ -37,6 +37,7 @@ const routes = [
       { path: 'lesson/:id', component: () => import('../views/student/LessonDetail.vue'), meta: { teacherPreview: true } },
       { path: 'activity-editor', component: () => import('../views/teacher/ActivityEditorHub.vue') },
       { path: 'activity-editor/grade/:gradeId', component: () => import('../views/teacher/TeacherGradeManage.vue') },
+      { path: 'scaffold-workbench', component: () => import('../views/teacher/ScaffoldWorkbench.vue') },
       { path: 'dashboard', component: () => import('../views/teacher/ClassDashboard.vue') },
       { path: 'ai-evaluation', component: () => import('../views/teacher/AiEvaluation.vue') },
       { path: 'points', component: () => import('../views/teacher/PointsManage.vue') },

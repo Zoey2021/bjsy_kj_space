@@ -321,11 +321,9 @@ function gradeOp(op){
 
 function computeLevel(total, fillAns, choiceAns, op){
   var c1=op.c1, s22=op.s22, s32=op.s32;
-  var conceptFuzzy = !matchAny(fillAns[0]&&fillAns[0][0], FILL[0].key[0]) && (choiceAns[0]!==CHOICE[0].ans);
-  var noSequence = (c1<=1);
   if(total>=85 && c1===5 && s22===6 && s32===6) return 'A';
-  if(total<65 || conceptFuzzy || noSequence) return 'C';
-  return 'B';
+  if(total>=65) return 'B';
+  return 'C';
 }
 function gradeAtt(att){
   var n=(att||[]).filter(function(x){return x;}).length;

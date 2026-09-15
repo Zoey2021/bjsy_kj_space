@@ -22,6 +22,13 @@ export const TEACHER_MODULES = [
     desc: '编辑课时介绍、资源与探究活动'
   },
   {
+    key: 'scaffold-workbench',
+    path: '/teacher/scaffold-workbench',
+    title: '分层脚手架',
+    icon: 'Notebook',
+    desc: '按课时配置三档任务与提示'
+  },
+  {
     key: 'ai-evaluation',
     path: '/teacher/ai-evaluation',
     title: '智能评价',
