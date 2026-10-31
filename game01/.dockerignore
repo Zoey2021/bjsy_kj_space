@@ -1,0 +1,11 @@
+.venv
+.venv310
+.venv312
+__pycache__
+**/__pycache__
+logs
+tmp*
+*.pyc
+.env.bak
+*.sh
+gunicorn.pid

@@ -87,11 +87,12 @@
           <div class="row-between">
             <h2>编辑三档草稿</h2>
             <div>
-              <el-button type="primary" :loading="generatingAll" :disabled="locked || generating" @click="generateAll">整课时批量生成</el-button>
-              <el-button v-if="generatingAll" @click="cancelGenerate">取消</el-button>
-              <el-button @click="saveDraft">保存草稿</el-button>
+              <el-button type="primary" :loading="generatingAll" :disabled="generating" @click="generateAll">整课时批量生成</el-button>
+              <el-button v-if="generating" @click="cancelGenerate">取消</el-button>
+              <el-button :disabled="generating" @click="saveDraft">保存草稿</el-button>
             </div>
           </div>
+          <p v-if="generating" class="gen-progress">{{ generatingText }}</p>
           <p v-if="!activities.length" class="empty-hint">没有可生成的活动。</p>
           <div v-for="item in items" :key="item.activityIndex" class="item-card">
             <div class="item-head">
@@ -101,7 +102,7 @@
                 plain
                 size="small"
                 :loading="generatingIndex === item.activityIndex"
-                :disabled="locked || generating"
+                :disabled="generating && generatingIndex !== item.activityIndex"
                 @click="generateOne(item.activityIndex)"
               >
                 AI 生成
@@ -186,9 +187,9 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, onMounted } from 'vue'
+import { computed, onUnmounted, reactive, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   teacherGetTextbooks,
   teacherGetOutline,
@@ -215,14 +216,33 @@ const activities = ref([])
 const items = ref([])
 const generatingAll = ref(false)
 const generatingIndex = ref(null)
+const generateElapsed = ref(0)
 const publishing = ref(false)
 const aiReady = ref(true)
 let abortCtrl = null
+let elapsedTimer = null
 
 const generating = computed(() => generatingAll.value || generatingIndex.value != null)
-const generatingText = computed(() =>
-  generatingAll.value ? '正在整课时调用百炼工作流，大约 1～3 分钟，请稍候…' : '正在调用百炼工作流，大约 1～2 分钟，请稍候…'
-)
+const generatingText = computed(() => {
+  const wait = generateElapsed.value > 0 ? `已等待 ${generateElapsed.value} 秒。` : ''
+  return generatingAll.value
+    ? `${wait}正在整课时调用百炼，大约 1～3 分钟，请不要关闭页面。`
+    : `${wait}正在调用百炼工作流，大约 1～2 分钟，请不要关闭页面。`
+})
+
+const startElapsed = () => {
+  generateElapsed.value = 0
+  if (elapsedTimer) clearInterval(elapsedTimer)
+  elapsedTimer = setInterval(() => {
+    generateElapsed.value += 1
+  }, 1000)
+}
+const stopElapsed = () => {
+  if (elapsedTimer) {
+    clearInterval(elapsedTimer)
+    elapsedTimer = null
+  }
+}
 
 const tierDefs = reactive({
   A: { goal: '', criteria: [] },
@@ -371,9 +391,29 @@ const cancelGenerate = () => {
   if (abortCtrl) abortCtrl.abort()
 }
 
+const hasDraftText = () => items.value.some((item) =>
+  ['A', 'B', 'C'].some((code) => String(item.tiers?.[code]?.task || '').trim())
+)
+
+const confirmOverwrite = async () => {
+  if (!locked.value && !hasDraftText()) return true
+  try {
+    await ElMessageBox.confirm(
+      locked.value
+        ? '本课支架已发布。调用百炼会覆盖当前文案并改回草稿，学生端需重新发布后才更新。确定生成？'
+        : '当前已有三档文案。调用百炼会覆盖这些内容。确定生成？',
+      '调用百炼生成',
+      { type: 'warning', confirmButtonText: '调用百炼', cancelButtonText: '取消' }
+    )
+    return true
+  } catch {
+    return false
+  }
+}
+
 const runGenerate = async (activityIndex) => {
-  if (locked.value) {
-    ElMessage.warning('已发布的课时请先点「重新编辑」')
+  if (!lessonId.value) {
+    ElMessage.warning('请先在左侧选择课时')
     return
   }
   if (!aiReady.value) {
@@ -381,7 +421,8 @@ const runGenerate = async (activityIndex) => {
     return
   }
   abortCtrl = new AbortController()
-  ElMessage.info('开始生成，大约需要 1～2 分钟，请不要关闭页面')
+  startElapsed()
+  ElMessage.info('已向百炼发送请求，请等待 1～2 分钟')
   try {
     const res = await teacherGenerateScaffold({
       lessonId: lessonId.value,
@@ -390,7 +431,7 @@ const runGenerate = async (activityIndex) => {
       tierDefinitions: readCriteria()
     }, { signal: abortCtrl.signal })
     applyPayload(res.data || {})
-    ElMessage.success('草稿已生成，请检查后可再改')
+    ElMessage.success('百炼草稿已写入，请检查后可再改')
   } catch (err) {
     if (err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError') {
       ElMessage.info('已取消生成')
@@ -398,28 +439,35 @@ const runGenerate = async (activityIndex) => {
     }
     const msg = err?.message || err?.response?.data?.message || ''
     if (!msg) {
-      ElMessage.error('AI 生成失败，请手动填写或重试')
+      ElMessage.error('百炼生成失败，请重试或手动填写')
     }
   } finally {
     abortCtrl = null
+    stopElapsed()
   }
 }
 
 const generateOne = async (index) => {
+  if (generating.value) return
+  if (!(await confirmOverwrite())) return
   generatingIndex.value = index
   try {
     await runGenerate(index)
   } finally {
     generatingIndex.value = null
+    stopElapsed()
   }
 }
 
 const generateAll = async () => {
+  if (generating.value) return
+  if (!(await confirmOverwrite())) return
   generatingAll.value = true
   try {
     await runGenerate('all')
   } finally {
     generatingAll.value = false
+    stopElapsed()
   }
 }
 
@@ -452,6 +500,11 @@ const publish = async () => {
     publishing.value = false
   }
 }
+
+onUnmounted(() => {
+  stopElapsed()
+  if (abortCtrl) abortCtrl.abort()
+})
 
 onMounted(async () => {
   booting.value = true
@@ -501,6 +554,14 @@ onMounted(async () => {
   font-size: 13px;
 }
 .ai-warn { color: #b45309; font-size: 13px; margin: 8px 0 0; }
+.gen-progress {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 13px;
+}
 .wb-body {
   flex: 1;
   min-height: 0;

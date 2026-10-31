@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多样的数据 — 探究活动</title>
+<style>
+:root{--bg:#fff7ed;--ink:#3a2743;--muted:#806d82;--pink:#ff6b8a;--orange:#ffb84d;--mint:#31b978;--blue:#42aceb;--lav:#7d9cff;--line:#f2d9dc;--card:#fff;--good:#187348;--goodbg:#e9fbf1;--bad:#a43c4b;--badbg:#fff0f2;--r:18px;--sh:0 14px 36px rgba(168,93,113,.12)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:var(--ink);background:linear-gradient(180deg,#fffaf5,var(--bg))}
+button,select,input{font:inherit}button{border:0;cursor:pointer}
+.studio{display:flex;min-height:100vh}
+.studio-nav{width:250px;flex-shrink:0;background:linear-gradient(180deg,#fff 0%,#fff6f7 100%);border-right:1px solid var(--line);padding:0 0 16px}
+.studio-title{background:linear-gradient(135deg,#ff6b8a,#ffb84d);color:#fff;font-size:15px;font-weight:800;padding:16px 14px;line-height:1.4}
+.studio-menu{padding:10px;display:flex;flex-direction:column;gap:6px}
+.studio-item{text-align:left;padding:10px 12px;border:1px solid #f2d9dc;border-radius:12px;background:#fff;font-size:13px;color:#5b3a4a;cursor:pointer}
+.studio-item.active{border-color:var(--pink);background:#fff0f4;color:#c2415b;font-weight:800}
+.studio-item.muted{opacity:.5;cursor:default}
+.studio-main{flex:1;min-width:0;padding:16px 18px 28px}
+.step-panel{display:none}.step-panel.active{display:block}
+.panel{background:var(--card);border:2px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px}
+.kicker{color:var(--pink);font-weight:800;font-size:13px;letter-spacing:.08em}
+h2{margin:4px 0 8px;font-size:26px}p.lead{margin:0 0 14px;color:var(--muted);line-height:1.65}
+.split{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;align-items:start}
+.hint{background:#fff4d9;border-left:5px solid var(--orange);padding:10px 12px;border-radius:10px;color:#79521a;font-weight:700;margin:12px 0}
+.btn{min-height:42px;padding:10px 16px;border-radius:12px;font-weight:800}
+.btn-primary{background:linear-gradient(135deg,var(--pink),#ff8da7);color:#fff}
+.btn-soft{background:#fff;border:2px solid var(--line);color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.feedback{min-height:44px;margin-top:12px;padding:10px 12px;border-radius:12px;background:#fff8fa;border:1px solid var(--line);font-weight:700}
+.feedback.ok{background:var(--goodbg);color:var(--good);border-color:var(--mint)}
+.feedback.bad{background:var(--badbg);color:var(--bad);border-color:#ed6677}
+.chips{display:flex;flex-wrap:wrap;gap:8px;min-height:42px}
+.chip{padding:7px 10px;border-radius:999px;background:#fff0f4;border:1px solid #ffb2c1;font-weight:800;font-size:13px}
+.empty{color:var(--muted)}
+.id-stage{position:relative;line-height:0;background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line);cursor:crosshair}
+.id-stage img{display:block;width:100%;height:auto;pointer-events:none}
+.hotspot{position:absolute;z-index:2;margin:0;padding:0;border:3px solid transparent;background:transparent;cursor:pointer}
+.hotspot:hover{border-color:rgba(214,40,40,.7);background:rgba(214,40,40,.06)}
+.hotspot.found{border-color:#D62828;background:rgba(214,40,40,.08)}
+.hotspot-name{left:7.2%;top:16.5%;width:19%;height:9%}
+.hotspot-gender{left:7.2%;top:27.5%;width:17%;height:9%}
+.hotspot-nation{left:29.8%;top:27.5%;width:14%;height:9%}
+.hotspot-birth{left:7.2%;top:39.2%;width:49%;height:10%}
+.hotspot-address{left:7.2%;top:51%;width:39%;height:10%}
+.hotspot-photo{left:63.7%;top:17%;width:29%;height:76%}
+.hotspot-id-number{left:7.2%;top:81%;width:78%;height:11%}
+.wrong-mark{position:absolute;z-index:4;width:38px;height:38px;transform:translate(-50%,-50%) scale(.7);opacity:0;pointer-events:none;color:#D62828;font:900 42px/38px Arial;text-align:center}
+.wrong-mark.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.source-grid,.cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:10px 0}
+.source-card,.cat-btn{min-height:86px;border-radius:14px;border:2px dashed #efcfd5;background:#fffafc;padding:10px;font-weight:800;text-align:center}
+.source-card .ico{font-size:28px;display:block;margin-bottom:4px}
+.source-card.selected,.cat-btn.selected{border-color:var(--pink);background:#fff0f4}
+.source-card.matched,.cat-btn.matched{border-style:solid;border-color:var(--mint);background:var(--goodbg);color:var(--good)}
+.source-card.wrong,.cat-btn.wrong{border-color:#ed6677;background:var(--badbg);animation:shake .35s}
+.classify{width:100%;border-collapse:collapse;margin-top:8px}
+.classify th,.classify td{border:1px solid var(--line);padding:8px;text-align:left}
+.classify select{width:100%;height:38px;border-radius:10px;border:1px solid #efcfd5;padding:0 8px}
+.timeline{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:12px 0}
+.storage-card{background:#fff;border:2px solid var(--line);border-radius:14px;padding:8px;text-align:center;cursor:pointer}
+.storage-card img{width:100%;height:78px;object-fit:cover;border-radius:10px;background:#f7f2ea}
+.storage-card.active{border-color:var(--pink);box-shadow:0 0 0 3px #ff6b8a22}
+.storage-card small{display:block;color:var(--muted);font-size:12px}
+.meter{height:12px;background:#ffe4e8;border-radius:999px;overflow:hidden;margin-top:8px}
+.meter i{display:block;height:100%;width:12%;background:linear-gradient(90deg,var(--pink),var(--orange));border-radius:999px;transition:.3s width}
+.order-slots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}
+.order-slot{min-height:64px;border:2px dashed #efcfd5;border-radius:12px;display:grid;place-items:center;font-weight:800;color:#b18ba0;padding:8px;text-align:center}
+.order-slot.filled{border-style:solid;border-color:#ffb2c1;background:#fff5f7;color:var(--ink)}
+.order-slot.ok{border-color:var(--mint);background:var(--goodbg);color:var(--good)}
+.order-slot.bad{border-color:#ed6677;background:var(--badbg);color:var(--bad)}
+.order-cards{display:flex;flex-wrap:wrap;gap:8px}
+.order-card{padding:10px 14px;border-radius:12px;background:linear-gradient(135deg,var(--pink),#ff93ab);color:#fff;font-weight:800}
+.order-card.used{display:none}
+.guess{margin:10px 0;padding:12px;border-radius:12px;background:#fffafc;border:1px solid var(--line)}
+.guess input{width:140px;height:38px;border:2px solid var(--line);border-radius:10px;padding:0 10px;margin:0 8px}
+.think{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.qbox{padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.qbox .btn{display:block;width:100%;margin-top:8px}
+.done-banner{margin-top:14px;padding:14px;border-radius:14px;background:var(--goodbg);border:2px solid var(--mint);text-align:center;font-weight:800;color:var(--good)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media(max-width:980px){.split,.source-grid,.cat-grid,.timeline,.order-slots,.think{grid-template-columns:1fr}.studio{display:block}.studio-nav{width:auto}}
+body.embedded-mode .studio{display:block;min-height:0}
+body.embedded-mode .studio-nav{display:none}
+body.embedded-mode .studio-main{padding:8px 10px 18px}
+</style>
+</head>
+<body>
+<div class="studio">
+  <aside class="studio-nav">
+    <div class="studio-title">第2课 多样的数据</div>
+    <div class="studio-menu">
+      <button type="button" class="studio-item muted">课程介绍</button>
+      <button type="button" class="studio-item active" data-step="1">探究一：寻找身份证上的数据</button>
+      <button type="button" class="studio-item" data-step="2">探究二：辨认五种数据形式</button>
+      <button type="button" class="studio-item" data-step="3">探究三：存储介质的变化</button>
+      <button type="button" class="studio-item muted">学习评价</button>
+      <button type="button" class="studio-item muted">课堂小测</button>
+    </div>
+  </aside>
+  <div class="studio-main">
+
+    <section class="step-panel active" id="panel1">
+      <div class="panel">
+        <div class="kicker">探究一</div>
+        <h2>寻找身份证上的数据</h2>
+        <p class="lead">请点击身份证示意图上的每一项数据，找齐 7 类。同一张证件里，既有文字、数字，也有图片。</p>
+        <div class="split">
+          <div>
+            <div class="id-stage" id="idStage">
+              <img src="./img/id-card.jpg" alt="脱敏身份证示意图" width="771" height="484" fetchpriority="high" decoding="async">
+              <div class="wrong-mark" id="wrongMark">×</div>
+              <button class="hotspot hotspot-name" data-key="姓名" type="button" aria-label="姓名"></button>
+              <button class="hotspot hotspot-gender" data-key="性别" type="button" aria-label="性别"></button>
+              <button class="hotspot hotspot-nation" data-key="民族" type="button" aria-label="民族"></button>
+              <button class="hotspot hotspot-birth" data-key="出生日期" type="button" aria-label="出生日期"></button>
+              <button class="hotspot hotspot-address" data-key="住址" type="button" aria-label="住址"></button>
+              <button class="hotspot hotspot-photo" data-key="照片" type="button" aria-label="照片"></button>
+              <button class="hotspot hotspot-id-number" data-key="公民身份号码" type="button" aria-label="公民身份号码"></button>
+            </div>
+            <div class="hint">提示：身份证上的数据不只有数字，还可能是文字和图片。</div>
+          </div>
+          <aside>
+            <h3>我找到的数据 <small id="foundCount">0 / 7</small></h3>
+            <div class="chips" id="foundChips"><span class="empty">点击左侧卡片开始寻找。</span></div>
+            <div class="feedback" id="fb1">找到一项后，这里会显示进度。</div>
+            <div class="done-banner" id="done1" hidden>太好了！你找齐了身份证上的 7 类数据。</div>
+            <button class="btn btn-soft" type="button" id="reset1">重新寻找</button>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="step-panel" id="panel2">
+      <div class="panel">
+        <div class="kicker">探究二</div>
+        <h2>辨认五种数据形式</h2>
+        <p class="lead">先点击一个素材，再点击对应的数据形式。五种都配对正确后，再完成下面的生活例子。</p>
+        <div class="source-grid" id="sourceGrid"></div>
+        <div class="cat-grid" id="catGrid"></div>
+        <div class="feedback" id="fb2">请先点击上方一个素材。</div>
+        <h3 style="margin-top:18px">生活例子巩固</h3>
+        <table class="classify" id="classifyTable">
+          <thead><tr><th>数据示例</th><th>属于哪种形式</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" type="button" id="submit2">提交巩固练习</button>
+          <button class="btn btn-soft" type="button" id="reset2">重新配对</button>
+        </div>
+        <div class="feedback" id="fb2b">配对完成后再提交巩固练习。</div>
+        <div class="done-banner" id="done2" hidden>五种形式都配对正确，巩固练习也完成了。</div>
+      </div>
+    </section>
+
+    <section class="step-panel" id="panel3">
+      <div class="panel">
+        <div class="kicker">探究三</div>
+        <h2>存储介质的变化</h2>
+        <p class="lead">先点时间线认识不同介质，再按从古到今排队，最后比较容量。介质越新，能存的形式越多、容量越大。</p>
+        <div class="timeline" id="timeline"></div>
+        <div class="hint" id="storageDetail">点击一张介质卡片，看看它怎么保存数据。</div>
+        <div class="meter"><i id="capFill"></i></div>
+        <h3>按从古到今排队</h3>
+        <p class="lead">谁最古老、谁最新？依次点击下方卡片放进格子。</p>
+        <div class="order-slots" id="orderSlots"></div>
+        <div class="order-cards" id="orderCards"></div>
+        <div style="margin:10px 0;display:flex;gap:8px">
+          <button class="btn btn-primary" type="button" id="submitOrder">提交排序</button>
+          <button class="btn btn-soft" type="button" id="resetOrder">重新排序</button>
+        </div>
+        <div class="feedback" id="fb3">排好后再提交。</div>
+        <h3>猜一猜存储容量</h3>
+        <div class="guess">① 一卷竹简大约可以写多少汉字？<input id="guessBamboo" type="number" placeholder="输入数字"> <button class="btn btn-soft" type="button" id="showBamboo">查看参考</button>
+          <div id="bambooAns" hidden>参考：一卷竹简大约 200～800 个汉字，容量很小。</div></div>
+        <div class="guess">② 1T 云盘大约可以存放多少部 1080P 高清电影？<input id="guessCloud" type="number" placeholder="输入数字"> <button class="btn btn-soft" type="button" id="showCloud">查看参考</button>
+          <div id="cloudAns" hidden>参考：大约 150～250 部。云端容量大，还能存多种形式的数据。</div></div>
+        <div class="think">
+          <div class="qbox"><b>想一想</b><p>甲骨主要能保存哪类数据？</p>
+            <button class="btn btn-soft think-opt" data-q="oracle" data-a="text">主要是文字</button>
+            <button class="btn btn-soft think-opt" data-q="oracle" data-a="video">主要是视频</button>
+            <div class="feedback" id="thinkOracle"></div>
+          </div>
+          <div class="qbox"><b>想一想</b><p>云端能保存哪些数据？</p>
+            <button class="btn btn-soft think-opt" data-q="cloud" data-a="all">文字、数字、图片、音频、视频都可以</button>
+            <button class="btn btn-soft think-opt" data-q="cloud" data-a="text">只能保存文字</button>
+            <div class="feedback" id="thinkCloud"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary" type="button" id="finish3" style="margin-top:12px">完成本环节</button>
+        <div class="done-banner" id="done3" hidden>本课三个探究都完成啦：数据形式多，存储介质也在变化。</div>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+const IS_EMBEDDED = params.get('embedded') === '1';
+const IS_PREVIEW = params.get('preview') === '1' || localStorage.getItem('role') === 'TEACHER';
+const ACTIVITY = parseInt(params.get('activityIndex') || params.get('step') || '1', 10);
+if (IS_EMBEDDED) document.body.classList.add('embedded-mode');
+if (IS_PREVIEW) document.body.classList.add('preview-mode');
+
+const $ = (id) => document.getElementById(id);
+const notified = new Set();
+function notify(step, extra) {
+  if (!window.parent || window.parent === window) return;
+  if (notified.has(step)) return;
+  notified.add(step);
+  window.parent.postMessage({
+    type: 'LEARN_SPACE_SUBMIT',
+    payload: Object.assign({
+      activityIndex: step,
+      step,
+      stepCompleted: true,
+      source: 'g4-up-lesson2',
+      studentName: localStorage.getItem('realName') || '',
+      username: localStorage.getItem('username') || ''
+    }, extra || {})
+  }, '*');
+}
+
+function showPanel(n) {
+  document.querySelectorAll('.step-panel').forEach((el) => el.classList.remove('active'));
+  $('panel' + n).classList.add('active');
+  document.querySelectorAll('.studio-item[data-step]').forEach((btn) => {
+    btn.classList.toggle('active', Number(btn.dataset.step) === n);
+  });
+  if (n === 3) ensureAct3();
+}
+
+document.querySelectorAll('.studio-item[data-step]').forEach((btn) => {
+  btn.addEventListener('click', () => showPanel(Number(btn.dataset.step)));
+});
+
+/* ===== 环节1 ===== */
+const found = [];
+const keys = ['姓名','性别','民族','出生日期','住址','照片','公民身份号码'];
+function renderFound() {
+  $('foundCount').textContent = found.length + ' / 7';
+  $('foundChips').innerHTML = found.length ? found.map((k) => '<span class="chip">' + k + '</span>').join('') : '<span class="empty">点击左侧卡片开始寻找。</span>';
+  const fb = $('fb1');
+  if (found.length === 7) {
+    fb.className = 'feedback ok';
+    fb.textContent = '找齐了！同一张身份证里既有文字、数字，也有图片。';
+    $('done1').hidden = false;
+    notify(1, { found: found.slice(), score: 100 });
+  } else {
+    fb.className = 'feedback';
+    fb.textContent = found.length ? ('已找到 ' + found.length + ' 项，继续找。') : '点击身份证上的数据区域。';
+    $('done1').hidden = true;
+  }
+}
+$('idStage').addEventListener('click', (e) => {
+  if (e.target.closest('.hotspot')) return;
+  const mark = $('wrongMark');
+  const rect = $('idStage').getBoundingClientRect();
+  mark.style.left = (e.clientX - rect.left) + 'px';
+  mark.style.top = (e.clientY - rect.top) + 'px';
+  mark.classList.add('show');
+  setTimeout(() => mark.classList.remove('show'), 450);
+  $('fb1').className = 'feedback bad';
+  $('fb1').textContent = '这里不是数据区域，请继续寻找。';
+});
+document.querySelectorAll('.hotspot').forEach((btn) => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const key = btn.dataset.key;
+    if (!found.includes(key)) found.push(key);
+    btn.classList.add('found');
+    renderFound();
+  });
+});
+$('reset1').addEventListener('click', () => {
+  found.length = 0;
+  notified.delete(1);
+  document.querySelectorAll('.hotspot').forEach((b) => b.classList.remove('found'));
+  renderFound();
+});
+
+/* ===== 环节2 ===== */
+const sources = [
+  { id: 'document', label: '文档 / 通知', ico: '📄', cat: 'text' },
+  { id: 'audio', label: '朗读录音', ico: '🔊', cat: 'audio' },
+  { id: 'video', label: '实验录像', ico: '🎬', cat: 'video' },
+  { id: 'image', label: '校园照片', ico: '🖼️', cat: 'image' },
+  { id: 'number', label: '温度 28℃', ico: '🔢', cat: 'number' }
+];
+const cats = [
+  { id: 'number', name: '数字' },
+  { id: 'text', name: '文本' },
+  { id: 'image', name: '图片' },
+  { id: 'audio', name: '音频' },
+  { id: 'video', name: '视频' }
+];
+const examples = [
+  { id: 'e1', text: '2026', ans: 'number' },
+  { id: 'e2', text: '学生姓名', ans: 'text' },
+  { id: 'e3', text: '一张校园照片', ans: 'image' },
+  { id: 'e4', text: '一段朗读录音', ans: 'audio' },
+  { id: 'e5', text: '科学实验录像', ans: 'video' }
+];
+let selectedSource = null;
+const matched = [];
+let classifyOk = false;
+function renderAct2() {
+  $('sourceGrid').innerHTML = sources.map((s) =>
+    '<button type="button" class="source-card' + (matched.includes(s.id) ? ' matched' : '') + (selectedSource === s.id ? ' selected' : '') + '" data-id="' + s.id + '"><span class="ico">' + s.ico + '</span>' + s.label + '</button>'
+  ).join('');
+  $('catGrid').innerHTML = cats.map((c) =>
+    '<button type="button" class="cat-btn' + (matched.some((id) => sources.find((s) => s.id === id).cat === c.id) ? ' matched' : '') + '" data-id="' + c.id + '">' + c.name + '</button>'
+  ).join('');
+  $('sourceGrid').querySelectorAll('.source-card').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (matched.includes(btn.dataset.id)) return;
+      selectedSource = btn.dataset.id;
+      $('fb2').className = 'feedback';
+      $('fb2').textContent = '已选择「' + sources.find((s) => s.id === selectedSource).label + '」，请点击下方对应形式。';
+      renderAct2();
+    });
+  });
+  $('catGrid').querySelectorAll('.cat-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (!selectedSource) {
+        $('fb2').className = 'feedback bad';
+        $('fb2').textContent = '请先点击上方一个素材。';
+        return;
+      }
+      const src = sources.find((s) => s.id === selectedSource);
+      if (src.cat === btn.dataset.id) {
+        matched.push(src.id);
+        selectedSource = null;
+        $('fb2').className = 'feedback ok';
+        $('fb2').textContent = matched.length === 5 ? '五种数据形式都配对正确。' : '配对正确，继续下一个。';
+      } else {
+        $('fb2').className = 'feedback bad';
+        $('fb2').textContent = '配对不正确，请再想一想。';
+      }
+      renderAct2();
+      maybeFinish2();
+    });
+  });
+}
+function renderClassify() {
+  const tb = $('classifyTable').querySelector('tbody');
+  tb.innerHTML = examples.map((e) =>
+    '<tr><td>' + e.text + '</td><td><select data-id="' + e.id + '"><option value="">请选择</option>' +
+    cats.map((c) => '<option value="' + c.id + '">' + c.name + '</option>').join('') +
+    '</select></td></tr>'
+  ).join('');
+}
+function maybeFinish2() {
+  if (matched.length === 5 && classifyOk) {
+    $('done2').hidden = false;
+    notify(2, { matched: matched.slice(), score: 100 });
+  }
+}
+$('submit2').addEventListener('click', () => {
+  if (matched.length < 5) {
+    $('fb2b').className = 'feedback bad';
+    $('fb2b').textContent = '请先完成上面五种形式的配对。';
+    return;
+  }
+  let wrong = 0;
+  examples.forEach((e) => {
+    const sel = document.querySelector('select[data-id="' + e.id + '"]');
+    if (sel.value !== e.ans) wrong += 1;
+  });
+  if (wrong) {
+    classifyOk = false;
+    $('fb2b').className = 'feedback bad';
+    $('fb2b').textContent = '有 ' + wrong + ' 题需要再看看。数字、文本、图片、音频、视频各有各的样子。';
+  } else {
+    classifyOk = true;
+    $('fb2b').className = 'feedback ok';
+    $('fb2b').textContent = '巩固练习全部正确。';
+    maybeFinish2();
+  }
+});
+$('reset2').addEventListener('click', () => {
+  matched.length = 0;
+  selectedSource = null;
+  classifyOk = false;
+  notified.delete(2);
+  $('done2').hidden = true;
+  renderAct2();
+  renderClassify();
+  $('fb2').className = 'feedback';
+  $('fb2').textContent = '请先点击上方一个素材。';
+  $('fb2b').className = 'feedback';
+  $('fb2b').textContent = '配对完成后再提交巩固练习。';
+});
+
+/* ===== 环节3 ===== */
+const media = [
+  { id: 'oracle', name: '甲骨', year: '古代', img: './img/oracle.jpg', method: '把文字刻在骨片上。', cap: '很小，适合保存少量重要信息。', width: '12%' },
+  { id: 'bamboo', name: '竹简', year: '古代', img: './img/bamboo.jpg', method: '把文字写在竹片上，再用绳子编连成册。', cap: '比甲骨能保存更多文字，但体积较大。', width: '22%' },
+  { id: 'paper', name: '纸质书', year: '近代以前', img: './img/paper.jpg', method: '通过书写或印刷把文字、图片保存到纸张上。', cap: '一本书可以连续保存大量信息。', width: '38%' },
+  { id: 'cd', name: '光盘', year: '20世纪', img: './img/cd.jpg', method: '用激光读取盘片上的数字信息。', cap: '可保存文本、图片和音视频。', width: '56%' },
+  { id: 'usb', name: 'U盘', year: '21世纪初', img: './img/usb.jpg', method: '把数字信息保存在闪存中，插上就能用。', cap: '常见为几十 GB，便携又方便。', width: '78%' },
+  { id: 'cloud', name: '云盘', year: '现在', img: './img/cloud.jpg', method: '把数据存放在网络服务器中，连上网就能访问。', cap: '容量可扩展，便于同步和分享。', width: '96%' }
+];
+const orderAnswer = ['甲骨','竹简','纸质书','磁带·光盘','云端存储'];
+let orderDeck = orderAnswer.slice().sort(() => Math.random() - 0.5);
+let orderPicked = [];
+let orderOk = false;
+let thinkOk = { oracle: false, cloud: false };
+let guessed = { bamboo: false, cloud: false };
+
+function renderTimeline() {
+  $('timeline').innerHTML = media.map((m, i) =>
+    '<button type="button" class="storage-card' + (i === 0 ? ' active' : '') + '" data-id="' + m.id + '"><small>' + m.year + '</small><img src="' + m.img + '" alt="' + m.name + '" loading="lazy" decoding="async"><b>' + m.name + '</b></button>'
+  ).join('');
+  $('timeline').querySelectorAll('.storage-card').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      $('timeline').querySelectorAll('.storage-card').forEach((x) => x.classList.remove('active'));
+      btn.classList.add('active');
+      const m = media.find((x) => x.id === btn.dataset.id);
+      $('storageDetail').textContent = m.name + '：' + m.method + ' ' + m.cap;
+      $('capFill').style.width = m.width;
+    });
+  });
+  $('storageDetail').textContent = media[0].name + '：' + media[0].method + ' ' + media[0].cap;
+  $('capFill').style.width = media[0].width;
+}
+function renderOrder() {
+  $('orderSlots').innerHTML = [1,2,3,4,5].map((n, i) =>
+    '<div class="order-slot' + (orderPicked[i] ? ' filled' : '') + '" data-i="' + i + '">' + (orderPicked[i] || ('第' + n + '格')) + '</div>'
+  ).join('');
+  const remain = orderDeck.filter((x) => !orderPicked.includes(x));
+  $('orderCards').innerHTML = remain.map((name) => '<button type="button" class="order-card" data-name="' + name + '">' + name + '</button>').join('');
+  $('orderCards').querySelectorAll('.order-card').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (orderPicked.length >= 5) return;
+      orderPicked.push(btn.dataset.name);
+      renderOrder();
+    });
+  });
+}
+$('submitOrder').addEventListener('click', () => {
+  if (orderPicked.length < 5) {
+    $('fb3').className = 'feedback bad';
+    $('fb3').textContent = '请先把五个格子都放满。';
+    return;
+  }
+  let wrong = 0;
+  [...$('orderSlots').children].forEach((slot, i) => {
+    slot.classList.remove('ok', 'bad');
+    if (orderPicked[i] === orderAnswer[i]) slot.classList.add('ok');
+    else { slot.classList.add('bad'); wrong += 1; }
+  });
+  orderOk = wrong === 0;
+  $('fb3').className = orderOk ? 'feedback ok' : 'feedback bad';
+  $('fb3').textContent = orderOk ? '排序完全正确：甲骨 → 竹简 → 纸质书 → 磁带·光盘 → 云端。' : ('有 ' + wrong + ' 个位置需要调整。');
+});
+$('resetOrder').addEventListener('click', () => {
+  orderPicked = [];
+  orderOk = false;
+  orderDeck = orderAnswer.slice().sort(() => Math.random() - 0.5);
+  renderOrder();
+  $('fb3').className = 'feedback';
+  $('fb3').textContent = '排好后再提交。';
+});
+$('showBamboo').addEventListener('click', () => { $('bambooAns').hidden = false; guessed.bamboo = true; });
+$('showCloud').addEventListener('click', () => { $('cloudAns').hidden = false; guessed.cloud = true; });
+document.querySelectorAll('.think-opt').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const q = btn.dataset.q;
+    const ok = (q === 'oracle' && btn.dataset.a === 'text') || (q === 'cloud' && btn.dataset.a === 'all');
+    const box = q === 'oracle' ? $('thinkOracle') : $('thinkCloud');
+    box.className = ok ? 'feedback ok' : 'feedback bad';
+    box.textContent = ok ? '对！介质越新，能存的形式越多。' : '再想一想：古代介质主要刻写文字，云端可以保存多种形式。';
+    thinkOk[q] = ok;
+  });
+});
+$('finish3').addEventListener('click', () => {
+  if (!orderOk) {
+    $('fb3').className = 'feedback bad';
+    $('fb3').textContent = '请先把从古到今的排序做对。';
+    return;
+  }
+  if (!thinkOk.oracle || !thinkOk.cloud) {
+    $('fb3').className = 'feedback bad';
+    $('fb3').textContent = '请先完成下面两个“想一想”。';
+    return;
+  }
+  $('done3').hidden = false;
+  notify(3, {
+    order: orderPicked.slice(),
+    guessBamboo: $('guessBamboo').value,
+    guessCloud: $('guessCloud').value,
+    score: 100
+  });
+});
+
+let act3Ready = false;
+function ensureAct3() {
+  if (act3Ready) return;
+  act3Ready = true;
+  renderTimeline();
+  renderOrder();
+}
+
+renderAct2();
+renderClassify();
+renderFound();
+
+const start = ACTIVITY === 2 || ACTIVITY === 3 ? ACTIVITY : 1;
+showPanel(start);
+</script>
+</body>
+</html>

@@ -63,6 +63,7 @@ const sseConnected = ref(false)
 const chartRef = ref(null)
 let chart = null
 let eventSource = null
+let dashTimer = null
 
 onMounted(async () => {
   const res = await getClasses()
@@ -72,10 +73,7 @@ onMounted(async () => {
     await loadData()
     connectSse()
   } else {
-  // 演示：教师默认看班级1
-    classId.value = 1
-    await loadData()
-    connectSse()
+    classId.value = null
   }
 })
 
@@ -118,9 +116,12 @@ const connectSse = () => {
   eventSource = new EventSource(`/api/dashboard/sse/${classId.value}?token=${token}`)
 
   eventSource.addEventListener('connected', () => { sseConnected.value = true })
-  eventSource.addEventListener('dashboard', (e) => {
-    data.value = JSON.parse(e.data)
-    renderChart()
+  eventSource.addEventListener('dashboard', () => {
+    if (dashTimer) return
+    dashTimer = setTimeout(() => {
+      dashTimer = null
+      loadData()
+    }, 4000)
   })
   eventSource.onerror = () => { sseConnected.value = false }
 }

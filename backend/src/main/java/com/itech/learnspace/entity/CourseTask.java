@@ -1,8 +1,10 @@
 package com.itech.learnspace.entity;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.util.Map;
 
 @Data
 @Entity
@@ -33,4 +35,9 @@ public class CourseTask {
 
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
+
+    /** 仅课时详情返回给学生，不入库。 */
+    @Transient
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Map<String, Object> studentSubmission;
 }

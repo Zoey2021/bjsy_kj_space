@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { accountScope, SCOPE_KECHUANG } from '../utils/schoolCourseAccess'
+import { landingPath } from '../utils/landing'
 
 const routes = [
   { path: '/login', component: () => import('../views/Login.vue') },
@@ -11,9 +13,10 @@ const routes = [
       { path: 'pbl', component: () => import('../views/student/PblStudentWorkspace.vue') },
       { path: 'interdisciplinary', component: () => import('../views/student/InterdisciplinaryStudentWorkspace.vue') },
       { path: 'textbook/:gradeId', component: () => import('../views/student/TextbookOutline.vue') },
+      { path: 'school-ppt/:id', component: () => import('../views/school/SchoolPptLesson.vue') },
       { path: 'lesson/:id', component: () => import('../views/student/LessonDetail.vue') },
       { path: 'records', component: () => import('../views/student/MyRecords.vue') },
-      { path: 'ai', component: () => import('../views/ai/AiCenter.vue') },
+      { path: 'ai', redirect: '/student/map' },
       { path: 'mall', component: () => import('../views/student/PointsMall.vue') },
       { path: 'park', component: () => import('../views/student/StudyPark.vue') },
       { path: 'pretest/g4', component: () => import('../views/student/PretestG4.vue') },
@@ -34,13 +37,18 @@ const routes = [
       { path: 'pbl', component: () => import('../views/teacher/PblTeacherWorkspace.vue') },
       { path: 'interdisciplinary', component: () => import('../views/teacher/InterdisciplinaryTeacherWorkspace.vue') },
       { path: 'course-map/grade/:gradeId', component: () => import('../views/teacher/TeacherTextbookHub.vue') },
+      { path: 'school-ppt/:id', component: () => import('../views/school/SchoolPptLesson.vue') },
       { path: 'lesson/:id', component: () => import('../views/student/LessonDetail.vue'), meta: { teacherPreview: true } },
+      { path: 'student-view', component: () => import('../views/teacher/StudentViewHub.vue') },
+      { path: 'student-view/mall', component: () => import('../views/student/PointsMall.vue') },
+      { path: 'student-view/park', component: () => import('../views/student/StudyPark.vue') },
       { path: 'activity-editor', component: () => import('../views/teacher/ActivityEditorHub.vue') },
       { path: 'activity-editor/grade/:gradeId', component: () => import('../views/teacher/TeacherGradeManage.vue') },
       { path: 'scaffold-workbench', component: () => import('../views/teacher/ScaffoldWorkbench.vue') },
       { path: 'dashboard', component: () => import('../views/teacher/ClassDashboard.vue') },
       { path: 'ai-evaluation', component: () => import('../views/teacher/AiEvaluation.vue') },
       { path: 'points', component: () => import('../views/teacher/PointsManage.vue') },
+      { path: 'park-settings', component: () => import('../views/teacher/ParkSettings.vue') },
       { path: 'settings', component: () => import('../views/teacher/TeacherSettings.vue') },
       { path: 'lesson/:lessonId/stats', component: () => import('../views/teacher/LessonStats.vue') },
       { path: 'course-editor', redirect: '/teacher/activity-editor' },
@@ -56,6 +64,7 @@ const routes = [
       { path: 'users', component: () => import('../views/admin/UserManage.vue') }
     ]
   },
+  { path: '/portal', redirect: '/login' },
   { path: '/', redirect: '/login' }
 ]
 
@@ -69,15 +78,34 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
   const role = localStorage.getItem('role')
 
-  if (to.path === '/login') {
+  const mustChangePassword = localStorage.getItem('mustChangePassword') === '1'
+  if (mustChangePassword && token) {
+    if (to.path !== '/login') return next('/login')
     return next()
   }
-  if (!token) {
-    return next('/login')
+  if (to.path === '/portal') {
+    return next(token && role ? landingPath() : '/login')
   }
-  if (to.meta.role && to.meta.role !== role) {
-    const home = { STUDENT: '/student/map', TEACHER: '/teacher/course-map', ADMIN: '/admin/users' }
-    return next(home[role] || '/login')
+  if (to.path === '/login' || to.path === '/') {
+    if (token && role) return next(landingPath())
+    if (to.path === '/') return next('/login')
+    return next()
+  }
+  if (!token) return next('/login')
+
+  const need = to.meta.role
+  const roles = to.meta.roles
+  const roleOk = !need && !roles
+    || need === role
+    || (need === 'TEACHER' && role === 'ADMIN')
+    || (Array.isArray(roles) && roles.includes(role))
+  if (!roleOk) return next(landingPath())
+
+  if (role === 'TEACHER' && accountScope() === SCOPE_KECHUANG && to.path.startsWith('/teacher')) {
+    const allowed = to.path === '/teacher/course-map'
+      || to.path.startsWith('/teacher/course-map/grade/')
+      || to.path.startsWith('/teacher/school-ppt/')
+    if (!allowed) return next('/teacher/course-map')
   }
   next()
 })

@@ -1,16 +1,16 @@
 <template>
   <div class="login-page">
     <aside class="login-visual" aria-hidden="true">
-      <img src="/login-cover.png" alt="" class="cover-img" fetchpriority="high" />
+      <img src="/login-cover.jpg" alt="" class="cover-img" fetchpriority="high" decoding="async" />
       <div class="visual-mask" />
     </aside>
 
     <main class="login-panel">
       <div class="panel-inner">
         <div class="brand">
-          <img src="/it-office-logo.jpg" alt="滨江实验小学信息组" class="brand-logo-img" />
+          <img src="/smart-edu-logo.png" alt="杭州市滨江实验小学" class="brand-logo-img" />
           <h1 class="school-name">杭州市滨江实验小学</h1>
-          <p class="product-name">信息科技学习平台</p>
+          <p class="product-name">智慧教育平台</p>
           <div class="brand-bar"><i /><i /></div>
         </div>
 
@@ -77,7 +77,15 @@
             </el-button>
           </el-form>
 
-          <div v-else class="code-form">
+          <div v-if="role === 'TEACHER'" class="ding-block">
+            <div class="ding-or">或</div>
+            <button type="button" class="ding-btn" :disabled="dingLoading" @click="startDingTalk">
+              {{ dingLoading ? '正在前往钉钉…' : '钉钉登录' }}
+            </button>
+            <p class="ding-note">仅限杭州市滨江实验小学的教师。其他学校、学生不能通过钉钉进入。</p>
+          </div>
+
+          <div v-if="role === 'STUDENT' && studentMode === 'code'" class="code-form">
             <p class="code-tip">请输入教师提供的 6 位班级码，然后选择你的姓名进入平台。</p>
             <el-input
               v-model="classCode"
@@ -95,7 +103,7 @@
           </div>
         </div>
 
-        <p v-if="isDev" class="demo-tip">演示：student1 / teacher1 / admin，密码 123456</p>
+        <p class="demo-tip">账号登录要连本机数据库。数据库没开时，账号登录进不去。</p>
       </div>
     </main>
 
@@ -131,20 +139,45 @@
       </div>
       <el-empty v-if="!pickerLoading && !visiblePickerStudents.length" description="没有匹配的姓名，请核对班级码或联系老师" :image-size="64" />
     </el-dialog>
+
+    <el-dialog
+      v-model="changeVisible"
+      title="请先修改密码"
+      width="420px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+    >
+      <p style="margin:0 0 14px;line-height:1.6;color:#475569">第一次使用账号密码登录，需要先改成自己的密码。请设置一个自己记得住的新密码。</p>
+      <el-form label-width="88px" @submit.prevent>
+        <el-form-item label="原密码">
+          <el-input v-model="changeForm.oldPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="新密码">
+          <el-input v-model="changeForm.newPassword" type="password" show-password placeholder="4 到 20 位" />
+        </el-form-item>
+        <el-form-item label="再输入一次">
+          <el-input v-model="changeForm.confirm" type="password" show-password @keyup.enter="submitNewPassword" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button type="primary" :loading="changing" @click="submitNewPassword">保存新密码</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { login, getClassCodeStudents, classCodeLogin } from '../api'
+import { login, getClassCodeStudents, classCodeLogin, getDingTalkLogin, getMe, changePassword } from '../api'
 import { detectEnrollmentYear } from '../utils/cohortGradeAccess'
-
-const isDev = import.meta.env.DEV
+import { landingPath } from '../utils/landing'
 
 const router = useRouter()
 const loading = ref(false)
+const dingLoading = ref(false)
 const codeLoading = ref(false)
 const pickLoading = ref(false)
 const role = ref('STUDENT')
@@ -158,6 +191,9 @@ const pickerClassName = ref('')
 const pickerLoading = ref(false)
 const pickerKeyword = ref('')
 const pendingCode = ref('')
+const changeVisible = ref(false)
+const changing = ref(false)
+const changeForm = ref({ oldPassword: '', newPassword: '', confirm: '' })
 
 const visiblePickerStudents = computed(() => {
   const kw = String(pickerKeyword.value || '').trim().toLowerCase()
@@ -172,7 +208,7 @@ const visiblePickerStudents = computed(() => {
 })
 
 const clearAuthStorage = () => {
-  ;['token', 'role', 'realName', 'userId', 'username', 'classId', 'className', 'enrollmentYear'].forEach((key) => {
+  ;['token', 'role', 'realName', 'userId', 'username', 'classId', 'className', 'enrollmentYear', 'identityCode', 'mustChangePassword'].forEach((key) => {
     localStorage.removeItem(key)
   })
 }
@@ -185,6 +221,9 @@ const normalizeClassCode = (raw) => {
 
 const onClassCodeInput = (val) => {
   classCode.value = normalizeClassCode(val)
+  if (/^\d{6}$/.test(classCode.value) && !codeLoading.value && !pickerVisible.value) {
+    openStudentPicker()
+  }
 }
 
 const saveLoginAndRedirect = (data) => {
@@ -197,6 +236,8 @@ const saveLoginAndRedirect = (data) => {
   localStorage.setItem('realName', data.realName)
   localStorage.setItem('userId', data.userId)
   localStorage.setItem('username', data.username || '')
+  if (data.identityCode) localStorage.setItem('identityCode', data.identityCode)
+  else localStorage.removeItem('identityCode')
   localStorage.setItem('classId', data.classId || '')
   if (data.className) {
     localStorage.setItem('className', data.className)
@@ -213,9 +254,111 @@ const saveLoginAndRedirect = (data) => {
   } else {
     localStorage.removeItem('enrollmentYear')
   }
-  const routes = { STUDENT: '/student/map', TEACHER: '/teacher/dashboard', ADMIN: '/admin/users' }
-  router.push(routes[data.role] || '/login')
+  if (data.mustChangePassword) {
+    localStorage.setItem('mustChangePassword', '1')
+    changeForm.value = {
+      oldPassword: form.value.password || '',
+      newPassword: '',
+      confirm: ''
+    }
+    changeVisible.value = true
+    return
+  }
+  localStorage.removeItem('mustChangePassword')
+  const dest = landingPath()
+  router.replace(dest).catch(() => {
+    window.location.assign(dest)
+  })
 }
+
+const submitNewPassword = async () => {
+  const next = String(changeForm.value.newPassword || '').trim()
+  if (!changeForm.value.oldPassword) {
+    ElMessage.warning('请填写原来的密码')
+    return
+  }
+  if (next.length < 4 || next.length > 20) {
+    ElMessage.warning('新密码请设置 4 到 20 位')
+    return
+  }
+  if (next !== String(changeForm.value.confirm || '').trim()) {
+    ElMessage.warning('两次输入的新密码不一致')
+    return
+  }
+  if (next === changeForm.value.oldPassword) {
+    ElMessage.warning('新密码不能和原来的一样')
+    return
+  }
+  changing.value = true
+  try {
+    await changePassword({ oldPassword: changeForm.value.oldPassword, newPassword: next })
+    localStorage.removeItem('mustChangePassword')
+    changeVisible.value = false
+    ElMessage.success('密码已修改')
+    const dest = landingPath()
+    router.replace(dest).catch(() => {
+      window.location.assign(dest)
+    })
+  } catch {
+    /* 拦截器已提示 */
+  } finally {
+    changing.value = false
+  }
+}
+
+const startDingTalk = async () => {
+  dingLoading.value = true
+  try {
+    const res = await getDingTalkLogin()
+    const url = res.data?.url
+    if (!res.data?.enabled || !url) {
+      ElMessage.warning('钉钉登录还没配置好，请先使用账号密码登录')
+      return
+    }
+    window.location.assign(url)
+  } catch {
+    /* 拦截器已提示 */
+  } finally {
+    dingLoading.value = false
+  }
+}
+
+const finishDingTalkLogin = async (token) => {
+  localStorage.setItem('token', token)
+  try {
+    const me = await getMe()
+    const data = { ...(me.data || {}), token }
+    if (data.role !== 'TEACHER' && data.role !== 'ADMIN') {
+      clearAuthStorage()
+      ElMessage.error('仅限本校教师登录')
+      return
+    }
+    ElMessage.success('登录成功')
+    saveLoginAndRedirect(data)
+  } catch {
+    clearAuthStorage()
+  }
+}
+
+onMounted(() => {
+  if (localStorage.getItem('mustChangePassword') === '1' && localStorage.getItem('token')) {
+    changeVisible.value = true
+  }
+  const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : ''
+  const dingToken = new URLSearchParams(hash).get('dingtalkToken')
+  if (dingToken) {
+    history.replaceState(null, '', '/login')
+    role.value = 'TEACHER'
+    finishDingTalkLogin(dingToken)
+    return
+  }
+  const dingError = new URLSearchParams(window.location.search).get('dingtalkError')
+  if (dingError) {
+    history.replaceState(null, '', '/login')
+    role.value = 'TEACHER'
+    ElMessage.error(dingError)
+  }
+})
 
 const handleAccountLogin = async () => {
   if (!form.value.username || !form.value.password) {
@@ -339,11 +482,13 @@ const confirmStudent = async (stu) => {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 48px 36px 40px;
+  padding: 32px 36px 28px;
   background: #fff;
   box-shadow: -8px 0 32px rgba(30, 64, 120, 0.06);
   position: relative;
   min-height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 .login-panel::after {
@@ -373,9 +518,9 @@ const confirmStudent = async (stu) => {
   margin-bottom: 24px;
 }
 .brand-logo-img {
-  width: 120px;
+  width: 188px;
   height: auto;
-  margin: 0 auto 12px;
+  margin: 0 auto 8px;
   display: block;
   object-fit: contain;
 }
@@ -522,6 +667,47 @@ const confirmStudent = async (stu) => {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.32);
 }
+.ding-block {
+  margin-top: 18px;
+}
+.ding-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.ding-or::before,
+.ding-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+.ding-btn {
+  width: 100%;
+  height: 46px;
+  border: none;
+  border-radius: 10px;
+  background: #1677ff;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ding-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.ding-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+  text-align: center;
+}
+
 .login-btn:hover {
   background: linear-gradient(135deg, #4f8ff7 0%, #3b82f6 100%);
 }

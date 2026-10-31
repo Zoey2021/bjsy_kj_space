@@ -7,11 +7,16 @@ import java.util.List;
 import java.util.Optional;
 
 public interface LearnParkAccessRepository extends JpaRepository<LearnParkAccess, Long> {
-    Optional<LearnParkAccess> findByStudentId(Long studentId);
+    Optional<LearnParkAccess> findByStudentIdAndLessonId(Long studentId, Long lessonId);
+
+    List<LearnParkAccess> findByClassIdAndLessonIdOrderByAppliedAtDesc(Long classId, Long lessonId);
+
+    List<LearnParkAccess> findByClassIdAndLessonIdAndStatusOrderByAppliedAtAsc(Long classId, Long lessonId, String status);
 
     List<LearnParkAccess> findByClassIdOrderByAppliedAtDesc(Long classId);
 
     List<LearnParkAccess> findByClassIdAndStatusOrderByAppliedAtAsc(Long classId, String status);
 
     long countByClassIdAndStatus(Long classId, String status);
+    long deleteByClassIdAndLessonId(Long classId, Long lessonId);
 }

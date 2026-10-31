@@ -12,6 +12,7 @@
     >
       <img v-if="mallIconSrc(item)" class="gift-art" :src="mallIconSrc(item)" :alt="item.name" />
       <span v-else class="gift-icon">{{ item.icon || '🎁' }}</span>
+      <span class="price-badge" :class="{ 'with-action': mode === 'apply' }">{{ item.cost }} 积分</span>
       <span v-if="mode === 'apply'" class="gift-action">{{ actionLabel(item) }}</span>
     </button>
   </div>
@@ -33,8 +34,9 @@ const emit = defineEmits(['apply'])
 const canClick = (item) => props.applyOpen && props.redeemablePoints >= Number(item.cost || 0)
 
 const actionLabel = (item) => {
+  const cost = Number(item.cost || 0)
   if (!props.applyOpen) return '待开放'
-  if (props.redeemablePoints < Number(item.cost || 0)) return '积分不足'
+  if (props.redeemablePoints < cost) return `还差 ${cost - props.redeemablePoints} 分`
   return '申请兑换'
 }
 
@@ -84,6 +86,19 @@ const onClick = (item) => {
   padding: 36px 0;
   text-align: center;
 }
+.price-badge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  text-align: center;
+  padding: 6px 0;
+  background: rgba(255, 255, 255, 0.96);
+  color: #c2410c;
+  font-size: 18px;
+  font-weight: 800;
+}
+.price-badge.with-action { bottom: 32px; }
 .gift-action {
   position: absolute;
   left: 0;

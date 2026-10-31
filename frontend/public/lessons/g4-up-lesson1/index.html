@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>身边的数据 — 探究活动</title>
+<style>
+:root{--bg:#fff7ed;--ink:#3a2743;--muted:#806d82;--pink:#ff6b8a;--pink2:#ff9ab0;--orange:#ffb84d;--mint:#7ad7c5;--blue:#7d9cff;--lav:#b89cff;--surface:#fff;--line:#f2d9dc;--good:#31b978;--goodbg:#e9fbf1;--bad:#ed6677;--badbg:#fff0f2;--shadow:0 18px 45px rgba(168,93,113,.14);--r:26px}*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:var(--ink);background:radial-gradient(circle at 8% 8%,#ffe1e7 0 11%,transparent 29%),radial-gradient(circle at 92% 4%,#ffe8bd 0 10%,transparent 25%),linear-gradient(180deg,#fffaf5,var(--bg));}button,input{font:inherit}button{border:0;cursor:pointer}body{overflow-x:hidden}.app{max-width:1440px;margin:auto;padding:24px 28px 42px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:14px}.mascot{width:58px;height:58px;border-radius:20px;background:linear-gradient(135deg,var(--pink),var(--orange));box-shadow:0 10px 20px #ff9aaa55;display:grid;place-items:center;position:relative}.mascot:before,.mascot:after{content:"";position:absolute;width:11px;height:11px;border-radius:50%;background:#fff;top:19px}.mascot:before{left:15px}.mascot:after{right:15px}.mascot i{width:22px;height:10px;border-bottom:4px solid #fff;border-radius:50%;margin-top:18px}.eyebrow{color:var(--pink);font-size:14px;font-weight:800;letter-spacing:1px}.brand h1{margin:2px 0 0;font-size:30px;line-height:1.2}.top-actions{display:flex;gap:10px;align-items:center}.pill{padding:10px 14px;border-radius:999px;background:#fff;border:2px solid var(--line);font-weight:800;color:var(--muted)}.page{display:none}.page.active{display:block}.hero{min-height:calc(100vh - 120px);display:grid;place-items:center}.hero-card,.panel{background:rgba(255,255,255,.92);border:2px solid #f4dfe0;border-radius:var(--r);box-shadow:var(--shadow)}.hero-card{max-width:820px;width:100%;padding:42px 46px;text-align:center;position:relative;overflow:hidden}.hero-card:before,.hero-card:after{content:"";position:absolute;border-radius:50%;opacity:.55}.hero-card:before{width:180px;height:180px;background:#ffd6df;left:-90px;top:-80px}.hero-card:after{width:170px;height:170px;background:#ffe4b8;right:-80px;bottom:-80px}.hero-art{height:125px;display:flex;justify-content:center;align-items:center;gap:12px;position:relative;z-index:1}.blob{width:86px;height:86px;border-radius:35% 65% 54% 46%;display:grid;place-items:center;font-size:35px;font-weight:900;color:#fff;transform:rotate(-8deg);box-shadow:0 12px 18px #9b6b6b22}.blob:nth-child(1){background:var(--pink)}.blob:nth-child(2){background:var(--orange);transform:rotate(8deg) translateY(-12px)}.blob:nth-child(3){background:var(--mint);transform:rotate(-4deg)}.hero-card h2{font-size:38px;margin:8px 0 10px;position:relative;z-index:1}.hero-card p{font-size:18px;line-height:1.75;color:var(--muted);position:relative;z-index:1}.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0;text-align:left;position:relative;z-index:1}.rule{padding:15px;border-radius:18px;background:#fff6f7;border:1px solid #f8dde2;line-height:1.55;font-size:15px}.rule b{display:block;color:var(--pink);font-size:17px;margin-bottom:4px}.btn{min-height:48px;padding:12px 22px;border-radius:16px;font-weight:900;transition:.2s transform,.2s box-shadow}.btn:hover{transform:translateY(-2px)}.btn-primary{color:#fff;background:linear-gradient(135deg,var(--pink),#ff8da7);box-shadow:0 10px 20px #ff6b8a44}.btn-orange{color:#6c4310;background:linear-gradient(135deg,#ffd47c,var(--orange));box-shadow:0 10px 20px #ffb84d44}.btn-soft{background:#fff;border:2px solid var(--line);color:var(--ink)}.form-card{max-width:580px;margin:10vh auto 0;padding:34px;text-align:center}.form-card h2{font-size:30px;margin:8px 0}.form-card p{color:var(--muted);line-height:1.65}.field{margin:22px auto;text-align:left;max-width:390px}.field label{display:block;font-weight:800;margin-bottom:8px}.field input{width:100%;height:54px;border:2px solid var(--line);border-radius:16px;padding:0 16px;background:#fff;outline:none}.field input:focus{border-color:var(--pink);box-shadow:0 0 0 5px #ff6b8a1c}.error{min-height:24px;color:var(--bad);font-size:14px}.game-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:15px}.level-title small{display:block;color:var(--pink);font-weight:900;margin-bottom:4px}.level-title h2{margin:0;font-size:31px}.level-title p{margin:7px 0 0;color:var(--muted)}.scorebar{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}.stat{background:#fff;border:2px solid var(--line);border-radius:16px;padding:10px 14px;min-width:92px;text-align:center}.stat small{display:block;color:var(--muted);font-size:12px}.stat b{font-size:20px;color:var(--pink)}.progress{height:12px;background:#ffe4e8;border-radius:999px;overflow:hidden;margin-bottom:18px}.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--orange));border-radius:999px;transition:.35s width}.panel{padding:20px}.tip{padding:13px 16px;border-radius:16px;background:#fff4d9;color:#79521a;font-weight:800;margin-bottom:16px}.scene-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.scene-card{background:#fffafc;border:3px dashed #efcfd5;border-radius:22px;padding:10px;transition:.2s}.scene-card.drag-over,.scene-card.selected-target{border-color:var(--pink);background:#fff0f4;transform:translateY(-3px)}.scene-card.correct{border-style:solid;border-color:var(--good);background:var(--goodbg)}.scene-card.wrong{border-style:solid;border-color:var(--bad);background:var(--badbg);animation:shake .4s}.scene-media{aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:#ffe9ed;position:relative}.scene-media img{display:block;width:100%;height:100%;object-fit:cover}.badge{position:absolute;top:9px;left:9px;background:#fff;color:var(--pink);font-weight:900;border-radius:999px;padding:5px 9px;font-size:13px}.desc{font-size:14px;line-height:1.5;font-weight:800;margin:9px 2px}.slot{min-height:58px;border:2px solid #f2dce0;background:#fff;border-radius:15px;display:grid;place-items:center;text-align:center;padding:6px;color:#b18ba0;font-size:13px;font-weight:800}.slot.filled{color:var(--ink);border-color:#ffb2c1;background:#fff5f7}.feedback{display:none;margin-top:8px;padding:9px 10px;border-radius:12px;font-size:13px;line-height:1.45}.feedback.show{display:block}.feedback.good{background:var(--goodbg);color:#187348}.feedback.bad{background:var(--badbg);color:#a43c4b}.bank{margin-top:16px;padding:16px;border-radius:20px;background:#fff;border:2px solid var(--line)}.bank h3{font-size:17px;margin:0 0 11px}.chips{display:flex;flex-wrap:wrap;gap:11px;min-height:58px}.chip,.drag-card{user-select:none;touch-action:none}.chip{padding:13px 16px;border-radius:16px;color:#fff;background:linear-gradient(135deg,var(--pink),#ff93ab);font-weight:900;box-shadow:0 8px 15px #ff6b8a2b;cursor:grab;transition:.18s}.chip:hover{transform:translateY(-2px) rotate(-1deg)}.chip.selected{outline:4px solid #ffd27c;transform:translateY(-3px) scale(1.04)}.chip.used{display:none}.next-row{display:flex;justify-content:center;gap:12px;margin-top:18px}.notice{margin-top:14px;color:var(--muted);text-align:center;font-size:14px}.type-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:18px 0}.type-zone{min-height:180px;border:3px dashed #e8d8df;background:#fff;border-radius:22px;padding:13px;transition:.2s}.type-zone.drag-over{border-color:var(--pink);background:#fff1f5;transform:scale(1.02)}.type-zone.correct{border-style:solid;border-color:var(--good);background:var(--goodbg)}.type-head{display:flex;gap:9px;align-items:center;padding-bottom:10px;border-bottom:2px solid #faeff1;margin-bottom:10px}.type-dot{width:35px;height:35px;border-radius:12px;display:grid;place-items:center;font-weight:900;color:#fff}.type-zone:nth-child(1) .type-dot{background:#7d9cff}.type-zone:nth-child(2) .type-dot{background:#f1b54f}.type-zone:nth-child(3) .type-dot{background:#72cda8}.type-zone:nth-child(4) .type-dot{background:#b393ec}.type-zone:nth-child(5) .type-dot{background:#ef7c9c}.type-head b{font-size:16px}.type-head small{display:block;color:var(--muted);font-size:12px;margin-top:3px}.drag-area{display:flex;flex-wrap:wrap;gap:11px;padding:15px;background:#fff8fa;border:2px solid var(--line);border-radius:20px;min-height:90px}.drag-card{padding:13px 15px;border-radius:16px;background:#fff;border:2px solid #f0dce1;box-shadow:0 7px 13px #9b6b6b14;font-weight:800;cursor:grab}.drag-card.correct{background:var(--goodbg);border-color:var(--good);color:#187348}.drag-card.wrong{background:var(--badbg);border-color:var(--bad);animation:shake .4s}.drag-card.placed{display:none}.mini{font-size:13px;padding:7px 9px;border-radius:10px;background:#fff;border:1px solid #d9efe2;color:#316b4e;margin:3px;display:inline-block}.question-card{max-width:900px;margin:0 auto;padding:24px;background:#fff;border:2px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}.q-meta{color:var(--pink);font-weight:900;font-size:14px}.question-card h3{font-size:28px;line-height:1.45;margin:12px 0 20px}.options{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}.option{min-height:58px;text-align:left;padding:14px 16px;border:2px solid var(--line);background:#fff;border-radius:16px;font-weight:800;color:var(--ink);transition:.2s}.option:hover{border-color:var(--pink);transform:translateY(-2px)}.option.correct{border-color:var(--good);background:var(--goodbg)}.option.wrong{border-color:var(--bad);background:var(--badbg);animation:shake .4s}.q-feedback{min-height:42px;margin:16px 0 0;padding:11px 13px;border-radius:14px;line-height:1.55;display:none}.q-feedback.show{display:block}.q-feedback.good{background:var(--goodbg);color:#187348}.q-feedback.bad{background:var(--badbg);color:#a43c4b}.result-wrap{max-width:800px;margin:7vh auto 0;text-align:center}.result-card{padding:34px}.stars{display:flex;justify-content:center;gap:8px;margin:18px 0}.star{font-size:54px;color:#e7dbe0;transition:.3s}.star.on{color:var(--orange);animation:pop .45s}.result-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:22px 0}.result-stat{padding:14px;border-radius:16px;background:#fff7e8;border:1px solid #f7e4b9}.result-stat b{display:block;font-size:25px;color:var(--pink)}.result-stat small{color:var(--muted)}.actions{display:flex;justify-content:center;gap:11px;flex-wrap:wrap}.toast{position:fixed;left:50%;top:25px;transform:translate(-50%,-130px);padding:14px 22px;border-radius:18px;color:#fff;font-weight:900;z-index:30;box-shadow:0 12px 25px #9b6b6b33;transition:.35s}.toast.show{transform:translate(-50%,0)}.toast.good{background:var(--good)}.toast.bad{background:var(--bad)}.confetti{position:fixed;inset:0;pointer-events:none;z-index:20;overflow:hidden}.confetti span{position:absolute;width:10px;height:18px;border-radius:4px;animation:fall 1.4s ease-out forwards}@keyframes fall{from{transform:translateY(-20px) rotate(0);opacity:1}to{transform:translateY(100vh) rotate(520deg);opacity:0}}@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}50%{transform:translateX(7px)}75%{transform:translateX(-4px)}}@keyframes pop{0%{transform:scale(.3)}70%{transform:scale(1.2)}100%{transform:scale(1)}}@media(max-width:1100px){.scene-grid{grid-template-columns:repeat(3,1fr)}.type-grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.app{padding:16px 12px 30px}.topbar{align-items:flex-start}.brand h1{font-size:23px}.mascot{width:48px;height:48px}.top-actions{display:none}.hero-card{padding:28px 18px}.hero-card h2{font-size:30px}.rules{grid-template-columns:1fr}.game-head{display:block}.scorebar{justify-content:flex-start;margin-top:12px}.scene-grid,.type-grid{grid-template-columns:1fr 1fr}.options{grid-template-columns:1fr}.result-stats{grid-template-columns:repeat(2,1fr)}.level-title h2{font-size:25px}}@media(max-width:430px){.scene-grid,.type-grid{grid-template-columns:1fr}.hero-art{transform:scale(.8)}}
+
+
+.rules.two{grid-template-columns:repeat(2,1fr)}
+.student-chip{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.embedded .app{padding:12px 14px 24px;max-width:none}
+html.embedded .topbar{margin-bottom:10px}
+.done-banner{margin-top:16px;padding:16px 18px;border-radius:18px;background:#e9fbf1;border:2px solid #31b978;text-align:center}
+.done-banner b{display:block;font-size:18px;color:#187348;margin-bottom:4px}
+.done-banner p{margin:0;color:#316b4e}
+.page{display:none !important}
+.page.active{display:block !important}
+.page.active.hero{display:grid !important}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="mascot"><i></i></div>
+      <div>
+        <div class="eyebrow">小学四年级 · 信息科技</div>
+        <h1>身边的数据</h1>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="pill student-chip" id="studentInfo">读取学生信息中…</span>
+      <span class="pill" id="headerLevel">准备出发</span>
+    </div>
+  </header>
+
+  <section id="intro" class="page hero">
+    <div class="hero-card">
+      <div class="hero-art">
+        <div class="blob">图</div>
+        <div class="blob">数</div>
+        <div class="blob">据</div>
+      </div>
+      <h2>欢迎来到数据探险岛</h2>
+      <p>跟着数据小怪兽一起观察生活、认识数据。完成两个环节：先看身边的场景匹配数据类型，再把数据分到对应岛屿。</p>
+      <div class="rules two">
+        <div class="rule"><b>环节1</b>看生活场景，把数据类型送回正确位置。</div>
+        <div class="rule"><b>环节2</b>把身边的文字、数字、图片、声音和视频分到对应岛屿。</div>
+      </div>
+      <button class="btn btn-primary" id="startBtn" type="button">开始探险</button>
+      <div class="notice">支持鼠标拖拽，也支持点击卡片再点击目标位置。登录后会自动读取你的姓名和学号。</div>
+    </div>
+  </section>
+
+  <section id="level1" class="page">
+    <div class="game-head">
+      <div class="level-title">
+        <small>环节 1 · 场景匹配</small>
+        <h2>把数据卡片送回家</h2>
+        <p>观察每幅图里的主要信息，再拖拽或点击正确的数据类型。</p>
+      </div>
+      <div class="scorebar">
+        <div class="stat"><small>关卡进度</small><b id="l1Count">0/5</b></div>
+        <div class="stat"><small>总得分</small><b id="score1">0</b></div>
+        <div class="stat"><small>连击</small><b id="combo1">0</b></div>
+      </div>
+    </div>
+    <div class="progress"><i id="l1Progress" style="width:0"></i></div>
+    <div class="panel">
+      <div class="tip">活动提示：先看图，再找类型。卡片会吸附到目标位置；全部摆放后才能揭晓。</div>
+      <div class="scene-grid" id="sceneGrid"></div>
+      <div class="bank">
+        <h3>数据类型卡片</h3>
+        <div class="chips" id="chipBank"></div>
+      </div>
+      <div class="next-row">
+        <button class="btn btn-orange" id="l1Submit" disabled type="button">提交并揭晓</button>
+        <button class="btn btn-soft" id="l1Reset" type="button">重新挑战</button>
+      </div>
+      <div class="done-banner" id="doneBanner" hidden>
+        <b id="doneTitle">本环节已完成</b>
+        <p id="doneDesc">请在左侧进入下一环节。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="level2" class="page">
+    <div class="game-head">
+      <div class="level-title">
+        <small>环节 2 · 分类岛屿</small>
+        <h2>让数据住进正确的岛</h2>
+        <p>把每张数据卡拖到对应分类框；答对会获得连击奖励，答错会得到提示。</p>
+      </div>
+      <div class="scorebar">
+        <div class="stat"><small>已完成</small><b id="l2Count">0/10</b></div>
+        <div class="stat"><small>总得分</small><b id="score2">0</b></div>
+        <div class="stat"><small>连击</small><b id="combo2">0</b></div>
+      </div>
+    </div>
+    <div class="progress"><i id="l2Progress" style="width:0"></i></div>
+    <div class="panel">
+      <div class="tip">活动提示：可以拖拽，也可以先点击一张卡片，再点击下方的分类岛。</div>
+      <div class="drag-area" id="dragArea"></div>
+      <div class="type-grid" id="typeGrid"></div>
+      <div class="next-row">
+        <button class="btn btn-soft" id="l2Reset" type="button">重新挑战本关</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="result" class="page">
+    <div class="result-wrap">
+      <div class="result-card panel">
+        <div class="hero-art">
+          <div class="blob">通</div>
+          <div class="blob">关</div>
+          <div class="blob">啦</div>
+        </div>
+        <h2 id="resultTitle">数据探险完成</h2>
+        <p id="resultDesc">你已经走完两个环节，看看自己的探险成绩吧。</p>
+        <div class="stars" id="stars"></div>
+        <div class="result-stats">
+          <div class="result-stat"><b id="finalScore">0</b><small>总得分</small></div>
+          <div class="result-stat"><b id="finalAccuracy">0%</b><small>正确率</small></div>
+          <div class="result-stat"><b id="finalTime">0:00</b><small>完成用时</small></div>
+          <div class="result-stat"><b id="finalCombo">0</b><small>最高连击</small></div>
+        </div>
+        <div id="saveStatus" class="notice"></div>
+        <div class="actions">
+          <button class="btn btn-primary" id="againBtn" type="button">再探险一次</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+<div class="confetti" id="confetti"></div>
+<script src="app.js"></script>
+</body>
+</html>

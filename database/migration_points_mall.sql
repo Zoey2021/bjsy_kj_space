@@ -38,12 +38,12 @@ CREATE TABLE IF NOT EXISTS learn_mall_class (
 
 INSERT INTO learn_mall_item (code, name, icon, cost, sort_order, enabled)
 SELECT * FROM (
-  SELECT 'star_future_2' AS code, '星未来积分2' AS name, '🌟' AS icon, 10 AS cost, 1 AS sort_order, 1 AS enabled
-  UNION ALL SELECT 'snack', '零食1份', '🍪', 20, 2, 1
-  UNION ALL SELECT 'stationery', '文具1份', '✏️', 20, 3, 1
-  UNION ALL SELECT 'praise_letter', '表扬信', '💌', 20, 4, 1
-  UNION ALL SELECT 'milk_tea', '奶茶1份', '🧋', 50, 5, 1
-  UNION ALL SELECT 'info_blindbox', '信息盲盒小礼物', '🎁', 20, 6, 1
+  SELECT 'star_future_2' AS code, '星未来积分2' AS name, '🌟' AS icon, 80 AS cost, 1 AS sort_order, 1 AS enabled
+  UNION ALL SELECT 'snack', '零食1份', '🍪', 160, 2, 1
+  UNION ALL SELECT 'stationery', '文具1份', '✏️', 160, 3, 1
+  UNION ALL SELECT 'praise_letter', '表扬信', '💌', 180, 4, 1
+  UNION ALL SELECT 'milk_tea', '奶茶1份', '🧋', 250, 5, 1
+  UNION ALL SELECT 'info_blindbox', '信息盲盒小礼物', '🎁', 140, 6, 1
 ) AS seed
 WHERE NOT EXISTS (SELECT 1 FROM learn_mall_item LIMIT 1);
 
@@ -56,3 +56,10 @@ INSERT INTO sys_config (config_key, config_value, description)
 SELECT 'points_extension_bonus', '1', '完整完成拓展任务额外积分'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'points_extension_bonus');
+
+UPDATE learn_mall_item SET cost = 80 WHERE code = 'star_future_2' AND cost = 10;
+UPDATE learn_mall_item SET cost = 160 WHERE code = 'snack' AND cost = 20;
+UPDATE learn_mall_item SET cost = 160 WHERE code = 'stationery' AND cost = 20;
+UPDATE learn_mall_item SET cost = 180 WHERE code = 'praise_letter' AND cost = 20;
+UPDATE learn_mall_item SET cost = 250 WHERE code = 'milk_tea' AND cost = 50;
+UPDATE learn_mall_item SET cost = 140 WHERE code = 'info_blindbox' AND cost = 20;

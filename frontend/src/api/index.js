@@ -1,11 +1,13 @@
 import request from './request'
 
 export const login = (data) => request.post('/auth/login', data)
+export const getDingTalkLogin = () => request.get('/auth/dingtalk/url')
 export const getClassCodeStudents = (code) => request.get(`/auth/class-code/${code}/students`)
 export const classCodeLogin = (data) => request.post('/auth/class-code/login', data)
 export const getClassLoginCode = (classId) => request.get(`/dashboard/class/${classId}/login-code`)
 export const refreshClassLoginCode = (classId) => request.post(`/dashboard/class/${classId}/login-code/refresh`)
 export const getMe = () => request.get('/auth/me')
+export const changePassword = (data) => request.post('/auth/change-password', data)
 export const getCourseMap = () => request.get('/course/map')
 export const getTextbooks = (type = 'MAIN') => request.get('/course/textbooks', { params: { type } })
 export const getGradeOutline = (gradeId) => request.get(`/course/grade/${gradeId}/outline`)
@@ -18,6 +20,7 @@ export const getCurrentLesson = () => request.get('/learn/current-lesson')
 export const getNotifications = (since) =>
   request.get('/learn/notifications', { params: since ? { since } : {} })
 export const getParkStatus = () => request.get('/learn/park/status')
+export const getClassDismiss = () => request.get('/learn/class-dismiss')
 export const applyParkAccess = () => request.post('/learn/park/apply')
 export const submitPretestG4 = (data) => request.post('/learn/pretest/g4', data)
 export const getMyPretestG4 = () => request.get('/learn/pretest/g4/mine')
@@ -29,9 +32,15 @@ export const teacherGetPretestG6 = (classId) =>
   request.get('/teacher/pretest/g6', { params: { classId } })
 export const teacherClearPretestG6 = (classId) =>
   request.delete('/teacher/pretest/g6', { params: { classId } })
-export const getParkApplications = (classId) =>
-  request.get('/teacher/park/applications', { params: { classId } })
+export const getParkApplications = (classId, lessonId) =>
+  request.get('/teacher/park/applications', { params: { classId, lessonId } })
 export const reviewParkAccess = (data) => request.post('/teacher/park/review', data)
+export const reviewParkClass = (data) => request.post('/teacher/park/review-class', data)
+export const getParkPlays = (classId, lessonId) =>
+  request.get('/teacher/park/plays', { params: { classId, lessonId } })
+export const getParkSettings = () => request.get('/teacher/park/settings')
+export const saveParkSettings = (data) => request.put('/teacher/park/settings', data)
+export const recordParkPlay = (data) => request.post('/learn/park/play', data)
 
 /** 教师端后台管理：教师 / 班级 / 学生 */
 export const manageListTeachers = () => request.get('/teacher/manage/teachers')
@@ -39,6 +48,7 @@ export const manageCreateTeacher = (data) => request.post('/teacher/manage/teach
 export const manageUpdateTeacher = (id, data) => request.put(`/teacher/manage/teachers/${id}`, data)
 export const manageDeleteTeacher = (id) => request.delete(`/teacher/manage/teachers/${id}`)
 export const manageResetTeacherPassword = (id) => request.put(`/teacher/manage/teachers/${id}/reset-password`)
+export const manageSaveTeacherClasses = (id, classIds) => request.put(`/teacher/manage/teachers/${id}/classes`, { classIds })
 
 export const manageListClasses = () => request.get('/teacher/manage/classes')
 export const manageCreateClass = (data) => request.post('/teacher/manage/classes', data)
@@ -59,15 +69,22 @@ export const setClassCurrentLesson = (classId, lessonId) =>
 export const getClasses = () => request.get('/dashboard/classes')
 export const getLessonActivityDashboard = (lessonId, classId) =>
   request.get(`/dashboard/lesson/${lessonId}/class/${classId}`)
+export const clearLessonClassRecords = (lessonId, classId) =>
+  request.delete(`/dashboard/lesson/${lessonId}/class/${classId}/records`)
 export const getDashboard = (classId) => request.get(`/dashboard/data/${classId}`)
 export const getMatrix = (classId) => request.get(`/dashboard/matrix/${classId}`)
 export const getRanking = (classId) => request.get(`/dashboard/ranking/${classId}`)
 export const getClassScreen = (lessonId) =>
   request.get('/learn/class-screen', { params: { lessonId } })
+export const getStudentAvatar = () => request.get('/learn/avatar')
+export const chooseAvatarFigure = (figure) => request.post('/learn/avatar/figure', { figure })
+export const equipAvatarItem = (itemId) => request.post('/learn/avatar/equip', { itemId })
 export const getStudentMall = () => request.get('/learn/mall')
 export const redeemMallItem = (itemId) => request.post('/learn/mall/redeem', { itemId })
 export const getTeacherPointsRules = () => request.get('/teacher/points/rules')
 export const saveTeacherPointsRules = (data) => request.put('/teacher/points/rules', data)
+export const resetClassPoints = (classId) =>
+  request.post('/teacher/points/reset', null, { params: { classId } })
 export const getTeacherMall = (classId) =>
   request.get('/teacher/mall', { params: classId ? { classId } : {} })
 export const setMallApplyOpen = (data) => request.put('/teacher/mall/open', data)
@@ -125,7 +142,7 @@ export const teacherGenerateScaffold = (data, config = {}) =>
 export const teacherGetTiers = (classId) => request.get('/teacher/tiers', { params: { classId } })
 export const teacherOverrideTier = (data) => request.post('/teacher/tiers/override', data)
 
-/** 学生端按档课时内容（响应不含档位字段） */
+/** 学生端按档课时内容（含 effective 档位 tier：教师指定 > 前测 > B） */
 export const getLessonContent = (lessonId) =>
   request.get('/learn/lesson-content', { params: { lessonId } })
 export const reportHintUsed = (data) => request.post('/learn/hint-used', data)

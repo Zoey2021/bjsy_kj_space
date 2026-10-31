@@ -126,6 +126,7 @@ import {
   teacherCreateResource,
   teacherDeleteResource
 } from '../../api'
+import { isKechuangBook, accountScope, SCOPE_ALL, SCOPE_KECHUANG } from '../../utils/schoolCourseAccess'
 
 const route = useRoute()
 const router = useRouter()
@@ -154,6 +155,16 @@ const goActivityEditor = (lessonId) => {
 const loadOutline = async () => {
   const res = await teacherGetOutline(gradeId)
   outline.value = res.data
+  if (isKechuangBook(res.data) && accountScope() !== SCOPE_ALL && accountScope() !== SCOPE_KECHUANG) {
+    ElMessage.info('科创启航暂未开放，开通后将点亮入口')
+    router.replace('/teacher/activity-editor')
+    return
+  }
+  if (accountScope() === SCOPE_KECHUANG && !isKechuangBook(res.data)) {
+    ElMessage.info('当前账号仅可查看科创启航')
+    router.replace('/teacher/course-map')
+    return
+  }
   const first = res.data?.units?.[0]?.lessons?.[0]
   if (first && !lesson.value) await selectLesson(first.id)
 }

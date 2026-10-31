@@ -8,6 +8,9 @@
       <el-table-column prop="username" label="账号" />
       <el-table-column prop="realName" label="姓名" />
       <el-table-column prop="role" label="角色" />
+      <el-table-column label="身份" width="110">
+        <template #default="{ row }">{{ row.identityCode === 'INFO_TEACHER' ? '信息老师' : '—' }}</template>
+      </el-table-column>
       <el-table-column prop="classId" label="班级ID" width="80" />
       <el-table-column label="状态" width="80">
         <template #default="{ row }">

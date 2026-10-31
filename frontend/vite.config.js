@@ -10,6 +10,10 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true
+      },
+      '/pbl-app': {
+        target: 'http://127.0.0.1:5014',
+        changeOrigin: true
       }
     }
   }

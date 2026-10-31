@@ -4,6 +4,7 @@ import com.itech.learnspace.dto.ApiResponse;
 import com.itech.learnspace.dto.ClassSaveRequest;
 import com.itech.learnspace.dto.StudentBatchRequest;
 import com.itech.learnspace.dto.StudentSaveRequest;
+import com.itech.learnspace.dto.TeacherClassMatchRequest;
 import com.itech.learnspace.dto.TeacherSaveRequest;
 import com.itech.learnspace.entity.SysUser;
 import com.itech.learnspace.exception.BusinessException;
@@ -20,10 +21,13 @@ public class SchoolManageController {
 
     private final SchoolManageService schoolManageService;
     private final AuthService authService;
+    private final com.itech.learnspace.service.AccountAccessService accountAccessService;
 
-    public SchoolManageController(SchoolManageService schoolManageService, AuthService authService) {
+    public SchoolManageController(SchoolManageService schoolManageService, AuthService authService,
+                                  com.itech.learnspace.service.AccountAccessService accountAccessService) {
         this.schoolManageService = schoolManageService;
         this.authService = authService;
+        this.accountAccessService = accountAccessService;
     }
 
     private SysUser checkTeacherOrAdmin() {
@@ -31,6 +35,7 @@ public class SchoolManageController {
         if (!"TEACHER".equals(user.getRole()) && !"ADMIN".equals(user.getRole())) {
             throw new BusinessException(403, "仅教师或管理员可操作");
         }
+        accountAccessService.assertClassData(user);
         return user;
     }
 
@@ -68,12 +73,20 @@ public class SchoolManageController {
         return ApiResponse.ok("密码已重置", schoolManageService.resetTeacherPassword(id));
     }
 
+    @PutMapping("/teachers/{id}/classes")
+    public ApiResponse<Map<String, Object>> saveTeacherClasses(@PathVariable Long id,
+                                                               @RequestBody TeacherClassMatchRequest request) {
+        SysUser operator = checkTeacherOrAdmin();
+        List<Long> classIds = request == null ? null : request.getClassIds();
+        return ApiResponse.ok("任课班级已保存", schoolManageService.saveTeacherClasses(operator, id, classIds));
+    }
+
     // ----- 班级 -----
 
     @GetMapping("/classes")
     public ApiResponse<List<Map<String, Object>>> classes() {
-        checkTeacherOrAdmin();
-        return ApiResponse.ok(schoolManageService.listClasses());
+        SysUser user = checkTeacherOrAdmin();
+        return ApiResponse.ok(schoolManageService.listClasses(user));
     }
 
     @PostMapping("/classes")
@@ -102,8 +115,8 @@ public class SchoolManageController {
     public ApiResponse<List<Map<String, Object>>> students(
             @RequestParam(required = false) Long classId,
             @RequestParam(required = false) String q) {
-        checkTeacherOrAdmin();
-        return ApiResponse.ok(schoolManageService.listStudents(classId, q));
+        SysUser user = checkTeacherOrAdmin();
+        return ApiResponse.ok(schoolManageService.listStudents(user, classId, q));
     }
 
     @PostMapping("/students")

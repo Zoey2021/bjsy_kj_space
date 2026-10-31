@@ -1,3 +1,13 @@
+/** 人工智能启蒙上下册都在本校目录中打开。 */
+export function provincialCourseUrl() {
+  return ''
+}
+
+export function openProvincialCourse(url) {
+  const opened = window.open(url, '_blank', 'noopener,noreferrer')
+  if (!opened) window.location.assign(url)
+}
+
 /** 从校本教材 description 解析系列名（如「科创启航 · …」→ 科创启航） */
 export function parseSchoolSeries(book) {
   const desc = book?.description || ''

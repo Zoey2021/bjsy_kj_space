@@ -51,6 +51,26 @@ export function parseGradeKeyFromBookName(bookName) {
   return m ? m[1] : null
 }
 
+/** 从册次名解析上下册，如「四年级下册」→「下」 */
+export function parseVolumeFromBookName(bookName) {
+  const m = String(bookName || '').match(/(上|下)册$/)
+  return m ? m[1] : null
+}
+
+/** 本学期四、六年级只开放上册 */
+const UP_ONLY_GRADES = ['四年级', '六年级']
+
+export function isDownVolumeLocked(gradeKey, volume) {
+  return UP_ONLY_GRADES.includes(gradeKey) && volume === '下'
+}
+
+/** 该年级该册是否可进入学习 */
+export function canOpenBookVolume(enrollmentYear, gradeKey, volume) {
+  if (!canEnterGrade(enrollmentYear, gradeKey)) return false
+  if (isDownVolumeLocked(gradeKey, volume)) return false
+  return true
+}
+
 /** 获取某入学届在某年级的配套课程状态；未配置届别则全部开放 */
 export function getGradeAccess(enrollmentYear, gradeKey) {
   if (!enrollmentYear || !gradeKey) return GRADE_ACCESS.OPEN

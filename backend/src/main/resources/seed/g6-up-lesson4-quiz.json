@@ -1,0 +1,84 @@
+{
+  "title": "课堂小测",
+  "unlockAfterActivity": 3,
+  "questions": [
+    {
+      "id": "k1",
+      "dimension": "知识掌握",
+      "stem": "print(\"hello, world!\") 的作用是：",
+      "options": [
+        "在屏幕上显示 hello, world!",
+        "把这句话存成文件",
+        "先算出一个加法",
+        "画出流程图"
+      ],
+      "answer": 0,
+      "explanation": "print() 会把括号里的内容显示出来。"
+    },
+    {
+      "id": "k2",
+      "dimension": "知识掌握",
+      "stem": "print(3+5) 和 print(\"3+5\") 的区别是：",
+      "options": [
+        "完全一样",
+        "前者输出 8，后者原样输出 3+5",
+        "前者会报错",
+        "后者输出 8"
+      ],
+      "answer": 1,
+      "explanation": "没有引号时会先计算；加了引号就当成文字。"
+    },
+    {
+      "id": "a1",
+      "dimension": "能力提升",
+      "stem": "鸡兔同笼程序里，while ji <= 35 中的 35 表示：",
+      "options": [
+        "脚的只数",
+        "鸡最多可以试到 35 只",
+        "正确答案是 35",
+        "每次让 ji 加 35"
+      ],
+      "answer": 1,
+      "explanation": "头一共 35 个，所以鸡的只数从 0 试到 35。"
+    },
+    {
+      "id": "a2",
+      "dimension": "能力提升",
+      "stem": "代码里的 ji = ji + 1 是在：",
+      "options": [
+        "输出结果",
+        "结束程序",
+        "试下一只鸡",
+        "计算兔的只数"
+      ],
+      "answer": 2,
+      "explanation": "每试完一次，鸡的只数加 1，继续枚举。"
+    },
+    {
+      "id": "l1",
+      "dimension": "素养变化",
+      "stem": "写 Python 时，括号和引号应该：",
+      "options": [
+        "用中文全角也可以",
+        "用英文半角，而且要成对",
+        "可以全部不写",
+        "只能用中文引号"
+      ],
+      "answer": 1,
+      "explanation": "Python 只认英文符号。中文引号或括号会报语法错误。"
+    },
+    {
+      "id": "l2",
+      "dimension": "素养变化",
+      "stem": "三边是 3、4、5 的三角形，周长是：",
+      "options": [
+        "12",
+        "5",
+        "3",
+        "35"
+      ],
+      "answer": 0,
+      "explanation": "周长 = 3+4+5 = 12。"
+    }
+  ]
+}

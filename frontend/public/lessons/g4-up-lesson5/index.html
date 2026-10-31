@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第5课 数据获取 — 探究活动</title>
+<script>
+(function () {
+  try {
+    if (new URLSearchParams(location.search).get('embedded') === '1') {
+      document.documentElement.classList.add('embedded-mode');
+    }
+  } catch (e) {}
+})();
+</script>
+<style>
+:root{
+  --blue:#2563eb;--blue-soft:#e8f0fe;--blue-line:#c6d8f7;
+  --orange:#ea7a2d;--orange-soft:#fff3e8;
+  --red:#d6271e;--green:#16a34a;--green-soft:#ecfdf5;
+  --ink:#1e293b;--muted:#64748b;--line:#dbe4f0;--bg:#f2f5fa;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:"PingFang SC","Microsoft YaHei",ui-sans-serif,-apple-system,sans-serif;line-height:1.6;font-size:17px}
+.wrap{max-width:1100px;margin:0 auto;padding:16px 16px 40px}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{border:1.5px solid var(--blue-line);background:#fff;color:var(--blue);border-radius:999px;padding:8px 14px;font-weight:800}
+.tabs button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.panel{display:none}
+.panel.on{display:block}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px 22px 18px;box-shadow:0 6px 20px rgba(30,58,138,.06)}
+.kicker{color:var(--blue);font-weight:800;font-size:13px;letter-spacing:.04em}
+h2{font-size:clamp(20px,2.4vw,26px);margin:4px 0 8px}
+.lead{color:#475569;margin-bottom:14px}
+.task{background:var(--blue-soft);border:1px solid var(--blue-line);border-left:5px solid var(--blue);border-radius:12px;padding:12px 16px;margin:0 0 16px}
+.task b{color:var(--blue)}
+.methods{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.method{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:linear-gradient(180deg,#fbfcff,#f4f8ff)}
+.method h4{font-size:16px;color:#1e3a8a;margin-bottom:4px}
+.method p{font-size:14px;color:#475569}
+.method .no{display:inline-flex;width:22px;height:22px;border-radius:6px;background:var(--blue);color:#fff;font-size:12px;align-items:center;justify-content:center;margin-right:6px;font-weight:800}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 12px}
+.chip{border:1.6px solid #b9c9e8;background:#fff;border-radius:12px;padding:9px 13px;font-weight:700;font-size:14.5px;color:var(--ink)}
+.chip.sel{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
+.chip.used{display:none}
+.dropgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.zone{border:2px dashed #c3d2ec;border-radius:14px;padding:12px;background:#fdfefe;min-height:150px}
+.zone h4{font-size:15px;margin-bottom:8px;display:flex;justify-content:space-between;color:#1e3a8a}
+.zone h4 span{font-size:12.5px;color:#94a3b8}
+.zone .item{background:#eef4ff;border:1px solid #d6e4fb;border-radius:9px;padding:6px 8px;font-size:13px;margin-bottom:6px}
+.panel-box{background:#fbfcff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.think{border:1.5px solid #f5cdb0;background:linear-gradient(180deg,#fffaf5,#fff)}
+.tag{font-size:13px;font-weight:700;color:#fff;background:var(--orange);border-radius:999px;padding:2px 10px;margin-right:8px}
+.opts4{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{display:flex;gap:10px;align-items:center;text-align:left;border:1.6px solid #cfd9ea;background:#fff;border-radius:12px;padding:11px 14px;font-weight:700;width:100%}
+.opt b{display:inline-flex;width:26px;height:26px;flex:0 0 26px;border-radius:8px;background:#eef2f9;align-items:center;justify-content:center}
+.opt.right{border-color:var(--green);background:var(--green-soft);color:#166534}
+.opt.right b{background:var(--green);color:#fff}
+.opt.dim{opacity:.5}
+.steps{display:none;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.steps.show{display:grid}
+.step{border:1px solid var(--line);border-radius:12px;background:#f8fbff;padding:16px 12px 12px;position:relative}
+.step .sn{position:absolute;top:-10px;left:12px;background:var(--blue);color:#fff;font-size:12px;font-weight:800;border-radius:999px;padding:2px 10px}
+.step h4{color:#1e3a8a;margin:6px 0 4px}
+.step p{font-size:13.5px;color:#475569}
+.lockline{display:none;font-weight:800;color:#b45309;background:#fff7ed;border:1.5px dashed #f5c98f;border-radius:12px;padding:10px 14px;margin-bottom:12px}
+.lockline.show{display:block}
+.gate.locked{opacity:.42;pointer-events:none;filter:grayscale(.55)}
+.design{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-weight:800;font-size:14.5px;color:#1e3a8a;margin-bottom:6px}
+.field input,.field textarea{width:100%;border:1.5px solid #c9d8ef;border-radius:10px;padding:9px 12px}
+.samples{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.sample{font-size:13px;border:1px dashed #c9d8ef;background:#fff;border-radius:999px;padding:4px 10px;color:#475569}
+.sample.on{border-style:solid;border-color:#2563eb;background:#eff6ff;color:#1e3a8a;font-weight:800}
+.bank .q{border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:8px;background:#fff}
+.bank .q.used{opacity:.35;text-decoration:line-through;pointer-events:none}
+.paper{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px}
+.paper .p-title{text-align:center;font-weight:800;margin-bottom:8px}
+.paper .p-note{font-size:13.5px;color:#475569;background:#f8fafc;border-radius:8px;padding:8px 10px;margin-bottom:10px}
+.paper ol{padding-left:20px;font-size:14px}
+.paper .opts{color:#64748b;font-size:13px}
+.paper .empty{color:#94a3b8;text-align:center;padding:16px 0}
+.survey-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px}
+.statline{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.stat{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px}
+.stat b{font-size:18px;color:var(--blue)}
+.stack{max-height:240px;overflow:auto}
+.slip{background:#fff;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:8px;padding:7px 10px;font-size:13.5px;margin-bottom:6px}
+.bars .row{display:grid;grid-template-columns:72px 1fr 56px;gap:8px;align-items:center;margin-bottom:8px;font-size:14px}
+.bars .track{height:18px;background:#eef2f9;border-radius:6px;overflow:hidden}
+.bars .bar{display:block;height:100%;width:0;background:linear-gradient(90deg,#60a5fa,#2563eb);transition:width .4s}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+th{background:var(--blue-soft);color:#1e3a8a;padding:8px;border:1px solid var(--blue-line);text-align:left}
+td{padding:8px;border:1px solid var(--line)}
+.btn{border:1.5px solid var(--blue-line);background:#fff;color:var(--blue);border-radius:10px;padding:8px 14px;font-weight:800}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+.fb{min-height:22px;font-size:14.5px;font-weight:700;margin-top:8px}
+.fb.ok{color:var(--green)}.fb.no{color:var(--red)}
+.banner{display:none;margin-top:12px;background:var(--green-soft);border:1.5px solid var(--green);border-radius:12px;padding:12px 14px;font-weight:800;color:#166534}
+.banner.show{display:block}
+.hint{color:var(--muted);font-size:14px;margin-top:8px}
+.theme-input{display:flex;gap:8px;flex-wrap:wrap}
+.theme-input input{flex:1;min-width:220px;border:1.5px solid #c9d8ef;border-radius:10px;padding:9px 12px}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.shake{animation:shake .3s ease 2}
+html.embedded-mode .tabs{display:none}
+html.embedded-mode .wrap{width:100%;max-width:none;padding:4px 2px 20px}
+@media (max-width:900px){
+  .methods,.dropgrid,.steps,.design,.survey-grid,.opts4{grid-template-columns:1fr 1fr}
+  .design,.survey-grid,.steps{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="tabs" id="tabs">
+    <button type="button" data-step="1" class="on">探究一</button>
+    <button type="button" data-step="2">探究二</button>
+    <button type="button" data-step="3">探究三</button>
+  </nav>
+
+  <section class="panel on" id="panel1">
+    <div class="card">
+      <div class="kicker">探究一</div>
+      <h2>情境配对：这份数据该怎么取？</h2>
+      <p class="lead">看得见的现象靠「记」，心里的想法靠「问」，公开的资料靠「查」，连续的变化靠「采」。</p>
+      <div class="methods">
+        <div class="method"><h4><span class="no">1</span>现场记录</h4><p>到现场看一看、数一数、记一记。真实、直接，但比较费时间。</p></div>
+        <div class="method"><h4><span class="no">2</span>问卷调查</h4><p>设计问题请人填写。适合了解大家的想法和习惯。</p></div>
+        <div class="method"><h4><span class="no">3</span>网络获取</h4><p>用搜索引擎、网站查公开资料。又快又多，但要分辨真假。</p></div>
+        <div class="method"><h4><span class="no">4</span>设备采集</h4><p>用传感器、摄像头、打卡机自动记录。连续、准确，需要设备。</p></div>
+      </div>
+      <div class="task"><b>任务：</b>先点选一张情境卡，再点它应该进入的方法筐。8 张都放对，本探究才完成。</div>
+      <div class="chips" id="chips"></div>
+      <div class="dropgrid" id="zones"></div>
+      <div class="fb" id="fb1"></div>
+      <div class="btn-row"><button type="button" class="btn primary" id="submit1" disabled>提交探究一</button></div>
+      <div class="banner" id="ban1">全部配对正确。四种方法各有用处：想法靠问、现象靠记、资料靠查、变化靠采。</div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel2">
+    <div class="card">
+      <div class="kicker">探究二</div>
+      <h2>设计问卷：把「想知道」变成「能统计」</h2>
+      <div class="task"><b>任务：</b>先选对问卷的制作顺序，再点一个调查主题。下面的题库会换成这个主题的题目，从中挑出 3 道合格的题。不合格的题点开会告诉你原因。</div>
+      <div class="panel-box think">
+        <h3 style="margin-bottom:8px"><span class="tag">先想一想</span>正确的顺序是哪一个？</h3>
+        <div class="opts4" id="opts4"></div>
+        <div class="fb" id="fb0"></div>
+        <div class="steps" id="steps">
+          <div class="step"><span class="sn">第 1 步</span><h4>设计问卷</h4><p>想清楚调查谁、调查什么，把大问题拆成小问题。</p></div>
+          <div class="step"><span class="sn">第 2 步</span><h4>制作问卷</h4><p>写上标题和调查说明，排成一张能发出去的问卷。</p></div>
+          <div class="step"><span class="sn">第 3 步</span><h4>开展调查</h4><p>发给调查对象，收回来后再逐题汇总。</p></div>
+        </div>
+      </div>
+      <div class="lockline show" id="lockline">先答对上面的顺序，再打开问卷设计台。</div>
+      <div class="gate locked" id="gate">
+        <div class="design">
+          <div>
+            <div class="panel-box">
+              <h3 style="margin-bottom:8px"><span class="tag">第 1 步</span>定主题</h3>
+              <div class="field">
+                <label for="topic">我们想调查什么？（写清调查谁、想知道什么）</label>
+                <input type="text" id="topic" placeholder="例：同学们最喜欢的课间活动">
+                <div class="samples">
+                  <button type="button" class="sample" data-topic="同学们最喜欢的课间活动">同学们最喜欢的课间活动</button>
+                  <button type="button" class="sample" data-topic="同学们午餐最不喜欢的一道菜">同学们午餐最不喜欢的一道菜</button>
+                  <button type="button" class="sample" data-topic="同学们每天完成作业需要的时间">同学们每天完成作业需要的时间</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="note">调查说明</label>
+                <textarea id="note" rows="3">亲爱的同学：您好！为了更好地了解同学们的情况，特设计此问卷。本问卷不记名，请放心如实填写，感谢你的参与！</textarea>
+              </div>
+            </div>
+            <div class="panel-box">
+              <h3 style="margin-bottom:8px"><span class="tag">第 2 步</span>选 3 道和主题相符的合格题</h3>
+              <div class="bank" id="bank"></div>
+              <div class="fb" id="fb2"></div>
+            </div>
+          </div>
+          <div class="panel-box">
+            <h3 style="margin-bottom:8px"><span class="tag">第 3 步</span>问卷预览</h3>
+            <div class="paper" id="paper">
+              <div class="p-title" id="pTitle">（还没有主题）</div>
+              <div class="p-note" id="pNote">调查说明会显示在这里。</div>
+              <div id="pBody" class="empty">从左侧题库中选择题目。</div>
+            </div>
+            <div class="btn-row">
+              <button type="button" class="btn primary" id="submit2" disabled>提交探究二</button>
+              <button type="button" class="btn" id="reset2">重做问卷</button>
+            </div>
+            <div class="banner" id="ban2">问卷完成。合格的问卷要有调查目的、调查说明和调查内容，题目还要一题一问、不重不漏、不问隐私。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel3">
+    <div class="card">
+      <div class="kicker">探究三</div>
+      <h2>收回问卷：把答案变成数据</h2>
+      <div class="task"><b>任务：</b>事务所发出了 12 份问卷。把已经交回的 10 份收进来，看汇总表和柱状图怎样长出来。收齐后，写下你最想在学校里调查的一个主题。</div>
+      <div class="survey-grid">
+        <div class="panel-box">
+          <h3 style="margin-bottom:8px"><span class="tag">回收箱</span>一份一份收回来</h3>
+          <div class="statline">
+            <div class="stat">发出 <b>12</b> 份</div>
+            <div class="stat">收回 <b id="got">0</b> 份</div>
+            <div class="stat">回收率 <b id="rate">0%</b></div>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="btn primary" id="collect">收回一份</button>
+            <button type="button" class="btn" id="collectAll">全部收回</button>
+          </div>
+          <div class="stack" id="stack"><p class="hint">还没有收回的问卷。</p></div>
+        </div>
+        <div class="panel-box">
+          <h3 style="margin-bottom:8px"><span class="tag">汇总</span>最喜欢的课间活动</h3>
+          <div class="bars" id="bars"></div>
+          <table>
+            <thead><tr><th>选项</th><th>人数</th><th>占比</th></tr></thead>
+            <tbody id="sumBody">
+              <tr><td>跳绳</td><td>0</td><td>—</td></tr>
+              <tr><td>踢毽子</td><td>0</td><td>—</td></tr>
+              <tr><td>看书</td><td>0</td><td>—</td></tr>
+              <tr><td>聊天</td><td>0</td><td>—</td></tr>
+            </tbody>
+          </table>
+          <div class="fb" id="fb3"></div>
+        </div>
+      </div>
+      <div class="panel-box" style="margin-top:14px">
+        <h3 style="margin-bottom:8px"><span class="tag">想一想</span>如果请你调查学校中的一个主题，你最想调查什么主题？</h3>
+        <div class="theme-input">
+          <input type="text" id="themeInput" maxlength="40" placeholder="例：课间同学们最喜欢的活动">
+        </div>
+        <p class="hint">写一个能在学校里调查到的主题。不要写同学姓名、家庭住址等个人信息。</p>
+        <div class="fb" id="fb4"></div>
+      </div>
+      <div class="btn-row"><button type="button" class="btn primary" id="submit3" disabled>提交探究三</button></div>
+      <div class="banner" id="ban3">数据收齐了。10 份答卷里跳绳最多。发出 12 份、收回 10 份，回收率约 83%，还有 2 份没回来，下结论时要记得这一点。你想调查的主题也记下了。</div>
+    </div>
+  </section>
+</div>
+<script>
+const urlParams = new URLSearchParams(location.search);
+const IS_EMBEDDED = urlParams.get('embedded') === '1';
+const notified = new Set();
+function notify(step, extra) {
+  if (!window.parent || window.parent === window || notified.has(step)) return;
+  notified.add(step);
+  const idx = parseInt(urlParams.get('activityIndex') || String(step), 10);
+  const payload = { activityIndex: Number.isFinite(idx) ? idx : step, step: step, stepCompleted: true, source: 'g4-up-lesson5' };
+  if (extra) Object.keys(extra).forEach((key) => { payload[key] = extra[key]; });
+  window.parent.postMessage({ type: 'LEARN_SPACE_SUBMIT', payload: payload }, '*');
+}
+function stageReady(step) {
+  if (step === 1) return placed === SCENES.length;
+  if (step === 2) {
+    const topic = document.getElementById('topic').value.trim();
+    const note = document.getElementById('note').value.trim();
+    return orderDone && topic.length >= 4 && !!note && picked.length === 3;
+  }
+  if (step === 3) return got === ANSWERS.length && themeReady();
+  return false;
+}
+function refreshSubmit(step) {
+  const btn = document.getElementById('submit' + step);
+  if (!btn) return;
+  const names = ['', '一', '二', '三'];
+  if (notified.has(step)) {
+    btn.disabled = true;
+    btn.textContent = '已提交';
+    return;
+  }
+  btn.disabled = !stageReady(step);
+  btn.textContent = '提交探究' + names[step];
+}
+function submitStage(step) {
+  if (notified.has(step)) return;
+  if (!stageReady(step)) {
+    const fb = document.getElementById(step === 2 ? 'fb2' : step === 3 ? 'fb3' : 'fb1');
+    if (fb) {
+      fb.className = 'fb no';
+      fb.textContent = step === 1
+        ? '8 张情境卡都放对后，再点提交。'
+        : step === 2
+          ? '顺序、主题、说明和 3 道合格题都完成，再点提交。'
+          : '10 份都收回，并写下调查主题后，再点提交。';
+    }
+    return;
+  }
+  document.getElementById('ban' + step).classList.add('show');
+  notify(step, step === 3 ? { surveyTheme: themeText() } : null);
+  refreshSubmit(step);
+}
+function switchStep(step) {
+  document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('on', p.id === 'panel' + step));
+  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', Number(b.dataset.step) === step));
+}
+
+const SCENES = [
+  { t: '到食堂门口数一数剩饭的餐盘数', k: '现场记录' },
+  { t: '请全班同学填写「最喜欢的课间活动」', k: '问卷调查' },
+  { t: '查一查明天杭州的天气和气温', k: '网络获取' },
+  { t: '校门口的测温设备记录体温', k: '设备采集' },
+  { t: '用搜索引擎查全校学生人数', k: '网络获取' },
+  { t: '操场上的噪音监测仪显示分贝数', k: '设备采集' },
+  { t: '站在路口记录 10 分钟内经过的汽车', k: '现场记录' },
+  { t: '发放纸质问卷了解同学们的睡眠时间', k: '问卷调查' }
+];
+const CATS = ['现场记录', '问卷调查', '网络获取', '设备采集'];
+let selected = null;
+let placed = 0;
+const chipsEl = document.getElementById('chips');
+const zonesEl = document.getElementById('zones');
+SCENES.forEach((s) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'chip';
+  b.textContent = s.t;
+  b.dataset.k = s.k;
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.chip.sel').forEach((x) => x.classList.remove('sel'));
+    if (selected === b) { selected = null; return; }
+    selected = b;
+    b.classList.add('sel');
+  });
+  chipsEl.appendChild(b);
+});
+CATS.forEach((c) => {
+  const z = document.createElement('div');
+  z.className = 'zone';
+  z.innerHTML = '<h4>' + c + '<span>0 张</span></h4><div class="items"></div>';
+  z.addEventListener('click', () => {
+    if (!selected) return;
+    const fb = document.getElementById('fb1');
+    if (selected.dataset.k === c) {
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.textContent = selected.textContent;
+      z.querySelector('.items').appendChild(item);
+      selected.classList.add('used');
+      selected.classList.remove('sel');
+      selected = null;
+      placed += 1;
+      z.querySelector('h4 span').textContent = z.querySelectorAll('.item').length + ' 张';
+      fb.className = 'fb ok';
+      fb.textContent = '放对了：' + c + '。';
+      if (placed === SCENES.length) {
+        fb.className = 'fb ok';
+        fb.textContent = '8 张都放对了，点下面的「提交探究一」。';
+      }
+      refreshSubmit(1);
+    } else {
+      z.classList.remove('shake');
+      void z.offsetWidth;
+      z.classList.add('shake');
+      fb.className = 'fb no';
+      fb.textContent = '再想想：这个情境的数据，是这样取来的吗？';
+    }
+  });
+  zonesEl.appendChild(z);
+});
+
+const ORDER_OPTS = [
+  { t: '开展调查 → 设计问卷 → 制作问卷', why: '问卷还没做出来，调查没法开展。' },
+  { t: '设计问卷 → 制作问卷 → 开展调查', ok: true },
+  { t: '制作问卷 → 设计问卷 → 开展调查', why: '题目还没设计好就动手制作，做出来的问卷是空的。' },
+  { t: '设计问卷 → 开展调查 → 制作问卷', why: '没有制作成型的问卷，手里就没有东西可以发出去。' }
+];
+let orderDone = false;
+const opts4El = document.getElementById('opts4');
+['A', 'B', 'C', 'D'].forEach((letter, i) => {
+  const o = ORDER_OPTS[i];
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'opt';
+  b.innerHTML = '<b>' + letter + '</b><span>' + o.t + '</span>';
+  b.addEventListener('click', () => {
+    if (orderDone) return;
+    const fb0 = document.getElementById('fb0');
+    if (o.ok) {
+      orderDone = true;
+      b.classList.add('right');
+      document.querySelectorAll('#opts4 .opt').forEach((x) => { if (x !== b) x.classList.add('dim'); });
+      document.getElementById('steps').classList.add('show');
+      document.getElementById('gate').classList.remove('locked');
+      document.getElementById('lockline').classList.remove('show');
+      fb0.className = 'fb ok';
+      fb0.textContent = '答对了：设计 → 制作 → 开展调查，顺序不能颠倒。';
+      renderPaper();
+    } else {
+      b.classList.remove('shake');
+      void b.offsetWidth;
+      b.classList.add('shake');
+      fb0.className = 'fb no';
+      fb0.textContent = '再想想：' + o.why;
+    }
+  });
+  opts4El.appendChild(b);
+});
+
+const THEME_BANKS = {
+  '同学们最喜欢的课间活动': [
+    { ok: true, q: '你最喜欢的课间活动是？', o: '跳绳 ／ 踢毽子 ／ 看书 ／ 聊天' },
+    { ok: true, q: '你课间通常和谁一起玩？', o: '自己玩 ／ 好朋友 ／ 很多同学一起' },
+    { ok: true, q: '你每天课间大约玩多久？', o: '不到 5 分钟 ／ 5—10 分钟 ／ 10 分钟以上' },
+    { ok: true, q: '你希望学校再增加哪种课间活动？', o: '跳绳 ／ 球类 ／ 棋类 ／ 安静阅读' },
+    { ok: false, q: '你觉得课间好不好玩？', o: '问题太笼统，答了也统计不出什么' },
+    { ok: false, q: '你喜欢跳绳和看书吗？', o: '一题问了两件事，答案没法用' },
+    { ok: false, q: '课间你和谁玩？把对方的姓名和电话写下来。', o: '涉及隐私，和调查无关，不能问' }
+  ],
+  '同学们午餐最不喜欢的一道菜': [
+    { ok: true, q: '你午餐最不喜欢的一道菜是？', o: '青菜 ／ 红烧肉 ／ 鱼 ／ 汤' },
+    { ok: true, q: '你中午在食堂吃饭时，会不会剩下饭菜？', o: '从不 ／ 偶尔 ／ 经常' },
+    { ok: true, q: '你不喜欢这道菜，主要是因为？', o: '味道 ／ 太油 ／ 太淡 ／ 吃腻了' },
+    { ok: true, q: '你希望食堂下周少做哪一种菜？', o: '荤菜 ／ 素菜 ／ 汤' },
+    { ok: false, q: '你觉得食堂好不好？', o: '问题太笼统，答了也统计不出什么' },
+    { ok: false, q: '你喜欢吃饭和运动吗？', o: '一题问了两件事，答案没法用' },
+    { ok: false, q: '你家住在哪里？爸爸妈妈的电话是多少？', o: '涉及隐私，和调查无关，不能问' }
+  ],
+  '同学们每天完成作业需要的时间': [
+    { ok: true, q: '你每天完成作业大约需要多长时间？', o: '30 分钟以内 ／ 30—60 分钟 ／ 1 小时以上' },
+    { ok: true, q: '你通常在什么时候写作业？', o: '放学后马上写 ／ 晚饭后 ／ 睡觉前' },
+    { ok: true, q: '你写作业时最常遇到的困难是？', o: '题目不会 ／ 时间不够 ／ 容易分心 ／ 几乎没有' },
+    { ok: true, q: '你希望老师每天布置的作业？', o: '少一点 ／ 保持现在 ／ 可以再多一点' },
+    { ok: false, q: '作业难不难？', o: '问题太笼统，答了也统计不出什么' },
+    { ok: false, q: '你喜欢作业和考试吗？', o: '一题问了两件事，答案没法用' },
+    { ok: false, q: '写作业时谁辅导你？请写下家长的姓名和电话。', o: '涉及隐私，和调查无关，不能问' }
+  ]
+};
+function themeKey(topic) {
+  const text = String(topic || '').trim();
+  if (THEME_BANKS[text]) return text;
+  if (text.indexOf('课间') >= 0) return '同学们最喜欢的课间活动';
+  if (text.indexOf('午餐') >= 0 || text.indexOf('食堂') >= 0 || text.indexOf('菜') >= 0) return '同学们午餐最不喜欢的一道菜';
+  if (text.indexOf('作业') >= 0) return '同学们每天完成作业需要的时间';
+  return '';
+}
+let bankKey = null;
+let activeBank = [];
+let picked = [];
+const bankEl = document.getElementById('bank');
+function renderBank() {
+  bankEl.innerHTML = '';
+  if (!bankKey) {
+    bankEl.innerHTML = '<p class="hint">先点上面的一个调查主题，这里会换成这个主题的题目。</p>';
+    return;
+  }
+  activeBank.forEach((item, i) => {
+    const d = document.createElement('div');
+    d.className = 'q' + (picked.indexOf(i) >= 0 ? ' used' : '');
+    d.innerHTML = '<b>' + (i + 1) + '.</b> ' + item.q + '<div class="opts">' + item.o + '</div>';
+    d.addEventListener('click', () => {
+      const fb = document.getElementById('fb2');
+      if (!item.ok) {
+        d.classList.remove('shake');
+        void d.offsetWidth;
+        d.classList.add('shake');
+        fb.className = 'fb no';
+        fb.textContent = '这道题不合格：' + item.o + '。';
+        return;
+      }
+      if (picked.indexOf(i) >= 0) return;
+      if (picked.length >= 3) {
+        fb.className = 'fb no';
+        fb.textContent = '3 道题正好，题太多同学会不想填。';
+        return;
+      }
+      picked.push(i);
+      d.classList.add('used');
+      renderPaper();
+    });
+    bankEl.appendChild(d);
+  });
+}
+function syncBank() {
+  const key = themeKey(document.getElementById('topic').value);
+  document.querySelectorAll('.sample').forEach((b) => {
+    b.classList.toggle('on', b.dataset.topic === key);
+  });
+  if (key === bankKey) return;
+  bankKey = key;
+  activeBank = key ? THEME_BANKS[key] : [];
+  picked = [];
+  renderBank();
+}
+function renderPaper() {
+  syncBank();
+  const topic = document.getElementById('topic').value.trim();
+  const note = document.getElementById('note').value.trim();
+  document.getElementById('pTitle').textContent = topic ? ('关于' + topic + '的调查问卷') : '（还没有主题）';
+  document.getElementById('pNote').textContent = note || '调查说明会显示在这里。';
+  const body = document.getElementById('pBody');
+  if (!bankKey) {
+    body.className = 'empty';
+    body.textContent = '先选定调查主题，再选题。';
+  } else if (!picked.length) {
+    body.className = 'empty';
+    body.textContent = '从左侧题库中选择题目。';
+  } else {
+    body.className = '';
+    body.innerHTML = '<ol>' + picked.map((idx) => {
+      const it = activeBank[idx];
+      return '<li>' + it.q + '<div class="opts">□ ' + it.o.split(' ／ ').join('　□ ') + '</div></li>';
+    }).join('') + '</ol>';
+  }
+  const fb = document.getElementById('fb2');
+  if (orderDone && topic.length >= 4 && note && picked.length === 3) {
+    fb.className = 'fb ok';
+    fb.textContent = '问卷三部分齐全。点「提交探究二」完成本环节。';
+  }
+  refreshSubmit(2);
+}
+document.getElementById('topic').addEventListener('input', renderPaper);
+document.getElementById('note').addEventListener('input', renderPaper);
+document.querySelectorAll('.sample').forEach((b) => {
+  b.addEventListener('click', () => {
+    document.getElementById('topic').value = b.dataset.topic;
+    renderPaper();
+  });
+});
+document.getElementById('reset2').addEventListener('click', () => {
+  picked = [];
+  document.getElementById('topic').value = '';
+  document.getElementById('fb2').className = 'fb';
+  document.getElementById('fb2').textContent = '';
+  if (!notified.has(2)) document.getElementById('ban2').classList.remove('show');
+  renderPaper();
+});
+
+const ANSWERS = ['跳绳', '看书', '跳绳', '聊天', '跳绳', '踢毽子', '跳绳', '看书', '跳绳', '聊天'];
+const OPTIONS = ['跳绳', '踢毽子', '看书', '聊天'];
+let got = 0;
+const barsEl = document.getElementById('bars');
+OPTIONS.forEach((o, i) => {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = '<span>' + o + '</span><div class="track"><i class="bar" data-o="' + i + '"></i></div><span class="val" data-v="' + i + '">0 人</span>';
+  barsEl.appendChild(row);
+});
+function themeText() {
+  return document.getElementById('themeInput').value.trim();
+}
+function themeReady() {
+  return themeText().length >= 2;
+}
+function renderStats() {
+  const counts = {};
+  OPTIONS.forEach((o) => { counts[o] = 0; });
+  for (let i = 0; i < got; i++) counts[ANSWERS[i]] += 1;
+  let max = 1;
+  OPTIONS.forEach((o) => { if (counts[o] > max) max = counts[o]; });
+  OPTIONS.forEach((o, i) => {
+    const c = counts[o];
+    document.querySelector('.bar[data-o="' + i + '"]').style.width = (c / max * 100) + '%';
+    document.querySelector('.val[data-v="' + i + '"]').textContent = c + ' 人';
+    const tr = document.getElementById('sumBody').children[i];
+    tr.children[1].textContent = String(c);
+    tr.children[2].textContent = got ? Math.round(c / got * 100) + '%' : '—';
+  });
+  document.getElementById('got').textContent = String(got);
+  document.getElementById('rate').textContent = Math.round(got / 12 * 100) + '%';
+  const fb = document.getElementById('fb3');
+  const fb4 = document.getElementById('fb4');
+  if (got === ANSWERS.length && themeReady()) {
+    fb.className = 'fb ok';
+    fb.textContent = '汇总完成：跳绳 ' + counts['跳绳'] + ' 人，占 ' + Math.round(counts['跳绳'] / got * 100) + '%。';
+    fb4.className = 'fb ok';
+    fb4.textContent = '主题已写好。点下面的「提交探究三」。';
+  } else if (got === ANSWERS.length) {
+    fb.className = 'fb ok';
+    fb.textContent = '10 份都收回来了。再写下你最想调查的主题，本探究才完成。';
+    if (!notified.has(3)) document.getElementById('ban3').classList.remove('show');
+  } else if (got > 0) {
+    fb.className = 'fb';
+    fb.textContent = '已收回 ' + got + ' 份，继续收回。';
+    if (!notified.has(3)) document.getElementById('ban3').classList.remove('show');
+  }
+  refreshSubmit(3);
+}
+function collectOne() {
+  if (got >= ANSWERS.length) return;
+  const a = ANSWERS[got];
+  got += 1;
+  const stack = document.getElementById('stack');
+  if (got === 1) stack.innerHTML = '';
+  const d = document.createElement('div');
+  d.className = 'slip';
+  d.innerHTML = '第 <b>' + got + '</b> 份：最喜欢的课间活动 —— <b>' + a + '</b>';
+  stack.appendChild(d);
+  stack.scrollTop = stack.scrollHeight;
+  renderStats();
+}
+document.getElementById('collect').addEventListener('click', collectOne);
+document.getElementById('collectAll').addEventListener('click', () => {
+  while (got < ANSWERS.length) collectOne();
+});
+[1, 2, 3].forEach((step) => {
+  document.getElementById('submit' + step).addEventListener('click', () => submitStage(step));
+});
+document.getElementById('themeInput').addEventListener('input', () => {
+  const fb4 = document.getElementById('fb4');
+  const text = document.getElementById('themeInput').value.trim();
+  if (text && text.length < 2) {
+    fb4.className = 'fb no';
+    fb4.textContent = '主题再写具体一点。';
+    return;
+  }
+  if (!text) {
+    fb4.className = 'fb';
+    fb4.textContent = '';
+  }
+  renderStats();
+});
+
+if (!IS_EMBEDDED) {
+  document.querySelectorAll('#tabs button').forEach((btn) => {
+    btn.addEventListener('click', () => switchStep(Number(btn.dataset.step)));
+  });
+}
+(function init() {
+  if (IS_EMBEDDED) document.body.classList.add('embedded-mode');
+  const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+  switchStep(step >= 1 && step <= 3 ? step : 1);
+  renderPaper();
+  renderStats();
+  [1, 2, 3].forEach(refreshSubmit);
+})();
+</script>
+</body>
+</html>

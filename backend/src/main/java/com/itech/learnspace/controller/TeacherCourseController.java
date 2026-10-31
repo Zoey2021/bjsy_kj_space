@@ -23,10 +23,13 @@ public class TeacherCourseController {
 
     private final TeacherCourseService teacherCourseService;
     private final AuthService authService;
+    private final com.itech.learnspace.service.AccountAccessService accountAccessService;
 
-    public TeacherCourseController(TeacherCourseService teacherCourseService, AuthService authService) {
+    public TeacherCourseController(TeacherCourseService teacherCourseService, AuthService authService,
+                                   com.itech.learnspace.service.AccountAccessService accountAccessService) {
         this.teacherCourseService = teacherCourseService;
         this.authService = authService;
+        this.accountAccessService = accountAccessService;
     }
 
     private void checkTeacher() {
@@ -39,19 +42,30 @@ public class TeacherCourseController {
     @GetMapping("/textbooks")
     public ApiResponse<List<Map<String, Object>>> textbooks(@RequestParam(defaultValue = "MAIN") String type) {
         checkTeacher();
-        return ApiResponse.ok(teacherCourseService.listTextbooks(type));
+        SysUser user = authService.currentUser();
+        return ApiResponse.ok(accountAccessService.filterTextbooks(user, teacherCourseService.listTextbooks(type)));
     }
 
     @GetMapping("/grade/{gradeId}/outline")
     public ApiResponse<Map<String, Object>> outline(@PathVariable Long gradeId) {
         checkTeacher();
-        return ApiResponse.ok(teacherCourseService.getGradeOutline(gradeId));
+        SysUser user = authService.currentUser();
+        Map<String, Object> outline = teacherCourseService.getGradeOutline(gradeId);
+        accountAccessService.assertBook(user, outline);
+        return ApiResponse.ok(outline);
     }
 
     @GetMapping("/lesson/{lessonId}")
     public ApiResponse<Map<String, Object>> lessonDetail(@PathVariable Long lessonId) {
         checkTeacher();
-        return ApiResponse.ok(teacherCourseService.getLessonEditorData(lessonId));
+        SysUser user = authService.currentUser();
+        Map<String, Object> data = teacherCourseService.getLessonEditorData(lessonId);
+        Object grade = data.get("grade");
+        if (grade instanceof com.itech.learnspace.entity.CourseGrade) {
+            com.itech.learnspace.entity.CourseGrade book = (com.itech.learnspace.entity.CourseGrade) grade;
+            accountAccessService.assertBook(user, book.getName(), book.getDescription(), book.getTextbookType());
+        }
+        return ApiResponse.ok(data);
     }
 
     @PostMapping("/lesson")

@@ -93,6 +93,19 @@ public class ScaffoldService {
         this.activityProperties = activityProperties;
     }
 
+    /** 仅六年级配套教材按前测分档；四年级等其他课时先不分层，统一按课堂基准 B。 */
+    private boolean usesPretestScaffold(Long lessonId) {
+        CourseLesson lesson = lessonRepository.findById(lessonId).orElse(null);
+        if (lesson == null || lesson.getUnitId() == null) {
+            return false;
+        }
+        return unitRepository.findById(lesson.getUnitId())
+                .flatMap(unit -> gradeRepository.findById(unit.getGradeId()))
+                .map(grade -> "MAIN".equals(grade.getTextbookType())
+                        && String.valueOf(grade.getName()).startsWith("六年级"))
+                .orElse(false);
+    }
+
     public String effectiveTier(SysUser student) {
         String override = student.getTierOverride();
         if (isTier(override)) {
@@ -237,12 +250,30 @@ public class ScaffoldService {
         Map<String, Object> out = new LinkedHashMap<String, Object>();
         out.put("lessonId", lessonId);
         out.put("published", false);
+        boolean teacherView = student != null
+                && ("TEACHER".equals(student.getRole()) || "ADMIN".equals(student.getRole()));
+        boolean tiered = usesPretestScaffold(lessonId);
+        String tier = (!teacherView && tiered) ? effectiveTier(student) : "B";
+        out.put("tier", tier);
         LessonScaffold row = scaffoldRepository.findByLessonId(lessonId).orElse(null);
         if (row == null || !"published".equals(row.getStatus())) {
             return out;
         }
-        String tier = effectiveTier(student);
         List<Map<String, Object>> items = parseItems(row.getItemsJson());
+        if (teacherView && tiered) {
+            out.put("teacherPreview", true);
+            Map<String, Object> byTier = new LinkedHashMap<String, Object>();
+            String[] codes = new String[] { "A", "B", "C" };
+            for (int i = 0; i < codes.length; i++) {
+                String code = codes[i];
+                List<Map<String, Object>> one = new ArrayList<Map<String, Object>>();
+                for (Map<String, Object> item : items) {
+                    one.add(studentItem(item, code));
+                }
+                byTier.put(code, one);
+            }
+            out.put("tierActivities", byTier);
+        }
         List<Map<String, Object>> filtered = new ArrayList<Map<String, Object>>();
         for (Map<String, Object> item : items) {
             filtered.add(studentItem(item, tier));
@@ -441,7 +472,7 @@ public class ScaffoldService {
                     .append(a.get("title")).append("\n");
         }
         String pageText = extractActivityPageText(path, idx);
-        String intro = clip(stripHtml(lesson.getContent()), 800);
+        String intro = clip(stripHtml(lesson.getContent()), 400);
         String objectives = asText(act.get("objectives"));
 
         Map<String, Object> biz = new LinkedHashMap<String, Object>();
@@ -467,18 +498,19 @@ public class ScaffoldService {
                                   String siblings, int idx, String title, String intro, String pageText,
                                   Map<String, Object> defs) {
         return "请根据下列课时数据，为本探究环节生成 A/B/C 三档教学支架，只输出 JSON。\n"
+                + "【当前要出支架的环节】探究" + idx + "「" + title + "」\n"
+                + "【本环节页面任务原文｜唯一任务来源，禁止换成其他课题】\n"
+                + (StringUtils.hasText(pageText) ? pageText : "（未能读取页面，请严格按环节标题来写，不要换成其他课题）") + "\n"
+                + "【本课全部探究环节｜不要串题】\n" + siblings
                 + "【课程】" + nvl(gradeName) + " / " + nvl(unitName) + " / " + nvl(lessonTitle) + "\n"
                 + "【本课学习目标】" + (StringUtils.hasText(objectives) ? objectives : "（未填写）") + "\n"
-                + "【本课全部探究环节】\n" + siblings
-                + "【当前要出支架的环节】探究" + idx + "「" + title + "」\n"
                 + "【课时介绍摘录】" + (StringUtils.hasText(intro) ? intro : "（无）") + "\n"
-                + "【本环节页面任务原文】\n"
-                + (StringUtils.hasText(pageText) ? pageText : "（未能读取页面，请严格按环节标题来写，不要换成其他课题）") + "\n"
                 + "【三档目标】" + writeJson(defs) + "\n"
                 + "分层规则：三档是同一任务的不同支架，不是三道不同的题。"
                 + "A 档只说任务（可加变式），少给甚至不给操作提示；"
                 + "B 档在任务后给规范提示（若是画流程图，提示起止、输入输出、处理、判断四种形状）；"
-                + "C 档在 B 档基础上再给逐步操作提示（先拖什么、再连什么）。"
+                + "C 档在 B 档基础上再给逐步操作提示（先拖什么、再连什么），可给半成品/填空/起步问句，但不能替学生做完。"
+                + "必须紧扣上面的「本环节页面任务原文」。禁止因为环节序号是 2 或 3 就改成别的课、别的例题。"
                 + "禁止编造本环节没有的情境；语言口语化，面向小学生；不要 markdown。\n"
                 + "只输出 JSON：{\"A\":{\"task\":\"\",\"hints\":[],\"challenge\":\"\"},"
                 + "\"B\":{\"task\":\"\",\"hints\":[\"\"],\"example\":\"\"},"
@@ -543,10 +575,159 @@ public class ScaffoldService {
         }
         try {
             String html = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+            String brief = extractJsonBrief(html, activityIndex);
             String panel = slicePanel(html, activityIndex);
-            return clip(stripHtml(StringUtils.hasText(panel) ? panel : html), 1600);
+            String snippets = extractTaskSnippets(StringUtils.hasText(panel) ? panel : html);
+            StringBuilder out = new StringBuilder();
+            if (StringUtils.hasText(brief)) {
+                out.append(brief);
+            }
+            if (StringUtils.hasText(snippets)) {
+                if (out.length() > 0) {
+                    out.append("\n【页面可见文字】");
+                }
+                out.append(snippets);
+            }
+            if (out.length() == 0) {
+                return clip(stripHtml(StringUtils.hasText(panel) ? panel : html), 1600);
+            }
+            return clip(out.toString(), 2200);
         } catch (Exception e) {
             return "";
+        }
+    }
+
+    private String extractJsonBrief(String html, int activityIndex) {
+        int idPos = html.indexOf("id=\"ls-activity-briefs\"");
+        if (idPos < 0) {
+            idPos = html.indexOf("id='ls-activity-briefs'");
+        }
+        if (idPos < 0) {
+            return "";
+        }
+        int start = html.indexOf('>', idPos);
+        int end = html.indexOf("</script>", start);
+        if (start < 0 || end <= start) {
+            return "";
+        }
+        try {
+            JsonNode root = objectMapper.readTree(html.substring(start + 1, end).trim());
+            JsonNode node = root.get(String.valueOf(activityIndex));
+            if (node == null || node.isMissingNode()) {
+                return "";
+            }
+            StringBuilder brief = new StringBuilder();
+            String title = node.path("title").asText("");
+            String task = node.path("task").asText("");
+            String does = node.path("studentDoes").asText("");
+            String notThis = node.path("notThis").asText("");
+            if (StringUtils.hasText(title)) {
+                brief.append("环节标题：").append(title).append('\n');
+            }
+            if (StringUtils.hasText(task)) {
+                brief.append("任务：").append(task).append('\n');
+            }
+            if (StringUtils.hasText(does)) {
+                brief.append("学生操作：").append(does).append('\n');
+            }
+            if (StringUtils.hasText(notThis)) {
+                brief.append("禁止改写成：").append(notThis);
+            }
+            return brief.toString().trim();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private String extractTaskSnippets(String html) {
+        if (!StringUtils.hasText(html)) {
+            return "";
+        }
+        List<String> parts = new ArrayList<String>();
+        collectInner(html, "fc-info-title", parts);
+        collectInner(html, "fc-task-desc", parts);
+        collectInner(html, "fc-task-tip", parts);
+        collectInner(html, "fc-step-text", parts);
+        collectInner(html, "ls-kicker", parts);
+        collectTagged(html, "h2", parts);
+        collectInner(html, "ls-lead", parts);
+        collectInner(html, "question-title", parts);
+        collectInner(html, "info-strip", parts);
+        if (parts.isEmpty()) {
+            return "";
+        }
+        StringBuilder out = new StringBuilder();
+        int n = Math.min(parts.size(), 12);
+        for (int i = 0; i < n; i++) {
+            if (out.length() > 0) {
+                out.append("；");
+            }
+            out.append(parts.get(i));
+        }
+        return out.toString();
+    }
+
+    private void collectInner(String html, String cls, List<String> parts) {
+        String needle = "class=\"";
+        int from = 0;
+        while (from < html.length()) {
+            int c = html.indexOf(needle, from);
+            if (c < 0) {
+                return;
+            }
+            int cEnd = html.indexOf('"', c + needle.length());
+            if (cEnd < 0) {
+                return;
+            }
+            String classVal = html.substring(c + needle.length(), cEnd);
+            int tagEnd = html.indexOf('>', cEnd);
+            from = c + 1;
+            if (tagEnd < 0 || !containsClass(classVal, cls)) {
+                continue;
+            }
+            int close = html.indexOf('<', tagEnd + 1);
+            String inner = html.substring(tagEnd + 1, close > tagEnd ? close : Math.min(tagEnd + 180, html.length()));
+            addSnippet(parts, stripHtml(inner));
+        }
+    }
+
+    private void collectTagged(String html, String tag, List<String> parts) {
+        String open = "<" + tag;
+        int from = 0;
+        while (true) {
+            int s = html.indexOf(open, from);
+            if (s < 0) {
+                return;
+            }
+            int tagEnd = html.indexOf('>', s);
+            int close = html.indexOf("</" + tag + ">", tagEnd);
+            from = s + 1;
+            if (tagEnd < 0 || close < 0) {
+                continue;
+            }
+            addSnippet(parts, stripHtml(html.substring(tagEnd + 1, close)));
+        }
+    }
+
+    private boolean containsClass(String classVal, String cls) {
+        for (String one : classVal.split("\\s+")) {
+            if (cls.equals(one)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void addSnippet(List<String> parts, String text) {
+        if (!StringUtils.hasText(text)) {
+            return;
+        }
+        String t = text.trim();
+        if (t.length() < 4 || t.length() > 180) {
+            return;
+        }
+        if (!parts.contains(t)) {
+            parts.add(t);
         }
     }
 
@@ -556,6 +737,14 @@ public class ScaffoldService {
         }
         int i = webPath.indexOf("/lessons/");
         String rel = webPath.substring(i + "/lessons/".length());
+        int cut = rel.indexOf('?');
+        if (cut >= 0) {
+            rel = rel.substring(0, cut);
+        }
+        cut = rel.indexOf('#');
+        if (cut >= 0) {
+            rel = rel.substring(0, cut);
+        }
         List<Path> candidates = new ArrayList<Path>();
         if (activityProperties != null && StringUtils.hasText(activityProperties.getLessonHtmlDir())) {
             candidates.add(Paths.get(activityProperties.getLessonHtmlDir(), rel));
@@ -571,27 +760,55 @@ public class ScaffoldService {
     }
 
     private String slicePanel(String html, int index) {
-        String[] ids = {
-                "id=\"panel" + index + "\"",
-                "id='panel" + index + "'",
-                "data-step=\"" + index + "\"",
-                "id=\"step" + index + "\""
-        };
-        int start = -1;
-        for (String token : ids) {
-            start = html.indexOf(token);
-            if (start >= 0) {
-                break;
-            }
-        }
+        int start = indexOfPanelId(html, index);
         if (start < 0) {
             return "";
         }
-        int next = html.indexOf("id=\"panel" + (index + 1) + "\"", start + 1);
-        if (next < 0) {
-            next = html.indexOf("id='panel" + (index + 1) + "'", start + 1);
+        int next = indexOfPanelId(html, index + 1);
+        int script = findRuntimeScript(html, start + 8);
+        int end = html.length();
+        if (next > start) {
+            end = Math.min(end, next);
         }
-        return next > start ? html.substring(start, next) : html.substring(start);
+        if (script > start) {
+            end = Math.min(end, script);
+        }
+        return html.substring(start, end);
+    }
+
+    private int indexOfPanelId(String html, int index) {
+        String a = "id=\"panel" + index + "\"";
+        String b = "id='panel" + index + "'";
+        int ia = html.indexOf(a);
+        int ib = html.indexOf(b);
+        if (ia < 0) {
+            return ib;
+        }
+        if (ib < 0) {
+            return ia;
+        }
+        return Math.min(ia, ib);
+    }
+
+    private int findRuntimeScript(String html, int from) {
+        int i = from;
+        while (i < html.length()) {
+            int s = html.indexOf("<script", i);
+            if (s < 0) {
+                return -1;
+            }
+            int tagEnd = html.indexOf('>', s);
+            if (tagEnd < 0) {
+                return s;
+            }
+            String tag = html.substring(s, tagEnd).toLowerCase();
+            if (tag.contains("application/json")) {
+                i = tagEnd + 1;
+                continue;
+            }
+            return s;
+        }
+        return -1;
     }
 
     private String stripHtml(String raw) {

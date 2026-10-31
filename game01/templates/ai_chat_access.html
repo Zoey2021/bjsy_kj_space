@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>输入团队访问码 - Python+AI小游戏设计课程</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI','Helvetica','Arial',sans-serif;}
+        body { background:#f4f7fb; padding:20px; color:#333; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+        .container { background:#fff; border-radius:14px; box-shadow:0 6px 16px rgba(0,0,0,0.08); padding:40px; max-width:500px; width:100%; }
+        h2 { margin-bottom:20px; color:#2c5aa0; text-align:center; }
+        .team-info { background:#e8f4ff; padding:15px; border-radius:10px; margin-bottom:20px; }
+        .team-info p { margin:5px 0; color:#2c5aa0; }
+        .team-info strong { font-size:1.2rem; color:#1a5fb0; }
+        label { display:block; margin:15px 0 8px; font-weight:600; color:#2c5aa0; }
+        input { width:100%; padding:12px; border:2px solid #d6e4ff; border-radius:10px; font-size:1.2rem; text-align:center; letter-spacing:8px; }
+        input:focus { outline:none; border-color:#4d8eff; }
+        .error { color:#e74c3c; margin-top:10px; padding:10px; background:#fee; border-radius:8px; }
+        button { width:100%; padding:12px; border:none; border-radius:10px; cursor:pointer; font-weight:600; font-size:1rem; margin-top:15px; }
+        .primary { background:#4d8eff; color:#fff; }
+        .primary:hover { background:#3d7eef; }
+        .secondary { background:#f0f0f0; color:#333; margin-top:10px; }
+        .secondary:hover { background:#e0e0e0; }
+        .hint { color:#666; font-size:0.9rem; margin-top:8px; text-align:center; }
+        .icon { text-align:center; font-size:3rem; color:#4d8eff; margin-bottom:15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <i class="fas fa-lock"></i>
+        </div>
+        <h2><i class="fas fa-key"></i> 输入团队访问码</h2>
+        
+        <div class="team-info">
+            <p><strong>团队名称：</strong>{{ team.team_name }}</p>
+            <p><strong>班级：</strong>{{ team.class_name }}</p>
+        </div>
+        
+        {% if error %}
+        <div class="error">
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+        
+        <form id="access-form" onsubmit="submitAccessCode(event)">
+            <label for="access_code">请输入6位数字访问码：</label>
+            <input 
+                type="text" 
+                id="access_code" 
+                name="access_code" 
+                maxlength="6" 
+                pattern="[0-9]{6}" 
+                placeholder="000000"
+                required
+                autocomplete="off"
+                autofocus
+            />
+            <p class="hint">访问码在组队成功时已显示，请向队长或团队成员询问</p>
+            
+            <button type="submit" class="primary">
+                <i class="fas fa-sign-in-alt"></i> 进入AI对话
+            </button>
+        </form>
+        
+        <button class="secondary" onclick="window.location.href='/'">
+            <i class="fas fa-home"></i> 返回首页
+        </button>
+    </div>
+
+    <script>
+        const teamId = {{ team.id }};
+        
+        // 限制只能输入数字
+        document.getElementById('access_code').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+        
+        function submitAccessCode(event) {
+            event.preventDefault();
+            const accessCode = document.getElementById('access_code').value.trim();
+            
+            if (accessCode.length !== 6) {
+                alert('访问码必须是6位数字');
+                return;
+            }
+            
+            // 跳转到AI对话页面，带上访问码
+            window.location.href = `/ai-chat?team_id=${teamId}&access_code=${accessCode}`;
+        }
+    </script>
+</body>
+</html>
+

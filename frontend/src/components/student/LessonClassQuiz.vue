@@ -68,10 +68,11 @@ import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   quiz: { type: Object, default: () => ({}) },
-  submitting: { type: Boolean, default: false }
+  submitting: { type: Boolean, default: false },
+  seed: { type: Object, default: null }
 })
 
-const emit = defineEmits(['submit'])
+const emit = defineEmits(['submit', 'draft'])
 
 const DIMENSION_ORDER = ['知识掌握', '能力提升', '素养变化']
 
@@ -121,18 +122,48 @@ const dimensionScores = computed(() => {
 
 const optionLabel = (i) => String.fromCharCode(65 + i)
 
+let muteDraft = 0
+const applySeed = (seed) => {
+  muteDraft += 1
+  try {
+    Object.keys(answers).forEach((k) => delete answers[k])
+    submitted.value = false
+    showReview.value = false
+    score.value = 0
+    correctCount.value = 0
+    if (!seed || seed.mode === 'empty') return
+    ;(seed.answers || []).forEach((a, i) => {
+      if (a && a.selected != null) answers[i] = a.selected
+    })
+    if (seed.mode === 'result') {
+      submitted.value = true
+      showReview.value = true
+      score.value = seed.quizScore || 0
+      correctCount.value = seed.correctCount || 0
+    }
+  } finally {
+    muteDraft -= 1
+  }
+}
+
+watch([questions, () => props.seed], () => {
+  applySeed(props.seed)
+}, { immediate: true })
+
+watch(answers, () => {
+  if (muteDraft > 0 || submitted.value) return
+  emit('draft', questions.value.map((q, i) => ({
+    questionId: q.id,
+    selected: answers[i]
+  })))
+}, { deep: true, flush: 'sync' })
+
 const dimTag = (d) => {
   if (d === '知识掌握') return 'primary'
   if (d === '能力提升') return 'success'
   if (d === '素养变化') return 'warning'
   return 'info'
 }
-
-watch(questions, () => {
-  submitted.value = false
-  showReview.value = false
-  Object.keys(answers).forEach((k) => delete answers[k])
-}, { immediate: true })
 
 const submit = () => {
   const total = questions.value.length

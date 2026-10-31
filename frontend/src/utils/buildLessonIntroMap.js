@@ -60,7 +60,7 @@ function buildOrderNodes(activities, hasQuiz) {
     nodes.push({ text: '请从左侧菜单依次完成各探究活动' })
   }
   if (hasQuiz) {
-    nodes.push({ text: '全部活动完成后作答课堂小测' })
+    nodes.push({ text: '全部活动完成后先作答课堂小测，再完成学习评价' })
   }
   return nodes
 }

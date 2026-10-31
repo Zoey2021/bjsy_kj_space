@@ -1,3 +1,5 @@
+import { toOssUrl } from './ossStatic'
+
 /** 与后端 TextbookPdfHelper、migration_textbook_pdf.sql 文件名一致 */
 const DEFAULT_PDF_BY_NAME = {
   '三年级上册': '/textbooks/grade3-up.pdf',
@@ -12,7 +14,7 @@ const DEFAULT_PDF_BY_NAME = {
 
 export function resolveTextbookPdfUrl(grade) {
   if (!grade) return ''
-  if (grade.pdfUrl) return grade.pdfUrl
+  if (grade.pdfUrl) return toOssUrl(grade.pdfUrl)
   const name = (grade.name || '').trim()
-  return DEFAULT_PDF_BY_NAME[name] || ''
+  return toOssUrl(DEFAULT_PDF_BY_NAME[name] || '')
 }

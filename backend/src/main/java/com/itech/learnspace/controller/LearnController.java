@@ -8,6 +8,7 @@ import com.itech.learnspace.dto.VisitRequest;
 import com.itech.learnspace.entity.LearnSubmission;
 import com.itech.learnspace.entity.SysUser;
 import com.itech.learnspace.exception.BusinessException;
+import com.itech.learnspace.service.AvatarService;
 import com.itech.learnspace.service.AuthService;
 import com.itech.learnspace.service.DashboardService;
 import com.itech.learnspace.service.LearnService;
@@ -39,12 +40,14 @@ public class LearnController {
     private final DashboardService dashboardService;
     private final PointsMallService pointsMallService;
     private final ScaffoldService scaffoldService;
+    private final AvatarService avatarService;
 
     public LearnController(LearnService learnService, AuthService authService,
                            NotificationService notificationService, ParkService parkService,
                            PretestG4Service pretestG4Service, PretestG6Service pretestG6Service,
                            SseService sseService, DashboardService dashboardService,
-                           PointsMallService pointsMallService, ScaffoldService scaffoldService) {
+                           PointsMallService pointsMallService, ScaffoldService scaffoldService,
+                           AvatarService avatarService) {
         this.learnService = learnService;
         this.authService = authService;
         this.notificationService = notificationService;
@@ -55,6 +58,7 @@ public class LearnController {
         this.dashboardService = dashboardService;
         this.pointsMallService = pointsMallService;
         this.scaffoldService = scaffoldService;
+        this.avatarService = avatarService;
     }
 
     @PostMapping("/submit")
@@ -85,10 +89,14 @@ public class LearnController {
     @GetMapping("/records/lesson/{lessonId}")
     public ApiResponse<Map<String, Object>> lessonRecords(@PathVariable Long lessonId) {
         SysUser user = authService.currentUser();
-        if (!"STUDENT".equals(user.getRole())) {
+        if (!canViewStudentPage(user)) {
             throw new BusinessException(403, "仅学生可查看");
         }
-        return ApiResponse.ok(learnService.getLessonRecords(lessonId, user.getId()));
+        Map<String, Object> records = learnService.getLessonRecords(lessonId, user.getId());
+        if (!"STUDENT".equals(user.getRole())) {
+            records.put("preview", Boolean.TRUE);
+        }
+        return ApiResponse.ok(records);
     }
 
     /** 学生登录后获取班级当前课时 */
@@ -122,12 +130,25 @@ public class LearnController {
         return ApiResponse.ok(notificationService.getNotificationsSince(user.getId(), since));
     }
 
+    /** 教师一键关闭后，学生端无论停在哪个页面都要看到下课提示 */
+    @GetMapping("/class-dismiss")
+    public ApiResponse<Map<String, Object>> classDismiss() {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可访问");
+        }
+        return ApiResponse.ok(parkService.classDismissStatus(user.getId()));
+    }
+
     /** 游学乐园：当前状态（是否可申请 / 是否已解锁） */
     @GetMapping("/park/status")
     public ApiResponse<Map<String, Object>> parkStatus() {
         SysUser user = authService.currentUser();
-        if (!"STUDENT".equals(user.getRole())) {
+        if (!canViewStudentPage(user)) {
             throw new BusinessException(403, "仅学生可访问");
+        }
+        if (!"STUDENT".equals(user.getRole())) {
+            return ApiResponse.ok(parkService.previewStatus());
         }
         return ApiResponse.ok(parkService.getStatus(user.getId()));
     }
@@ -140,6 +161,28 @@ public class LearnController {
             throw new BusinessException(403, "仅学生可申请");
         }
         return ApiResponse.ok("申请已提交", parkService.apply(user.getId()));
+    }
+
+    /** 游学乐园：记录一次游玩时长 */
+    @PostMapping("/park/play")
+    public ApiResponse<Map<String, Object>> parkPlay(@RequestBody Map<String, Object> body) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可记录游玩");
+        }
+        String gameId = body.get("gameId") == null ? "" : String.valueOf(body.get("gameId"));
+        Integer seconds = null;
+        Object raw = body.get("durationSeconds");
+        if (raw instanceof Number) {
+            seconds = ((Number) raw).intValue();
+        } else if (raw != null) {
+            try {
+                seconds = Integer.parseInt(String.valueOf(raw));
+            } catch (NumberFormatException ignored) {
+                seconds = 0;
+            }
+        }
+        return ApiResponse.ok(parkService.recordPlay(user.getId(), gameId, seconds));
     }
 
     @PostMapping("/pretest/g4")
@@ -182,8 +225,11 @@ public class LearnController {
     @GetMapping("/class-screen")
     public ApiResponse<Map<String, Object>> classScreen(@RequestParam Long lessonId) {
         SysUser user = authService.currentUser();
-        if (!"STUDENT".equals(user.getRole())) {
+        if (!canViewStudentPage(user)) {
             throw new BusinessException(403, "仅学生可查看");
+        }
+        if (!"STUDENT".equals(user.getRole())) {
+            return ApiResponse.ok(dashboardService.buildTeacherClassScreen(user.getId(), lessonId));
         }
         if (user.getClassId() == null) {
             throw new BusinessException("当前账号未绑定班级");
@@ -194,8 +240,11 @@ public class LearnController {
     @GetMapping("/mall")
     public ApiResponse<Map<String, Object>> mall() {
         SysUser user = authService.currentUser();
-        if (!"STUDENT".equals(user.getRole())) {
+        if (!canViewStudentPage(user)) {
             throw new BusinessException(403, "仅学生可查看");
+        }
+        if (!"STUDENT".equals(user.getRole())) {
+            return ApiResponse.ok(pointsMallService.previewMall(user));
         }
         return ApiResponse.ok(pointsMallService.studentMall(user));
     }
@@ -203,7 +252,7 @@ public class LearnController {
     @GetMapping("/lesson-content")
     public ApiResponse<Map<String, Object>> lessonContent(@RequestParam Long lessonId) {
         SysUser user = authService.currentUser();
-        if (!"STUDENT".equals(user.getRole())) {
+        if (!canViewStudentPage(user)) {
             throw new BusinessException(403, "仅学生可查看");
         }
         return ApiResponse.ok(scaffoldService.studentLessonContent(user, lessonId));
@@ -218,6 +267,38 @@ public class LearnController {
         return ApiResponse.ok(scaffoldService.hintUsed(user, request));
     }
 
+    @GetMapping("/avatar")
+    public ApiResponse<Map<String, Object>> avatar() {
+        SysUser user = authService.currentUser();
+        if (!canViewStudentPage(user)) {
+            throw new BusinessException(403, "仅学生可查看");
+        }
+        if (!"STUDENT".equals(user.getRole())) {
+            return ApiResponse.ok(avatarService.preview(user));
+        }
+        return ApiResponse.ok(avatarService.profile(user));
+    }
+
+    @PostMapping("/avatar/figure")
+    public ApiResponse<Map<String, Object>> avatarFigure(@RequestBody Map<String, String> body) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可设置");
+        }
+        String figure = body == null ? null : body.get("figure");
+        return ApiResponse.ok(avatarService.chooseFigure(user, figure));
+    }
+
+    @PostMapping("/avatar/equip")
+    public ApiResponse<Map<String, Object>> avatarEquip(@RequestBody Map<String, String> body) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可装扮");
+        }
+        String itemId = body == null ? null : body.get("itemId");
+        return ApiResponse.ok(avatarService.equip(user, itemId));
+    }
+
     @PostMapping("/mall/redeem")
     public ApiResponse<Map<String, Object>> mallRedeem(@RequestBody MallRedeemRequest request) {
         SysUser user = authService.currentUser();
@@ -225,5 +306,10 @@ public class LearnController {
             throw new BusinessException(403, "仅学生可兑换");
         }
         return ApiResponse.ok("申请成功", pointsMallService.redeem(user, request));
+    }
+
+    private boolean canViewStudentPage(SysUser user) {
+        String role = user.getRole();
+        return "STUDENT".equals(role) || "TEACHER".equals(role) || "ADMIN".equals(role);
     }
 }

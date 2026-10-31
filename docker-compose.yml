@@ -40,15 +40,36 @@ services:
       AI_APP_ID: aa1496e342e14d439f8ecb8fe378b11e
       AI_APP_BASE_URL: "https://dashscope.aliyuncs.com/api/v1"
       AI_PASS_BIZ_PARAMS: "true"
+      DINGTALK_CLIENT_ID: ${DINGTALK_CLIENT_ID:-}
+      DINGTALK_CLIENT_SECRET: ${DINGTALK_CLIENT_SECRET:-}
+      DINGTALK_CORP_ID: ${DINGTALK_CORP_ID:-}
+      DINGTALK_REDIRECT_URI: ${DINGTALK_REDIRECT_URI:-https://bjsysmartedu.cn/api/auth/dingtalk/callback}
+      DINGTALK_FRONTEND_ORIGIN: ${DINGTALK_FRONTEND_ORIGIN:-https://bjsysmartedu.cn}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - lesson_generated:/app/lesson-generated
       - ./frontend/public/lessons:/app/lessons:ro
 
+  game01:
+    build: ./game01
+    container_name: learn-game01
+    environment:
+      GAME_PREFIX: /pbl-app
+      PORT: "3000"
+    env_file:
+      - ./game01/.env
+    volumes:
+      - ./game01/data:/app/data
+      - ./game01/students_export.csv:/app/students_export.csv:ro
+      - ./game01/private_key.pem:/app/private_key.pem:ro
+    restart: unless-stopped
+
   frontend:
     build: ./frontend
     container_name: learn-frontend
+    # 跳过官方 entrypoint 对 default.conf 做 md5（overlayfs 上会卡住，Nginx 起不来，站点 502）
+    entrypoint: ["nginx", "-g", "daemon off;"]
     ports:
       - "8088:80"
     depends_on:
@@ -56,11 +77,19 @@ services:
     volumes:
       - lesson_generated:/usr/share/nginx/html/lessons/generated
       # 互动课静态页（按目录挂载，避免覆盖 generated 卷）
+      - ./frontend/public/lessons/g4-up-lesson1:/usr/share/nginx/html/lessons/g4-up-lesson1:ro
+      - ./frontend/public/lessons/g4-up-lesson2:/usr/share/nginx/html/lessons/g4-up-lesson2:ro
+      - ./frontend/public/lessons/g4-up-lesson3:/usr/share/nginx/html/lessons/g4-up-lesson3:ro
+      - ./frontend/public/lessons/g4-up-lesson4:/usr/share/nginx/html/lessons/g4-up-lesson4:ro
+      - ./frontend/public/lessons/g4-up-lesson5:/usr/share/nginx/html/lessons/g4-up-lesson5:ro
+      - ./frontend/public/lessons/g4-up-lesson6:/usr/share/nginx/html/lessons/g4-up-lesson6:ro
       - ./frontend/public/lessons/g6-up-lesson1:/usr/share/nginx/html/lessons/g6-up-lesson1:ro
       - ./frontend/public/lessons/g6-up-lesson2:/usr/share/nginx/html/lessons/g6-up-lesson2:ro
       - ./frontend/public/lessons/g6-up-lesson3:/usr/share/nginx/html/lessons/g6-up-lesson3:ro
       - ./frontend/public/lessons/g6-up-lesson4:/usr/share/nginx/html/lessons/g6-up-lesson4:ro
       - ./frontend/public/lessons/g6-up-lesson5:/usr/share/nginx/html/lessons/g6-up-lesson5:ro
+      - ./frontend/public/lessons/g6-up-lesson6:/usr/share/nginx/html/lessons/g6-up-lesson6:ro
+      - ./frontend/public/school:/usr/share/nginx/html/school:ro
       # 教材 PDF 挂载本地目录，更新文件后无需重建镜像（文件须 chmod 644）
       - ./frontend/public/textbooks:/usr/share/nginx/html/textbooks:ro
       - ./frontend/public/pdfjs:/usr/share/nginx/html/pdfjs:ro

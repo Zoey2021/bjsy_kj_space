@@ -4,6 +4,11 @@ spring:
     url: jdbc:mysql://mysql:3306/learn_space?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: learnuser
     password: learnpass123
+    hikari:
+      maximum-pool-size: 40
+      minimum-idle: 5
+      connection-timeout: 8000
+      leak-detection-threshold: 20000
 
 dify:
   base-url: http://host.docker.internal:8090/v1
@@ -19,6 +24,13 @@ ai:
   pass-biz-params: ${AI_PASS_BIZ_PARAMS:true}
   base-url: ${AI_BASE_URL:}
   model: ${AI_MODEL:}
+
+dingtalk:
+  client-id: ${DINGTALK_CLIENT_ID:}
+  client-secret: ${DINGTALK_CLIENT_SECRET:}
+  corp-id: ${DINGTALK_CORP_ID:}
+  redirect-uri: ${DINGTALK_REDIRECT_URI:https://bjsysmartedu.cn/api/auth/dingtalk/callback}
+  frontend-origin: ${DINGTALK_FRONTEND_ORIGIN:https://bjsysmartedu.cn}
 
 learn-space:
   activity:

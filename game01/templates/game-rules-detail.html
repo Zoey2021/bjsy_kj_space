@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏规则与变量 - 团队详情</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Comic Sans MS', 'Segoe UI', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f7ff;
+            background-image: radial-gradient(#b8d4ff 1.5px, transparent 1.5px);
+            background-size: 30px 30px;
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #4d8eff;
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(77, 142, 255, 0.2);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .back-button:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .main-content {
+            background-color: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background-color: #f9f9f9;
+            border-radius: 15px;
+            border-left: 4px solid #4d8eff;
+        }
+        
+        .info-section h3 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .info-item {
+            margin-bottom: 15px;
+        }
+        
+        .info-item label {
+            display: block;
+            color: #666;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .info-item .value {
+            color: #333;
+            font-size: 1.1rem;
+            padding: 12px;
+            background-color: white;
+            border-radius: 8px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-item input,
+        .info-item textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        
+        .info-item input:focus,
+        .info-item textarea:focus {
+            outline: none;
+            border-color: #4d8eff;
+        }
+        
+        .info-item textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .members-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .member-tag {
+            padding: 8px 15px;
+            background-color: white;
+            border-radius: 20px;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .member-tag.leader {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+            font-weight: bold;
+        }
+        
+        .member-input-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .member-input-container input {
+            flex: 1;
+        }
+        
+        .member-input-container button {
+            padding: 10px 20px;
+            background-color: #4d8eff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .member-input-container button:hover {
+            background-color: #3a7cff;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .action-button {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .action-button.edit {
+            background-color: #4d8eff;
+            color: white;
+        }
+        
+        .action-button.edit:hover {
+            background-color: #3a7cff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(77, 142, 255, 0.3);
+        }
+        
+        .action-button.save {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .action-button.save:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .action-button.ai-chat {
+            background-color: #ff6b9d;
+            color: white;
+        }
+        
+        .action-button.ai-chat:hover {
+            background-color: #ff5a8a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 157, 0.3);
+        }
+        
+        .action-button.study {
+            background-color: #9c27b0;
+            color: white;
+        }
+        
+        .action-button.study:hover {
+            background-color: #7b1fa2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(156, 39, 176, 0.3);
+        }
+        
+        .action-button.cancel {
+            background-color: #999;
+            color: white;
+        }
+        
+        .action-button.cancel:hover {
+            background-color: #777;
+        }
+        
+        .action-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .edit-mode .info-item .value {
+            display: none;
+        }
+        
+        .edit-mode .info-item input,
+        .edit-mode .info-item textarea {
+            display: block;
+        }
+        
+        .view-mode .info-item input,
+        .view-mode .info-item textarea {
+            display: none;
+        }
+        
+        .view-mode .info-item .value {
+            display: flex;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4caf50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1001;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        
+        .notification.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .notification.error {
+            background-color: #f44336;
+        }
+        
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .action-button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/second" class="back-button">
+                <i class="fas fa-arrow-left"></i> 返回课程列表
+            </a>
+            <h1><i class="fab fa-python"></i> Python+AI小游戏设计课程</h1>
+            <p class="subtitle">课程2：游戏规则与变量 - 团队详情</p>
+        </header>
+        
+        <div class="main-content" id="main-content">
+            <div id="loading" style="text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #4d8eff;"></i>
+                <p style="margin-top: 20px; color: #666;">加载中...</p>
+            </div>
+            
+            <div id="content" style="display: none;">
+                <!-- 团队名称 -->
+                <div class="info-section">
+                    <h3><i class="fas fa-users"></i> 团队名称</h3>
+                    <div class="info-item">
+                        <label>团队名称</label>
+                        <div class="value" id="team-name-value"></div>
+                        <input type="text" id="team-name-input" placeholder="请输入团队名称">
+                    </div>
+                </div>
+                
+                <!-- 团队成员 -->
+                <div class="info-section">
+                    <h3><i class="fas fa-user-friends"></i> 团队成员</h3>
+                    <div class="info-item">
+                        <label>成员列表</label>
+                        <div class="value" id="members-value"></div>
+                        <div id="members-edit" style="display: none;">
+                            <div class="members-list" id="members-list"></div>
+                            <div class="member-input-container">
+                                <input type="text" id="new-member-input" placeholder="输入成员姓名，按回车添加">
+                                <button type="button" id="add-member-btn"><i class="fas fa-plus"></i> 添加</button>
+                            </div>
+                            <div style="margin-top: 10px;">
+                                <label style="font-size: 0.9rem; color: #666;">
+                                    <input type="checkbox" id="set-leader-checkbox"> 设为队长
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 游戏主题 -->
+                <div class="info-section">
+                    <h3><i class="fas fa-gamepad"></i> 游戏主题</h3>
+                    <div class="info-item">
+                        <label>游戏名称</label>
+                        <div class="value" id="game-name-value"></div>
+                        <input type="text" id="game-name-input" placeholder="请输入游戏主题">
+                    </div>
+                </div>
+                
+                <!-- 游戏简介 -->
+                <div class="info-section">
+                    <h3><i class="fas fa-file-alt"></i> 游戏简介</h3>
+                    <div class="info-item">
+                        <label>游戏描述</label>
+                        <div class="value" id="game-desc-value" style="white-space: pre-wrap;"></div>
+                        <textarea id="game-desc-input" placeholder="请输入游戏简介"></textarea>
+                    </div>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="action-buttons">
+                    <button class="action-button edit" id="edit-btn">
+                        <i class="fas fa-edit"></i> 修改
+                    </button>
+                    <button class="action-button save" id="save-btn" style="display: none;">
+                        <i class="fas fa-save"></i> 保存
+                    </button>
+                    <button class="action-button cancel" id="cancel-btn" style="display: none;">
+                        <i class="fas fa-times"></i> 取消
+                    </button>
+                    <button class="action-button ai-chat" id="ai-chat-btn">
+                        <i class="fas fa-robot"></i> AI对话
+                    </button>
+                    <button class="action-button study" id="study-btn">
+                        <i class="fas fa-graduation-cap"></i> 进一步学习
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 通知 -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notification-text"></span>
+    </div>
+    
+    <script>
+        // 从URL获取访问码
+        const urlParams = new URLSearchParams(window.location.search);
+        const accessCode = urlParams.get('access_code');
+        let teamData = null;
+        let isEditMode = false;
+        let originalData = null;
+        let membersList = [];
+        
+        // DOM元素
+        const loading = document.getElementById('loading');
+        const content = document.getElementById('content');
+        const mainContent = document.getElementById('main-content');
+        const teamNameValue = document.getElementById('team-name-value');
+        const teamNameInput = document.getElementById('team-name-input');
+        const membersValue = document.getElementById('members-value');
+        const membersEdit = document.getElementById('members-edit');
+        const membersListContainer = document.getElementById('members-list');
+        const newMemberInput = document.getElementById('new-member-input');
+        const addMemberBtn = document.getElementById('add-member-btn');
+        const setLeaderCheckbox = document.getElementById('set-leader-checkbox');
+        const gameNameValue = document.getElementById('game-name-value');
+        const gameNameInput = document.getElementById('game-name-input');
+        const gameDescValue = document.getElementById('game-desc-value');
+        const gameDescInput = document.getElementById('game-desc-input');
+        const editBtn = document.getElementById('edit-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const aiChatBtn = document.getElementById('ai-chat-btn');
+        const studyBtn = document.getElementById('study-btn');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notification-text');
+        
+        // 加载团队数据
+        async function loadTeamData() {
+            if (!accessCode) {
+                showNotification('缺少访问码参数', true);
+                setTimeout(() => {
+                    window.location.href = '/second';
+                }, 2000);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/teams/by-access-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ access_code: accessCode })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    teamData = data.team;
+                    originalData = JSON.parse(JSON.stringify(data.team)); // 深拷贝
+                    membersList = teamData.members || [];
+                    displayTeamData();
+                    loading.style.display = 'none';
+                    content.style.display = 'block';
+                } else {
+                    showNotification(data.error || '未找到团队信息', true);
+                    setTimeout(() => {
+                        window.location.href = '/second';
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('加载团队数据失败:', error);
+                showNotification('加载失败，请稍后重试', true);
+            }
+        }
+        
+        // 显示团队数据
+        function displayTeamData() {
+            // 团队名称
+            teamNameValue.textContent = teamData.team_name || '未命名团队';
+            teamNameInput.value = teamData.team_name || '';
+            
+            // 团队成员
+            displayMembers();
+            
+            // 游戏主题
+            const gameName = teamData.game_name || teamData.ai_game_name || '待定游戏';
+            gameNameValue.textContent = gameName;
+            gameNameInput.value = gameName;
+            
+            // 游戏简介
+            const gameDesc = teamData.game_desc || teamData.ai_game_desc || '暂无简介';
+            gameDescValue.textContent = gameDesc;
+            gameDescInput.value = gameDesc;
+        }
+        
+        // 显示成员列表
+        function displayMembers() {
+            if (isEditMode) {
+                renderMembersList();
+            } else {
+                if (membersList.length === 0) {
+                    membersValue.innerHTML = '<span style="color: #999;">暂无成员</span>';
+                } else {
+                    const membersHtml = membersList.map(m => {
+                        const memberName = typeof m === 'object' ? m.name : m;
+                        const isLeader = typeof m === 'object' ? (m.is_leader || m.isLeader) : false;
+                        return `<span class="member-tag ${isLeader ? 'leader' : ''}">
+                            ${isLeader ? '<i class="fas fa-crown" style="color: #ffc107;"></i>' : ''}
+                            ${memberName}
+                        </span>`;
+                    }).join('');
+                    membersValue.innerHTML = membersHtml;
+                }
+            }
+        }
+        
+        // 渲染可编辑的成员列表
+        function renderMembersList() {
+            membersListContainer.innerHTML = '';
+            membersList.forEach((member, index) => {
+                const memberName = typeof member === 'object' ? member.name : member;
+                const isLeader = typeof member === 'object' ? (member.is_leader || member.isLeader) : false;
+                
+                const memberEl = document.createElement('div');
+                memberEl.className = `member-tag ${isLeader ? 'leader' : ''}`;
+                memberEl.innerHTML = `
+                    ${isLeader ? '<i class="fas fa-crown" style="color: #ffc107;"></i>' : ''}
+                    <span>${memberName}</span>
+                    <button type="button" onclick="removeMember(${index})" style="margin-left: 10px; background: none; border: none; color: #f44336; cursor: pointer;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    ${!isLeader ? `<button type="button" onclick="setLeader(${index})" style="margin-left: 5px; background: none; border: none; color: #4d8eff; cursor: pointer;" title="设为队长">
+                        <i class="fas fa-crown"></i>
+                    </button>` : ''}
+                `;
+                membersListContainer.appendChild(memberEl);
+            });
+        }
+        
+        // 移除成员
+        window.removeMember = function(index) {
+            membersList.splice(index, 1);
+            renderMembersList();
+        };
+        
+        // 设置队长
+        window.setLeader = function(index) {
+            // 先清除所有成员的队长标记
+            membersList.forEach(m => {
+                if (typeof m === 'object') {
+                    m.is_leader = false;
+                    m.isLeader = false;
+                }
+            });
+            
+            // 设置新队长
+            if (typeof membersList[index] === 'object') {
+                membersList[index].is_leader = true;
+                membersList[index].isLeader = true;
+            } else {
+                membersList[index] = {
+                    name: membersList[index],
+                    is_leader: true,
+                    isLeader: true
+                };
+            }
+            renderMembersList();
+        };
+        
+        // 添加成员
+        addMemberBtn.addEventListener('click', addMember);
+        newMemberInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addMember();
+            }
+        });
+        
+        function addMember() {
+            const memberName = newMemberInput.value.trim();
+            if (!memberName) {
+                showNotification('请输入成员姓名', true);
+                return;
+            }
+            
+            // 检查是否已存在
+            const exists = membersList.some(m => {
+                const name = typeof m === 'object' ? m.name : m;
+                return name === memberName;
+            });
+            
+            if (exists) {
+                showNotification('该成员已存在', true);
+                return;
+            }
+            
+            const isLeader = setLeaderCheckbox.checked;
+            membersList.push({
+                name: memberName,
+                is_leader: isLeader,
+                isLeader: isLeader
+            });
+            
+            newMemberInput.value = '';
+            setLeaderCheckbox.checked = false;
+            renderMembersList();
+        }
+        
+        // 进入编辑模式
+        editBtn.addEventListener('click', () => {
+            isEditMode = true;
+            mainContent.classList.add('edit-mode');
+            mainContent.classList.remove('view-mode');
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'flex';
+            cancelBtn.style.display = 'flex';
+            membersEdit.style.display = 'block';
+            membersValue.style.display = 'none';
+            renderMembersList();
+        });
+        
+        // 取消编辑
+        cancelBtn.addEventListener('click', () => {
+            isEditMode = false;
+            mainContent.classList.remove('edit-mode');
+            mainContent.classList.add('view-mode');
+            editBtn.style.display = 'flex';
+            saveBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+            membersEdit.style.display = 'none';
+            membersValue.style.display = 'block';
+            
+            // 恢复原始数据
+            teamData = JSON.parse(JSON.stringify(originalData));
+            membersList = teamData.members || [];
+            displayTeamData();
+        });
+        
+        // 保存修改
+        saveBtn.addEventListener('click', async () => {
+            // 收集修改后的数据
+            const updatedData = {
+                team_name: teamNameInput.value.trim(),
+                game_name: gameNameInput.value.trim(),
+                game_desc: gameDescInput.value.trim(),
+                members: membersList.map(m => {
+                    if (typeof m === 'object') {
+                        return {
+                            name: m.name,
+                            is_leader: m.is_leader || m.isLeader || false
+                        };
+                    }
+                    return {
+                        name: m,
+                        is_leader: false
+                    };
+                })
+            };
+            
+            // 验证数据
+            if (!updatedData.team_name) {
+                showNotification('团队名称不能为空', true);
+                return;
+            }
+            
+            if (updatedData.members.length === 0) {
+                showNotification('至少需要一个成员', true);
+                return;
+            }
+            
+            // 确保至少有一个队长
+            const hasLeader = updatedData.members.some(m => m.is_leader);
+            if (!hasLeader) {
+                updatedData.members[0].is_leader = true;
+            }
+            
+            try {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+                
+                const response = await fetch(`/api/teams/${teamData.id}/update`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showNotification('保存成功！');
+                    // 更新本地数据
+                    teamData.team_name = updatedData.team_name;
+                    teamData.game_name = updatedData.game_name;
+                    teamData.game_desc = updatedData.game_desc;
+                    teamData.members = updatedData.members;
+                    originalData = JSON.parse(JSON.stringify(teamData));
+                    
+                    // 退出编辑模式
+                    cancelBtn.click();
+                } else {
+                    showNotification(data.error || '保存失败', true);
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+                showNotification('保存失败，请稍后重试', true);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> 保存';
+            }
+        });
+        
+        // AI对话
+        aiChatBtn.addEventListener('click', () => {
+            if (teamData && teamData.id) {
+                // 使用team_id跳转，确保会话隔离
+                window.location.href = `/ai-chat?team_id=${teamData.id}`;
+            } else {
+                showNotification('无法获取团队ID', true);
+            }
+        });
+        
+        // 进一步学习 - 跳转到AI学习助手页面
+        studyBtn.addEventListener('click', () => {
+            if (teamData && teamData.id) {
+                // 使用team_id跳转到AI学习助手页面
+                window.location.href = `/ai-study?team_id=${teamData.id}`;
+            } else if (accessCode) {
+                // 如果没有teamData，尝试通过访问码跳转
+                window.location.href = `/ai-study?access_code=${accessCode}`;
+            } else {
+                showNotification('无法获取团队信息', true);
+            }
+        });
+        
+        // 显示通知
+        function showNotification(message, isError = false) {
+            notificationText.textContent = message;
+            notification.className = 'notification' + (isError ? ' error' : '');
+            notification.classList.add('active');
+            
+            setTimeout(() => {
+                notification.classList.remove('active');
+            }, 3000);
+        }
+        
+        // 初始化
+        mainContent.classList.add('view-mode');
+        loadTeamData();
+    </script>
+</body>
+</html>
+

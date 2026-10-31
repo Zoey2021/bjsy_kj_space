@@ -3,7 +3,7 @@
     <header class="park-hero">
       <div class="hero-text">
         <h1>游学乐园</h1>
-        <p>完成当前课程任务后申请，经教师授权即可畅玩益智小游戏</p>
+        <p>做完当节课的全部探究活动、课堂小测和学习评价后，才能申请开启。开启后每分钟消耗 2 积分。</p>
       </div>
       <div class="status-card" :class="statusTone">
         <div class="status-label">当前状态</div>
@@ -16,7 +16,10 @@
           <el-button v-if="status.canApply" type="primary" :loading="applying" @click="doApply">
             申请开启乐园
           </el-button>
-          <el-button v-else-if="!status.unlocked && status.currentLessonId" @click="goLesson">
+          <el-button v-else-if="status.accessStatus === 'PENDING'" disabled>
+            等待教师授权
+          </el-button>
+          <el-button v-else-if="!status.unlocked && status.currentLessonId && !status.taskCompleted" @click="goLesson">
             继续完成任务
           </el-button>
           <el-button text @click="refresh">刷新状态</el-button>
@@ -25,16 +28,20 @@
     </header>
 
     <section class="games-section">
-      <h2>娱乐活动</h2>
+      <h2>益智游戏</h2>
+      <p class="games-note">每分钟 2 积分，不足 1 分钟也按 1 分钟算。你现在有 {{ status.redeemablePoints || 0 }} 分，可以玩 {{ status.parkMinutes || 0 }} 分钟。</p>
       <div class="game-grid">
         <article
-          v-for="game in games"
+          v-for="game in visibleGames"
           :key="game.id"
           class="game-card"
           :class="{ locked: !status.unlocked }"
           @click="openGame(game)"
         >
-          <div class="game-icon" :style="{ background: game.bg }">{{ game.icon }}</div>
+          <div class="game-icon" :style="{ background: game.bg }">
+            <span v-if="game.mark" class="mark" v-html="game.mark"></span>
+            <template v-else>{{ game.icon }}</template>
+          </div>
           <div class="game-body">
             <h3>{{ game.title }}</h3>
             <p>{{ game.desc }}</p>
@@ -43,19 +50,23 @@
           <span v-else class="play-badge">开始玩</span>
         </article>
       </div>
+      <p v-if="!visibleGames.length" class="games-note">教师暂时关闭了全部游戏。</p>
     </section>
 
     <el-dialog
       v-model="gameVisible"
       :title="activeGame?.title || '游戏'"
-      width="720px"
+      width="760px"
       destroy-on-close
       class="game-dialog"
       @closed="onGameClosed"
     >
       <SnakeGame v-if="activeGame?.id === 'snake' && gameVisible" />
       <TypingGame v-else-if="activeGame?.id === 'typing' && gameVisible" />
-      <MemoryGame v-else-if="activeGame?.id === 'memory' && gameVisible" />
+      <MemoryGame v-else-if="activeGame?.id === 'memory' && gameVisible" :pairs="memoryPairs" />
+      <Game2048 v-else-if="activeGame?.id === '2048' && gameVisible" />
+      <FruitGame v-else-if="activeGame?.id === 'fruit' && gameVisible" :lives="fruitLives" :speed="fruitSpeed" />
+      <RopeGame v-else-if="activeGame?.id === 'rope' && gameVisible" />
     </el-dialog>
   </div>
 </template>
@@ -64,10 +75,16 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { applyParkAccess, getParkStatus } from '../../api'
+import { applyParkAccess, getParkStatus, recordParkPlay } from '../../api'
 import SnakeGame from '../../components/student/games/SnakeGame.vue'
 import TypingGame from '../../components/student/games/TypingGame.vue'
 import MemoryGame from '../../components/student/games/MemoryGame.vue'
+import Game2048 from '../../components/student/games/Game2048.vue'
+import FruitGame from '../../components/student/games/FruitGame.vue'
+import RopeGame from '../../components/student/games/RopeGame.vue'
+import { MEMORY_ICONS } from '../../components/student/games/parkPictures'
+
+const picture = (id) => MEMORY_ICONS.find((icon) => icon.id === id)?.svg || ''
 
 const router = useRouter()
 const loading = ref(false)
@@ -75,6 +92,15 @@ const applying = ref(false)
 const status = ref({})
 const gameVisible = ref(false)
 const activeGame = ref(null)
+
+const visibleGames = computed(() => {
+  const enabled = status.value.parkConfig?.games
+  if (!enabled) return games
+  return games.filter((game) => enabled[game.id] !== false)
+})
+const fruitLives = computed(() => Number(status.value.parkConfig?.fruitLives) || 3)
+const fruitSpeed = computed(() => status.value.parkConfig?.fruitSpeed || 'normal')
+const memoryPairs = computed(() => Number(status.value.parkConfig?.memoryPairs) || 8)
 
 const games = [
   {
@@ -94,9 +120,32 @@ const games = [
   {
     id: 'memory',
     title: '记忆翻翻乐',
-    desc: '翻开卡片配对相同图案',
+    desc: '翻开卡片，找出相同图案',
     icon: '🧠',
+    mark: picture('star'),
     bg: 'linear-gradient(135deg, #fbbf24, #d97706)'
+  },
+  {
+    id: '2048',
+    title: '2048',
+    desc: '滑动合并相同数字，凑到 2048',
+    icon: '🔢',
+    bg: 'linear-gradient(135deg, #fb7185, #e11d48)'
+  },
+  {
+    id: 'fruit',
+    title: '接水果',
+    desc: '移动鼠标接住掉下来的水果',
+    icon: '🍎',
+    mark: picture('apple'),
+    bg: 'linear-gradient(135deg, #4ade80, #16a34a)'
+  },
+  {
+    id: 'rope',
+    title: '切绳接球',
+    desc: '看准时机点断绳子，让小球落入篮子',
+    icon: '🪢',
+    bg: 'linear-gradient(135deg, #c084fc, #7c3aed)'
   }
 ]
 
@@ -117,15 +166,16 @@ const statusTone = computed(() => {
   return 'tone-lock'
 })
 
-const refresh = async () => {
-  loading.value = true
+const refresh = async (quiet = false) => {
+  if (!quiet) loading.value = true
   try {
     const res = await getParkStatus()
     status.value = res.data || {}
   } catch {
-    ElMessage.error('获取乐园状态失败')
+    if (!quiet) ElMessage.error('获取乐园状态失败')
+    if (!status.value.message) status.value = { ...status.value, message: '暂时没有拿到乐园状态，请点刷新再试' }
   } finally {
-    loading.value = false
+    if (!quiet) loading.value = false
   }
 }
 
@@ -148,30 +198,104 @@ const goLesson = () => {
   else router.push('/student/map')
 }
 
+let playStartedAt = 0
+let playSaved = false
+let limitTimer = null
+
+const clearLimit = () => {
+  if (limitTimer) {
+    clearTimeout(limitTimer)
+    limitTimer = null
+  }
+}
+
+const flushPlay = async () => {
+  if (playSaved || !playStartedAt || !activeGame.value) return
+  if (status.value.preview) {
+    playSaved = true
+    clearLimit()
+    playStartedAt = 0
+    return
+  }
+  playSaved = true
+  clearLimit()
+  const seconds = Math.round((Date.now() - playStartedAt) / 1000)
+  const gameId = activeGame.value.id
+  playStartedAt = 0
+  if (seconds < 1) return
+  try {
+    const res = await recordParkPlay({ gameId, durationSeconds: seconds })
+    const bill = res.data || {}
+    if (bill.saved && bill.charged) {
+      status.value.redeemablePoints = bill.redeemablePoints
+      status.value.parkMinutes = bill.parkMinutes
+      ElMessage.success(`这次按 ${bill.minutes} 分钟计算，用了 ${bill.charged} 积分，还剩 ${bill.redeemablePoints} 分`)
+    }
+  } catch {
+    // 请求拦截器已经提示失败原因
+  }
+}
+
 const openGame = (game) => {
   if (!status.value.unlocked) {
     ElMessage.warning(status.value.message || '请先完成任务并获得教师授权')
     return
   }
+  const points = Number(status.value.redeemablePoints || 0)
+  const minutes = Math.floor(points / 2)
+  if (minutes < 1) {
+    ElMessage.warning(`还差 ${2 - Math.max(points, 0)} 积分。游学乐园每分钟需要 2 积分。`)
+    return
+  }
   activeGame.value = game
+  playStartedAt = Date.now()
+  playSaved = false
   gameVisible.value = true
+  clearLimit()
+  limitTimer = setTimeout(() => {
+    ElMessage.info('积分只够玩到这里啦，先去完成课堂任务再来吧。')
+    gameVisible.value = false
+  }, minutes * 60 * 1000)
 }
 
 const onGameClosed = () => {
+  flushPlay()
   activeGame.value = null
 }
 
 let pollTimer = null
+let toldParkClosed = 0
+const tellParkClosed = () => {
+  const now = Date.now()
+  if (now - toldParkClosed < 4000) return
+  toldParkClosed = now
+  ElMessage.info('游学乐园已关闭，可以继续做其他内容')
+}
+const shutPark = async () => {
+  const playing = gameVisible.value
+  await refresh(true)
+  if (playing && !status.value.unlocked) {
+    gameVisible.value = false
+    tellParkClosed()
+  }
+}
+const onParkClosed = () => shutPark()
 onMounted(() => {
   refresh()
-  // 等待教师授权时轮询状态
-  pollTimer = setInterval(() => {
-    if (!status.value.unlocked && status.value.accessStatus === 'PENDING') {
-      refresh()
+  window.addEventListener('learn-park-closed', onParkClosed)
+  pollTimer = setInterval(async () => {
+    const wasOpen = !!status.value.unlocked || gameVisible.value
+    if (!wasOpen && status.value.accessStatus !== 'PENDING') return
+    await refresh(true)
+    if (wasOpen && !status.value.unlocked && gameVisible.value) {
+      gameVisible.value = false
+      tellParkClosed()
     }
   }, 8000)
 })
 onUnmounted(() => {
+  window.removeEventListener('learn-park-closed', onParkClosed)
+  flushPlay()
   if (pollTimer) clearInterval(pollTimer)
 })
 </script>
@@ -246,6 +370,7 @@ onUnmounted(() => {
   gap: 8px;
   align-items: center;
 }
+.games-note { margin: -4px 0 12px; color: var(--park-muted); font-size: 13px; }
 .games-section h2 {
   margin: 0 0 14px;
   font-size: 20px;
@@ -285,6 +410,7 @@ onUnmounted(() => {
   flex-shrink: 0;
   color: #fff;
 }
+.game-icon :deep(svg) { width: 36px; height: 36px; }
 .game-body h3 {
   margin: 0 0 4px;
   font-size: 17px;

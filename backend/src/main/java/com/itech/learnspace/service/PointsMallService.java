@@ -21,6 +21,7 @@ import com.itech.learnspace.repository.SysUserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,6 +60,11 @@ public class PointsMallService {
         this.classRepository = classRepository;
         this.userRepository = userRepository;
         this.dashboardService = dashboardService;
+    }
+
+    @PostConstruct
+    public void initMall() {
+        ensureDefaultItems();
     }
 
     public Map<String, Object> getRules() {
@@ -126,6 +132,33 @@ public class PointsMallService {
         return m;
     }
 
+    @Transactional
+    public Map<String, Object> resetClassPoints(Long teacherId, String role, Long classId) {
+        if (classId == null) {
+            throw new BusinessException("请选择班级");
+        }
+        if (!"ADMIN".equals(role)) {
+            dashboardService.checkTeacherOwnsClass(teacherId, classId);
+        }
+        SysClass cls = classRepository.findById(classId)
+                .orElseThrow(() -> new BusinessException("班级不存在"));
+        List<SysUser> students = userRepository.findByClassIdAndRoleAndStatus(classId, "STUDENT", 1);
+        List<Long> ids = new ArrayList<Long>();
+        for (SysUser s : students) {
+            ids.add(s.getId());
+        }
+        int deleted = 0;
+        if (!ids.isEmpty()) {
+            deleted = (int) pointsRepository.deleteByStudentIdIn(ids);
+        }
+        Map<String, Object> m = new HashMap<String, Object>();
+        m.put("classId", cls.getId());
+        m.put("className", cls.getName());
+        m.put("studentCount", ids.size());
+        m.put("deletedRecords", deleted);
+        return m;
+    }
+
     public Map<String, Object> studentMall(SysUser student) {
         ensureDefaultItems();
         if (student.getClassId() == null) {
@@ -145,7 +178,30 @@ public class PointsMallService {
         m.put("applyOpen", open);
         m.put("redeemablePoints", remaining);
         m.put("earnedPoints", earned);
+        m.put("studentName", student.getRealName());
+        m.put("parkPointsPerMinute", 2);
         m.put("orders", toOrderMaps(orderRepository.findByStudentIdOrderByCreatedAtDesc(student.getId())));
+        return m;
+    }
+
+    /** 教师查看积分商城。用一组示例积分展示星星，不能真正兑换。 */
+    public Map<String, Object> previewMall(SysUser teacher) {
+        ensureDefaultItems();
+        List<Map<String, Object>> items = new ArrayList<Map<String, Object>>();
+        for (PointsMallItem item : itemRepository.findByEnabledOrderBySortOrderAscIdAsc(1)) {
+            Map<String, Object> map = toItemMap(item);
+            map.put("canApply", item.getCost() != null && item.getCost() <= 15);
+            items.add(map);
+        }
+        Map<String, Object> m = new HashMap<String, Object>();
+        m.put("items", items);
+        m.put("applyOpen", Boolean.TRUE);
+        m.put("preview", Boolean.TRUE);
+        m.put("redeemablePoints", 15);
+        m.put("earnedPoints", 15);
+        m.put("studentName", teacher.getRealName() == null ? "教师查看" : teacher.getRealName());
+        m.put("parkPointsPerMinute", 2);
+        m.put("orders", new ArrayList<Map<String, Object>>());
         return m;
     }
 
@@ -232,15 +288,25 @@ public class PointsMallService {
     }
 
     private void ensureDefaultItems() {
-        if (itemRepository.count() > 0) {
+        // 一学期 18 节、每节约 11～15 分。只把仍是旧标价的奖品改成学期价，老师后来改过的不动。
+        syncItem("star_future_2", "星未来积分2", "🌟", 10, 80, 1);
+        syncItem("snack", "零食1份", "🍪", 20, 160, 2);
+        syncItem("stationery", "文具1份", "✏️", 20, 160, 3);
+        syncItem("praise_letter", "表扬信", "💌", 20, 180, 4);
+        syncItem("milk_tea", "奶茶1份", "🧋", 50, 250, 5);
+        syncItem("info_blindbox", "信息盲盒小礼物", "🎁", 20, 140, 6);
+    }
+
+    private void syncItem(String code, String name, String icon, int oldCost, int newCost, int sort) {
+        PointsMallItem item = itemRepository.findByCode(code).orElse(null);
+        if (item == null) {
+            seedItem(code, name, icon, newCost, sort);
             return;
         }
-        seedItem("star_future_2", "星未来积分2", "🌟", 10, 1);
-        seedItem("snack", "零食1份", "🍪", 20, 2);
-        seedItem("stationery", "文具1份", "✏️", 20, 3);
-        seedItem("praise_letter", "表扬信", "💌", 20, 4);
-        seedItem("milk_tea", "奶茶1份", "🧋", 50, 5);
-        seedItem("info_blindbox", "信息盲盒小礼物", "🎁", 20, 6);
+        if (item.getCost() != null && item.getCost() == oldCost) {
+            item.setCost(newCost);
+            itemRepository.save(item);
+        }
     }
 
     private void seedItem(String code, String name, String icon, int cost, int sort) {

@@ -9,7 +9,7 @@
             <p class="sub">{{ data.lessonTitle || '本课' }} · 共 {{ data.totalStudents || 0 }} 人 · 实时刷新</p>
           </div>
           <div class="head-right">
-            <div class="me-chip" v-if="data.myRank">
+            <div class="me-chip" v-if="data.myRank && Number(data.myPoints || 0) > 0">
               我的排名 <b>第 {{ data.myRank }} 名</b>
               <span>{{ data.myPoints || 0 }} 分</span>
             </div>
@@ -27,9 +27,10 @@
               <div class="pstep">{{ row.rank }}</div>
             </div>
           </div>
-          <ol class="rank-list">
+          <p v-else-if="!loading" class="empty">本班还没有积分，完成探究环节后会出现在这里</p>
+          <ol class="rank-list" v-if="scored.length">
             <li
-              v-for="row in data.ranking || []"
+              v-for="row in scored"
               :key="row.studentId"
               :class="{ me: row.isMe, top: row.rank <= 3 }"
             >
@@ -79,7 +80,8 @@ const inquiryActs = computed(() =>
   (data.value.activities || []).filter((a) => a.type !== 'QUIZ' && a.type !== 'EVALUATION')
 )
 
-const top3 = computed(() => (data.value.ranking || []).slice(0, 3))
+const scored = computed(() => (data.value.ranking || []).filter((r) => Number(r.points || 0) > 0))
+const top3 = computed(() => scored.value.slice(0, 3))
 const podiumOrder = computed(() => {
   const [a, b, c] = top3.value
   return [b, a, c].filter(Boolean)
@@ -116,7 +118,7 @@ const load = async () => {
 watch(() => props.visible, (v) => {
   if (v) {
     load()
-    timer = setInterval(load, 4000)
+    timer = setInterval(load, 12000)
   } else if (timer) {
     clearInterval(timer)
     timer = null

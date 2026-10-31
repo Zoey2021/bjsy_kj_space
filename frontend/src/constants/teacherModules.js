@@ -43,6 +43,20 @@ export const TEACHER_MODULES = [
     desc: '积分排行与奖励兑换'
   },
   {
+    key: 'student-view',
+    path: '/teacher/student-view',
+    title: '学生页面',
+    icon: 'User',
+    desc: '查看学生看到的商城和乐园'
+  },
+  {
+    key: 'park-settings',
+    path: '/teacher/park-settings',
+    title: '游戏设置',
+    icon: 'Orange',
+    desc: '设置游学乐园开放的游戏和参数'
+  },
+  {
     key: 'settings',
     path: '/teacher/settings',
     title: '后台管理',

@@ -5,7 +5,9 @@
       <el-menu mode="horizontal" :default-active="route.path" router background-color="#5e35b1" text-color="#fff" active-text-color="#ffd04b">
         <el-menu-item index="/admin/users">账号管理</el-menu-item>
       </el-menu>
-      <span class="user">{{ realName }} <el-button link style="color:#fff" @click="logout">退出</el-button></span>
+      <span class="user">{{ realName }}
+        <el-button link style="color:#fff" @click="logout">退出</el-button>
+      </span>
     </el-header>
     <el-main><router-view /></el-main>
   </el-container>

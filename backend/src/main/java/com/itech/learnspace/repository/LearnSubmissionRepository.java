@@ -12,4 +12,5 @@ public interface LearnSubmissionRepository extends JpaRepository<LearnSubmission
     List<LearnSubmission> findByTaskIdIn(List<Long> taskIds);
     List<LearnSubmission> findByStudentIdIn(List<Long> studentIds);
     long countByTaskIdInAndStudentIdIn(List<Long> taskIds, List<Long> studentIds);
+    long deleteByTaskIdInAndStudentIdIn(List<Long> taskIds, List<Long> studentIds);
 }

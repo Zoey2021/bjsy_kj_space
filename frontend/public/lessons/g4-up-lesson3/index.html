@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据的价值 — 探究活动</title>
+<script>
+(function () {
+  try {
+    if (new URLSearchParams(location.search).get('embedded') === '1') {
+      document.documentElement.classList.add('embedded-mode');
+    }
+  } catch (e) {}
+})();
+</script>
+<style>
+:root { --p:#09d587; --pd:#099c62; --ink:#17324d; --muted:#5c6b78; --line:#d7efe4; --bg:#f4fbf7; }
+* { box-sizing: border-box; }
+body { margin:0; color:var(--ink); background:var(--bg); font-family:"Microsoft YaHei","PingFang SC",sans-serif; line-height:1.7; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+.page { width: min(1080px, calc(100% - 16px)); margin: 0 auto; padding: 12px 0 32px; }
+.tabs { display:flex; gap:8px; margin-bottom:10px; }
+.tabs button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:8px 14px; font-weight:700; color:var(--pd); }
+.tabs button.on { background:var(--p); color:#073222; border-color:var(--pd); }
+.panel { display:none; }
+.panel.on { display:block; }
+.card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:18px; margin:0 0 14px; box-shadow:0 8px 24px rgba(9,156,98,.06); }
+.kicker { color:var(--pd); font-weight:800; letter-spacing:.06em; font-size:13px; }
+h2 { margin:4px 0 8px; font-size:24px; }
+h2::before { content:"◼"; color:var(--p); font-size:.7em; margin-right:8px; }
+h3 { margin:0 0 8px; }
+.lead { color:var(--muted); margin:0 0 12px; }
+table.report { width:100%; border-collapse:collapse; background:#fff; }
+table.report th, table.report td { border:1px solid #cfe8db; padding:8px 10px; text-align:center; }
+table.report th { background:#e9faf2; color:var(--pd); }
+.row { display:flex; flex-wrap:wrap; gap:12px; align-items:end; margin:10px 0; }
+label { display:block; color:var(--muted); font-size:14px; margin-bottom:4px; }
+input[type="number"], input[type="text"] { border:1px solid #b7e4cf; border-radius:10px; padding:8px 10px; min-width:140px; }
+.btn { border:1px solid var(--pd); background:var(--p); color:#073222; border-radius:10px; min-height:42px; padding:8px 16px; font-weight:800; box-shadow:0 4px 0 rgba(4,111,76,.16); }
+.btn:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
+.options, .roles, .choices { display:grid; gap:8px; margin:10px 0; }
+.option, .role, .choice { text-align:left; background:#fff; border:1px solid #cfe8db; border-radius:10px; padding:10px 12px; }
+.option.on, .role.on, .choice.on { border-color:var(--pd); background:rgba(9,213,135,.14); }
+.fb { display:none; margin-top:12px; padding:12px 14px; border-radius:12px; }
+.fb.show { display:block; }
+.fb.ok { background:#e8faf1; border:1px solid #9eddbb; color:#0d6b42; }
+.fb.bad { background:#fff1f0; border:1px solid #f0b4ae; color:#8d3530; }
+.result { display:none; margin-top:12px; padding:12px 14px; border-radius:12px; background:#f3fff8; border:1px solid var(--line); }
+.result.show { display:block; }
+.bmi-num { font-size:28px; font-weight:900; color:var(--pd); }
+.match { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.bank, .zones { display:grid; gap:8px; }
+.card-item, .zone { border-radius:12px; padding:12px 14px; }
+.card-item { background:#080b03; color:#fff; cursor:pointer; border:2px solid transparent; }
+.card-item.on { border-color:var(--p); }
+.card-item.placed { opacity:.45; }
+.zone { background:#f7fffb; border:2px dashed #b7e4cf; min-height:64px; }
+.zone.on { border-color:var(--pd); background:#e9faf2; }
+.zone.ok { border-style:solid; border-color:var(--pd); }
+.zone.bad { border-color:#cf5d58; background:#fff5f4; }
+.zone small { display:block; color:var(--muted); }
+.flow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0 12px; }
+.flow span { background:#e9faf2; color:var(--pd); border-radius:999px; padding:4px 10px; font-weight:700; }
+html.embedded-mode .tabs, body.embedded-mode .tabs { display:none; }
+html.embedded-mode .page { width:100%; padding:4px 2px 24px; }
+@media (max-width:800px) { .match { grid-template-columns:1fr; } h2 { font-size:20px; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <nav class="tabs" id="tabs">
+    <button type="button" data-step="1" class="on">探究一</button>
+    <button type="button" data-step="2">探究二</button>
+    <button type="button" data-step="3">探究三</button>
+  </nav>
+
+  <section class="panel on" id="panel1">
+    <div class="card">
+      <div class="kicker">探究一 · 关卡1</div>
+      <h2>体检数据有什么用</h2>
+      <p class="lead">观察体检报告，算出 BMI，再想一想这些数据对谁有价值。</p>
+      <table class="report">
+        <tr><th>姓名</th><td>林××</td><th>性别</th><td>女</td><th>年龄</th><td>12岁</td></tr>
+        <tr><th>身高</th><td>155厘米</td><th>体重</th><td>39千克</td><th>BMI</th><td>16.2</td></tr>
+        <tr><th>血压</th><td colspan="5">收缩压 90mmHg / 舒张压 65mmHg</td></tr>
+        <tr><th>视力</th><td colspan="5">右眼 5.2 / 左眼 5.2</td></tr>
+        <tr><th>内科检查</th><td colspan="5">心、肺、肝、脾：正常</td></tr>
+        <tr><th>外科检查</th><td colspan="5">皮肤、淋巴结、颈部、胸部、脊椎、四肢、关节：正常</td></tr>
+        <tr><th>口腔检查</th><td colspan="5">正常</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>计算 BMI</h3>
+      <p class="lead">BMI = 体重（千克）÷ 身高（米）的平方。它帮助我们看体重和身高是否相称。</p>
+      <div class="row">
+        <div><label for="height">身高（厘米）</label><input id="height" type="number" min="50" max="250" placeholder="例如 155"></div>
+        <div><label for="weight">体重（千克）</label><input id="weight" type="number" min="10" max="200" placeholder="例如 39"></div>
+        <button class="btn" type="button" id="btnBmi">计算 BMI</button>
+      </div>
+      <div class="result" id="bmiResult">
+        <div class="bmi-num">BMI：<span id="bmiNumber"></span></div>
+        <div id="bmiCategory"></div>
+        <p id="bmiAdvice"></p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>这些数据对谁有用？</h3>
+      <p class="lead">可以选择多个。</p>
+      <div class="options" id="people">
+        <button type="button" class="option" data-ok="1">学生自己</button>
+        <button type="button" class="option" data-ok="1">家长</button>
+        <button type="button" class="option" data-ok="1">学校医生</button>
+        <button type="button" class="option" data-ok="1">体育老师</button>
+        <button type="button" class="option" data-ok="0">餐厅厨师</button>
+        <button type="button" class="option" data-ok="0">公交车司机</button>
+      </div>
+      <button class="btn" type="button" id="btnAct1">完成本探究</button>
+      <div class="fb" id="fb1"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel2">
+    <div class="card">
+      <div class="kicker">探究二 · 关卡2</div>
+      <h2>数据卡片归类</h2>
+      <p class="lead">先点一张数据卡片，再点右侧对应的应用。同一种数据，放到合适的场景里，才会产生价值。</p>
+      <div class="match">
+        <div>
+          <h3>数据卡片</h3>
+          <div class="bank" id="bank">
+            <button type="button" class="card-item" data-id="1">气象数据</button>
+            <button type="button" class="card-item" data-id="2">导航数据</button>
+            <button type="button" class="card-item" data-id="3">节气数据</button>
+            <button type="button" class="card-item" data-id="4">体检数据</button>
+          </div>
+        </div>
+        <div>
+          <h3>应用区域</h3>
+          <div class="zones">
+            <button type="button" class="zone" data-id="a"><strong>确定耕种时间</strong><small>根据季节变化安排农事</small></button>
+            <button type="button" class="zone" data-id="b"><strong>选择服装厚薄</strong><small>根据气温和降雨做准备</small></button>
+            <button type="button" class="zone" data-id="c"><strong>规划最优路线</strong><small>根据道路信息选择路线</small></button>
+            <button type="button" class="zone" data-id="d"><strong>建立健康档案</strong><small>记录身体变化与健康情况</small></button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:14px"><button class="btn" type="button" id="btnAct2">检查归类</button></div>
+      <div class="fb" id="fb2"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel3">
+    <div class="card">
+      <div class="kicker">探究三 · 关卡3</div>
+      <h2>同一份天气预报，不同的用法</h2>
+      <p class="lead">明天杭州气温 5～10℃，小雨，东北风 3～4 级。至少看两个角色，比较他们怎么用这份数据。</p>
+      <div class="roles" id="roles">
+        <button type="button" class="role" data-role="student">学生</button>
+        <button type="button" class="role" data-role="farmer">农民</button>
+        <button type="button" class="role" data-role="driver">司机</button>
+        <button type="button" class="role" data-role="fisherman">渔民</button>
+      </div>
+      <div class="result" id="roleResult"></div>
+    </div>
+    <div class="card">
+      <div class="kicker">探究三 · 关卡4</div>
+      <h2>大数据生活实验室</h2>
+      <div class="flow"><span>位置</span>＋<span>历史记录</span>＋<span>实时路况</span>→<span>个性服务</span></div>
+      <p class="lead">数据越丰富，系统越能帮我们做出更合适的选择。两个体验都要完成。</p>
+      <h3>为小明推荐午餐</h3>
+      <p class="lead">小明在学校附近，过去常点清淡餐。系统会怎样推荐？</p>
+      <div class="choices" id="foodChoices">
+        <button type="button" class="choice" data-food="healthy">清淡套餐：少油少盐，距离 300 米</button>
+        <button type="button" class="choice" data-food="spicy">重口味套餐：距离 500 米，评分较高</button>
+        <button type="button" class="choice" data-food="random">随机推荐：不参考已有数据</button>
+      </div>
+      <div class="result" id="foodResult"></div>
+      <h3 style="margin-top:16px">选择更快到达学校的路线</h3>
+      <p class="lead">导航同时看距离、拥堵和红绿灯。选出预计用时最短的路线。</p>
+      <div class="choices" id="routeChoices">
+        <button type="button" class="choice" data-route="a">路线 A：1.0 千米，红绿灯 5 个，前方拥堵，预计 10 分钟</button>
+        <button type="button" class="choice" data-route="b">路线 B：1.2 千米，红绿灯 2 个，道路畅通，预计 8 分钟</button>
+        <button type="button" class="choice" data-route="c">路线 C：0.8 千米，红绿灯 8 个，拥堵明显，预计 15 分钟</button>
+      </div>
+      <div class="result" id="routeResult"></div>
+      <p class="lead" style="margin-top:12px">已完成体验 <strong id="missionDone">0</strong> / 2，已查看角色 <strong id="roleDone">0</strong> / 2</p>
+      <button class="btn" type="button" id="btnAct3">完成本探究</button>
+      <div class="fb" id="fb3"></div>
+    </div>
+  </section>
+</div>
+<script>
+const urlParams = new URLSearchParams(location.search);
+const IS_EMBEDDED = urlParams.get('embedded') === '1';
+const notified = new Set();
+const MATCH = { '1': 'b', '2': 'c', '3': 'a', '4': 'd' };
+const placed = {};
+let picked = '';
+let bmiDone = false;
+const rolesSeen = new Set();
+const missions = new Set();
+const ROLE_TEXT = {
+  student: '学生会决定穿厚一点、带不带伞，也会提醒家人接送时间可能变化。',
+  farmer: '农民会看要不要排水、户外农活要不要改时间，以及雨水对庄稼的影响。',
+  driver: '司机会准备雨刷，提前出发，并注意雨天路滑。',
+  fisherman: '渔民会判断能不能出海，准备防雨防风，并按风向调整捕捞。'
+};
+
+function $(id) { return document.getElementById(id); }
+function show(id, ok, html) {
+  const el = $(id);
+  el.className = 'fb show ' + (ok ? 'ok' : 'bad');
+  el.innerHTML = html;
+}
+function notify(step) {
+  if (!window.parent || window.parent === window || notified.has(step)) return;
+  notified.add(step);
+  const idx = parseInt(urlParams.get('activityIndex') || String(step), 10);
+  window.parent.postMessage({
+    type: 'LEARN_SPACE_SUBMIT',
+    payload: { activityIndex: Number.isFinite(idx) ? idx : step, step, stepCompleted: true, source: 'g4-up-lesson3' }
+  }, '*');
+}
+function switchStep(step) {
+  document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('on', p.id === 'panel' + step));
+  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', Number(b.dataset.step) === step));
+}
+
+$('btnBmi').addEventListener('click', () => {
+  const height = parseFloat($('height').value) / 100;
+  const weight = parseFloat($('weight').value);
+  if (!height || !weight || height <= 0 || weight <= 0) {
+    show('fb1', false, '请先输入有效的身高和体重。');
+    return;
+  }
+  const bmi = weight / (height * height);
+  let category, advice;
+  if (bmi < 18.5) { category = '体重偏轻'; advice = '可以注意营养均衡，并问问家长或医生。'; }
+  else if (bmi < 24) { category = '体重正常'; advice = '体重在常见的健康范围内，继续保持。'; }
+  else if (bmi < 28) { category = '超重'; advice = '可以适当控制饮食，并增加运动。'; }
+  else { category = '肥胖'; advice = '最好和家长、医生一起商量更合适的饮食和运动。'; }
+  $('bmiNumber').textContent = bmi.toFixed(1);
+  $('bmiCategory').textContent = category;
+  $('bmiAdvice').textContent = advice;
+  $('bmiResult').classList.add('show');
+  bmiDone = true;
+});
+
+document.querySelectorAll('#people .option').forEach((btn) => {
+  btn.addEventListener('click', () => btn.classList.toggle('on'));
+});
+$('btnAct1').addEventListener('click', () => {
+  const chosen = [...document.querySelectorAll('#people .option.on')];
+  const names = chosen.map((b) => b.textContent);
+  const okPeople = ['学生自己', '家长', '学校医生', '体育老师'].every((n) => names.includes(n))
+    && !names.includes('餐厅厨师') && !names.includes('公交车司机');
+  if (!bmiDone) {
+    show('fb1', false, '请先算出自己的 BMI，再选择这些数据对谁有用。');
+    return;
+  }
+  if (!okPeople) {
+    show('fb1', false, '体检数据对学生自己、家长、学校医生和体育老师有用。餐厅厨师和公交车司机通常不需要这份个人数据。');
+    return;
+  }
+  show('fb1', true, '体检数据能帮助了解健康、安排运动。同一份数据，对真正需要它的人才有价值。');
+  notify(1);
+});
+
+document.querySelectorAll('.card-item').forEach((card) => {
+  card.addEventListener('click', () => {
+    if (card.classList.contains('placed')) return;
+    picked = card.dataset.id;
+    document.querySelectorAll('.card-item').forEach((c) => c.classList.toggle('on', c === card));
+  });
+});
+document.querySelectorAll('.zone').forEach((zone) => {
+  zone.addEventListener('click', () => {
+    if (!picked || zone.dataset.dropped) return;
+    const card = document.querySelector('.card-item[data-id="' + picked + '"]');
+    const right = MATCH[picked] === zone.dataset.id;
+    if (!right) {
+      zone.classList.add('bad');
+      show('fb2', false, '这张卡片和这个区域不匹配，换一个区域试试。');
+      setTimeout(() => zone.classList.remove('bad'), 500);
+      return;
+    }
+    zone.dataset.dropped = picked;
+    zone.classList.add('ok');
+    zone.insertAdjacentHTML('beforeend', '<div>' + card.textContent + '</div>');
+    card.classList.add('placed');
+    card.classList.remove('on');
+    picked = '';
+  });
+});
+$('btnAct2').addEventListener('click', () => {
+  const zones = [...document.querySelectorAll('.zone')];
+  const done = zones.every((z) => z.dataset.dropped && MATCH[z.dataset.dropped] === z.dataset.id);
+  if (!done) {
+    show('fb2', false, '四个区域都要放对。气象数据对应穿衣，导航数据对应路线，节气数据对应耕种，体检数据对应健康档案。');
+    return;
+  }
+  show('fb2', true, '归类成功。数据放到合适的场景里，才会产生实际价值。');
+  notify(2);
+});
+
+document.querySelectorAll('.role').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    btn.classList.add('on');
+    rolesSeen.add(btn.dataset.role);
+    $('roleDone').textContent = String(Math.min(rolesSeen.size, 2));
+    $('roleResult').className = 'result show';
+    $('roleResult').textContent = ROLE_TEXT[btn.dataset.role] + ' 同一份天气预报，对不同的人有不同的用法。';
+  });
+});
+document.querySelectorAll('[data-food]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const box = $('foodResult');
+    box.className = 'result show';
+    if (btn.dataset.food !== 'healthy') {
+      box.textContent = btn.dataset.food === 'spicy'
+        ? '这个选择主要看了评分，没有用上小明过去爱吃清淡的记录。'
+        : '如果不看历史记录和位置，推荐就容易变成随便猜。';
+      return;
+    }
+    document.querySelectorAll('[data-food]').forEach((b) => b.classList.toggle('on', b === btn));
+    box.textContent = '系统综合了口味记录和当前位置，推荐附近的清淡套餐。';
+    missions.add('food');
+    $('missionDone').textContent = String(missions.size);
+  });
+});
+document.querySelectorAll('[data-route]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const box = $('routeResult');
+    box.className = 'result show';
+    if (btn.dataset.route !== 'b') {
+      box.textContent = '更近不一定更快。还要看拥堵和红绿灯，再比较预计用时。';
+      return;
+    }
+    document.querySelectorAll('[data-route]').forEach((b) => b.classList.toggle('on', b === btn));
+    box.textContent = '路线 B 预计 8 分钟。导航不只看距离，还会综合路况和红绿灯。';
+    missions.add('route');
+    $('missionDone').textContent = String(missions.size);
+  });
+});
+$('btnAct3').addEventListener('click', () => {
+  if (rolesSeen.size < 2 || missions.size < 2) {
+    show('fb3', false, '请至少查看两个角色，并完成午餐推荐和路线选择。');
+    return;
+  }
+  show('fb3', true, '同一份数据可以有不同用法。数据越多，系统越能帮助我们做选择。');
+  notify(3);
+});
+
+if (!IS_EMBEDDED) {
+  document.querySelectorAll('#tabs button').forEach((btn) => {
+    btn.addEventListener('click', () => switchStep(Number(btn.dataset.step)));
+  });
+}
+(function init() {
+  if (IS_EMBEDDED) document.body.classList.add('embedded-mode');
+  const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+  switchStep(step >= 1 && step <= 3 ? step : 1);
+})();
+</script>
+</body>
+</html>

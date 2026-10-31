@@ -43,7 +43,7 @@
               placeholder="选择班级"
               @change="onClassChange"
             >
-              <el-option v-for="c in classes" :key="c.id" :label="c.name" :value="c.id" />
+              <el-option v-for="c in classes" :key="c.id" :label="classLabel(c)" :value="c.id" />
             </el-select>
           </div>
           <div class="pill pill-code" v-if="classId">
@@ -66,11 +66,12 @@
           @click="markCurrentLesson"
         >📍 设为当前课时</button>
         <button
-          v-if="classId"
+          v-if="classId && lessonId"
           type="button"
-          class="action-btn teal"
-          @click="broadcastCountdown"
-        >⏱ 倒计时提醒</button>
+          class="action-btn red"
+          :disabled="clearingLesson"
+          @click="clearCurrentLessonRecords"
+        >🗑 清除当前课记录</button>
         <button type="button" class="action-btn indigo" @click="$router.push('/teacher/pretest/g4')">📝 四年级前测</button>
         <button type="button" class="action-btn indigo" @click="$router.push('/teacher/pretest/g6')">📝 六年级前测</button>
         <button type="button" class="action-btn orange" @click="$router.push('/teacher/points')">🏆 班级积分榜单</button>
@@ -79,6 +80,14 @@
       </div>
     </header>
 
+    <el-alert
+      v-if="classesReady && !classes.length"
+      type="info"
+      show-icon
+      :closable="false"
+      title="还没有匹配到任课班级。请学校管理人员在「后台管理 → 教师管理」里为这位老师勾选班级。"
+      style="margin-bottom: 12px"
+    />
     <section v-if="classId" class="class-code-banner">
       <div class="banner-text">
         <strong>班级登录码</strong>
@@ -97,13 +106,20 @@
         <h3>
           <span class="sec-icon">🎮</span>
           游学乐园授权
+          <span v-if="lessonId" class="park-lesson">· {{ currentLessonTitle }}</span>
           <el-tag v-if="parkPendingCount" size="small" type="warning" style="margin-left:8px">
             {{ parkPendingCount }} 待审
           </el-tag>
         </h3>
-        <button type="button" class="act-btn sm" @click="loadParkApps">刷新申请</button>
+        <div class="park-actions">
+          <button type="button" class="act-btn sm" :disabled="!lessonId" @click="reviewParkClass('approve')">一键授权</button>
+          <button type="button" class="act-btn sm" :disabled="!lessonId" @click="reviewParkClass('revoke')">一键关闭</button>
+          <button type="button" class="act-btn sm" @click="loadParkApps">刷新</button>
+        </div>
       </div>
-      <p class="park-tip">学生完成当前课时任务并提交申请后，可在此授权开启贪吃蛇、打字等娱乐活动。</p>
+      <p class="park-tip">上方选中哪一课，这里就只控制哪一课。第1课的授权和游玩记录不会带到第2课，关闭第2课也不会关掉第1课。</p>
+      <p v-if="!lessonId" class="empty-hint">请先在上方选择课时。</p>
+      <template v-else>
       <el-table :data="parkApps" stripe size="small" max-height="280" v-loading="parkLoading">
         <el-table-column prop="realName" label="学生" width="100" />
         <el-table-column prop="username" label="学号" width="110" />
@@ -152,7 +168,30 @@
           </template>
         </el-table-column>
       </el-table>
-      <p v-if="!parkApps.length && !parkLoading" class="empty-hint">暂无游学乐园申请</p>
+      <p v-if="!parkApps.length && !parkLoading" class="empty-hint">这一课还没有游学乐园申请</p>
+
+      <h4 class="park-sub">游玩记录 · {{ currentLessonTitle }}</h4>
+      <el-table :data="parkSummary" stripe size="small" empty-text="这一课还没有游玩记录">
+        <el-table-column prop="gameTitle" label="游戏名称" min-width="120" />
+        <el-table-column prop="playerCount" label="游玩人数" width="100" align="center" />
+        <el-table-column label="总时长" width="120" align="center">
+          <template #default="{ row }">{{ formatDuration(row.totalSeconds) }}</template>
+        </el-table-column>
+        <el-table-column label="人均时长" width="120" align="center">
+          <template #default="{ row }">{{ formatDuration(row.avgSeconds) }}</template>
+        </el-table-column>
+      </el-table>
+      <el-table :data="parkRecent" stripe size="small" max-height="220" empty-text="暂无明细" style="margin-top:8px">
+        <el-table-column prop="realName" label="学生" width="100" />
+        <el-table-column prop="gameTitle" label="游戏名称" min-width="120" />
+        <el-table-column label="游戏时长" width="120">
+          <template #default="{ row }">{{ formatDuration(row.durationSeconds) }}</template>
+        </el-table-column>
+        <el-table-column label="时间" min-width="160">
+          <template #default="{ row }">{{ formatTime(row.playedAt) }}</template>
+        </el-table-column>
+      </el-table>
+      </template>
     </section>
 
     <template v-if="lessonId">
@@ -177,7 +216,9 @@
           <h3>✨ 课程小测 概况</h3>
           <p class="radar-meta">
             参与 {{ quiz.participantCount || 0 }} 人
-            <span v-if="quiz.avgTotalScore != null"> · 均分 {{ quiz.avgTotalScore }}/{{ quiz.totalMaxScore || 6 }}</span>
+            <span v-if="quiz.avgPercent != null"> · 均分 {{ quiz.avgPercent }}分</span>
+            <span v-else-if="quiz.avgTotalScore != null"> · 均分 {{ quiz.avgTotalScore }}/{{ quiz.totalMaxScore || 6 }}</span>
+            <span v-if="quiz.passRate != null"> · 及格率 {{ quiz.passRate }}%</span>
           </p>
           <div class="radar-wrap">
             <canvas ref="quizRadarRef" />
@@ -187,11 +228,108 @@
 
         <div class="card summary-card radar-card">
           <h3>📝 学习评价 概况</h3>
-          <p class="radar-meta">参与 {{ evaluation.participantCount || 0 }} 人</p>
+          <p class="radar-meta">
+            参与 {{ evaluation.participantCount || 0 }} 人
+            <span v-if="evaluation.submitRate != null"> · 提交率 {{ evaluation.submitRate }}%</span>
+          </p>
           <div class="radar-wrap">
             <canvas ref="evalRadarRef" />
           </div>
           <p v-if="!(evaluation.dimensions || []).length" class="empty-hint">暂无评价数据</p>
+        </div>
+      </section>
+
+      <section class="analysis-section">
+        <div class="analysis-col">
+          <div class="section-head">
+            <h3><span class="sec-icon">📊</span> 课堂小测汇总</h3>
+            <div class="analysis-actions">
+              <button
+                type="button"
+                class="act-btn sm"
+                :disabled="!(quiz.lowScoreStudents || []).length"
+                @click="guideLowQuizStudents"
+              >给低分学生发建议</button>
+              <button
+                type="button"
+                class="act-btn sm outline"
+                :disabled="!(quiz.unsubmittedStudents || []).length"
+                @click="remindQuizUnsubmitted"
+              >提醒未交</button>
+            </div>
+          </div>
+          <p class="analysis-tip">低于 {{ quiz.lowThreshold || 60 }} 分视为低分。薄弱维度指正确率不足 60%。</p>
+          <div class="stat-pills">
+            <span>提交 {{ quiz.participantCount || 0 }}/{{ data.totalStudents || 0 }}</span>
+            <span>及格率 {{ quiz.passRate || 0 }}%</span>
+            <span>低分 {{ (quiz.lowScoreStudents || []).length }} 人</span>
+            <span>未交 {{ (quiz.unsubmittedStudents || []).length }} 人</span>
+          </div>
+          <div v-if="(quiz.weakDimensions || []).length" class="weak-row">
+            <b>薄弱维度</b>
+            <span v-for="d in quiz.weakDimensions" :key="d.name" class="weak-tag">
+              {{ d.name }} {{ d.correctRate }}%
+            </span>
+          </div>
+          <div class="name-block">
+            <div class="name-label warn">低分学生</div>
+            <div v-if="(quiz.lowScoreStudents || []).length" class="name-chips">
+              <span v-for="s in quiz.lowScoreStudents" :key="'q-low-' + s.studentId" class="name-chip warn">
+                {{ s.realName }}<small>{{ s.scoreLabel || (s.score + '分') }}</small>
+              </span>
+            </div>
+            <p v-else class="empty-hint">暂无低分学生</p>
+          </div>
+          <div class="name-block">
+            <div class="name-label">未交小测</div>
+            <div v-if="(quiz.unsubmittedStudents || []).length" class="name-chips">
+              <span v-for="s in quiz.unsubmittedStudents" :key="'q-miss-' + s.studentId" class="name-chip">
+                {{ s.realName }}
+              </span>
+            </div>
+            <p v-else class="empty-hint">全部已交</p>
+          </div>
+        </div>
+
+        <div class="analysis-col">
+          <div class="section-head">
+            <h3><span class="sec-icon">📝</span> 学习评价汇总</h3>
+            <button
+              type="button"
+              class="act-btn sm outline"
+              :disabled="!(evaluation.unsubmittedStudents || []).length"
+              @click="remindEvalUnsubmitted"
+            >提醒未交</button>
+          </div>
+          <p class="analysis-tip">兴趣选 C/D、信心选 C/D 的学生会列入需关注；难度题选「都不难」不算低分。</p>
+          <div class="stat-pills">
+            <span>提交 {{ evaluation.participantCount || 0 }}/{{ data.totalStudents || 0 }}</span>
+            <span>需关注 {{ (evaluation.concernStudents || []).length }} 人</span>
+            <span>未交 {{ (evaluation.unsubmittedStudents || []).length }} 人</span>
+          </div>
+          <div class="eval-dim-row">
+            <span v-for="d in evaluation.dimensions || []" :key="d.name">
+              {{ d.name }} 正向 {{ d.positiveRate || 0 }}%
+            </span>
+          </div>
+          <div class="name-block">
+            <div class="name-label warn">需关注学生</div>
+            <div v-if="(evaluation.concernStudents || []).length" class="name-chips">
+              <span v-for="s in evaluation.concernStudents" :key="'e-low-' + s.studentId" class="name-chip warn">
+                {{ s.realName }}<small>{{ (s.reasons || []).join('、') }}</small>
+              </span>
+            </div>
+            <p v-else class="empty-hint">暂无需关注学生</p>
+          </div>
+          <div class="name-block">
+            <div class="name-label">未交评价</div>
+            <div v-if="(evaluation.unsubmittedStudents || []).length" class="name-chips">
+              <span v-for="s in evaluation.unsubmittedStudents" :key="'e-miss-' + s.studentId" class="name-chip">
+                {{ s.realName }}
+              </span>
+            </div>
+            <p v-else class="empty-hint">全部已交</p>
+          </div>
         </div>
       </section>
 
@@ -211,7 +349,6 @@
             <div class="act-info">
               <div class="act-title">
                 {{ activityLabel(act) }}
-                <el-tag v-if="!act.unlocked" size="small" type="info">需解锁</el-tag>
               </div>
               <div class="act-meta">{{ act.submittedCount || 0 }} / {{ data.totalStudents || 0 }} 人已提交</div>
               <div v-if="act.tierStats" class="act-tiers">{{ formatTierStats(act.tierStats) }}</div>
@@ -236,7 +373,6 @@
           <div v-for="act in data.activities || []" :key="'g-' + act.index" class="grid-card">
             <div class="grid-head">
               <span class="grid-num">#{{ act.index }}</span>
-              <el-tag v-if="!act.unlocked" size="small" type="info">需解锁</el-tag>
             </div>
             <div class="grid-title">{{ activityLabel(act) }}</div>
             <div class="grid-count">{{ act.submittedCount || 0 }} / {{ data.totalStudents || 0 }}</div>
@@ -252,6 +388,25 @@
           </div>
           <p v-if="!(data.activities || []).length" class="empty-hint">该课时暂无活动数据</p>
         </div>
+      </section>
+
+      <section v-if="themeActivity" class="matrix-section theme-section">
+        <div class="section-head">
+          <h3><span class="sec-icon">◎</span> 探究三 · 调查主题</h3>
+          <span class="theme-count">已填写 {{ themeGroups.filled }} / {{ themeGroups.rows.length }} 人</span>
+        </div>
+        <p class="park-tip">学生写下的原话按完全相同分成一组，方便按主题分组。说法接近但不一样的，可以再合并到同一组。</p>
+        <div v-if="themeGroups.groups.length" class="theme-list">
+          <div v-for="group in themeGroups.groups" :key="group.theme" class="theme-card">
+            <div class="theme-head">
+              <strong>{{ group.theme }}</strong>
+              <span>{{ group.names.length }} 人</span>
+            </div>
+            <p>{{ group.names.join('、') }}</p>
+          </div>
+        </div>
+        <p v-else class="empty-hint">还没有学生写下调查主题。</p>
+        <p v-if="themeGroups.missing.length" class="theme-missing">还没写：{{ themeGroups.missing.join('、') }}</p>
       </section>
 
       <!-- 全班任务完成矩阵 -->
@@ -271,7 +426,11 @@
               align="center"
             >
               <template #default="{ row }">
-                <span :class="cellClass(row.cells[col.index])">
+                <span
+                  :class="[cellClass(row.cells[col.index]), { 'is-fc': !!row.cells[col.index]?.flowchart }]"
+                  :title="row.cells[col.index]?.flowchart ? '点击放大流程图' : ''"
+                  @click="openCellFlowchart(row, col.index)"
+                >
                   {{ cellText(row.cells[col.index]) }}
                 </span>
               </template>
@@ -283,23 +442,95 @@
           <span class="undone">✗ 未完成</span>
         </p>
       </section>
+
+      <section class="matrix-section tier-section">
+        <div class="section-head">
+          <h3><span class="sec-icon">🎯</span> 本课表现与第2课分档</h3>
+          <button
+            type="button"
+            class="action-btn indigo"
+            :disabled="!tierStudents.length || applyingTiers"
+            @click="applyAllSuggested"
+          >按建议一键分档</button>
+        </div>
+        <p class="park-tip">
+          教师端已能读取本课提交：探究完成、流程图得分、课堂小测。建议规则：
+          暂无提交沿用当前档；探究完成 ≤ 1 或流程图 &lt; 50 建议 C；三个探究都完成且流程图 ≥ 80 建议 A；其余建议 B。
+          指定后覆盖前测档位，六年级第2课及后续课时按此呈现支架，学生看不到 A/B/C 标签。
+        </p>
+        <div class="tier-counts">
+          <span>当前 A {{ tierRoster.countA || 0 }} · B {{ tierRoster.countB || 0 }} · C {{ tierRoster.countC || 0 }}</span>
+          <span>建议 A {{ tierRoster.suggestA || 0 }} · B {{ tierRoster.suggestB || 0 }} · C {{ tierRoster.suggestC || 0 }}</span>
+          <span>有本课数据 {{ tierRoster.withData || 0 }} / {{ data.totalStudents || 0 }} 人</span>
+        </div>
+        <el-table :data="tierStudents" border stripe size="small" max-height="480">
+          <el-table-column prop="realName" label="学生" fixed width="100" />
+          <el-table-column prop="username" label="学号" width="110" />
+          <el-table-column label="探究完成" width="100" align="center">
+            <template #default="{ row }">{{ row.inquiryDone || 0 }} / {{ row.inquiryTotal || 0 }}</template>
+          </el-table-column>
+          <el-table-column label="流程图" width="88" align="center">
+            <template #default="{ row }">{{ row.flowchartScore ?? '—' }}</template>
+          </el-table-column>
+          <el-table-column label="小测" width="80" align="center">
+            <template #default="{ row }">{{ row.quizScore == null ? '—' : `${row.quizScore}/6` }}</template>
+          </el-table-column>
+          <el-table-column label="当前档" width="88" align="center">
+            <template #default="{ row }">
+              <el-tag size="small" :type="tierTagType(row.currentTier)">{{ row.currentTier || 'B' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="建议档" min-width="180">
+            <template #default="{ row }">
+              <el-tag size="small" :type="tierTagType(row.suggestedTier)">{{ row.suggestedTier || 'B' }}</el-tag>
+              <span class="suggest-reason">{{ row.suggestReason }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="指定档位" width="220" fixed="right">
+            <template #default="{ row }">
+              <el-select
+                :model-value="row.tierOverride || 'FOLLOW'"
+                size="small"
+                style="width: 118px"
+                :disabled="applyingTiers"
+                @change="(v) => changeRosterTier(row, v)"
+              >
+                <el-option label="跟随前测" value="FOLLOW" />
+                <el-option label="指定 A" value="A" />
+                <el-option label="指定 B" value="B" />
+                <el-option label="指定 C" value="C" />
+              </el-select>
+              <el-button
+                link
+                type="primary"
+                size="small"
+                :disabled="applyingTiers"
+                @click="applySuggestedOne(row)"
+              >用建议</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </section>
     </template>
 
     <div v-else class="empty-page">
       <el-empty description="请先选择年级与课程" :image-size="88" />
     </div>
 
-    <el-dialog v-model="detailVisible" :title="detailTitle" width="520px">
+    <el-dialog v-model="detailVisible" :title="detailTitle" :width="detailHasTheme ? '720px' : '520px'">
       <el-table :data="detailRows" stripe max-height="360" size="small">
         <el-table-column prop="realName" label="姓名" width="100" />
         <el-table-column prop="username" label="学号" width="100" />
+        <el-table-column v-if="detailHasTheme" label="调查主题" min-width="180">
+          <template #default="{ row }">{{ row.surveyTheme || '—' }}</template>
+        </el-table-column>
         <el-table-column v-if="detailMode === 'submitted'" label="得分" width="70">
           <template #default="{ row }">{{ row.score ?? '—' }}</template>
         </el-table-column>
         <el-table-column v-if="detailMode === 'submitted'" label="提交时间" min-width="140">
           <template #default="{ row }">{{ formatTime(row.submittedAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="168" fixed="right">
           <template #default="{ row }">
             <el-button
               v-if="detailMode === 'unsubmitted'"
@@ -309,7 +540,14 @@
               @click="remindStudent(row)"
             >提醒完成</el-button>
             <el-button
-              v-else-if="isLowScore(row)"
+              v-if="detailMode === 'submitted' && row.flowchart"
+              link
+              type="success"
+              size="small"
+              @click="openFlowchart(row)"
+            >放大流程图</el-button>
+            <el-button
+              v-if="detailMode === 'submitted' && isLowScore(row)"
               link
               type="primary"
               size="small"
@@ -320,13 +558,31 @@
       </el-table>
       <p v-if="!detailRows.length" class="empty-hint">暂无记录</p>
     </el-dialog>
+
+    <el-dialog
+      v-model="flowchartVisible"
+      :title="flowchartTitle"
+      width="92%"
+      top="4vh"
+      class="fc-zoom-dialog"
+      destroy-on-close
+    >
+      <div v-if="flowchartStudent" class="fc-zoom-meta">
+        <strong>{{ flowchartStudent.realName }}</strong>
+        <span>得分 {{ flowchartStudent.flowchartScore ?? flowchartStudent.score ?? '—' }}</span>
+        <span v-if="flowchartStudent.flowchartVersion">第 {{ flowchartStudent.flowchartVersion }} 次提交</span>
+        <span v-if="flowchartStudent.flowchartPassed">已达标，可体验投票器</span>
+        <span v-else>未达标，讲解后可让学生二次修改</span>
+      </div>
+      <FlowchartPreview v-if="flowchartStudent?.flowchart" :flowchart="flowchartStudent.flowchart" />
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Chart,
   BarController,
@@ -345,6 +601,7 @@ import {
 import {
   getClasses,
   getLessonActivityDashboard,
+  clearLessonClassRecords,
   teacherGetTextbooks,
   teacherGetOutline,
   getClassLoginCode,
@@ -352,8 +609,12 @@ import {
   teacherIntervene,
   setClassCurrentLesson,
   getParkApplications,
-  reviewParkAccess
+  reviewParkAccess,
+  reviewParkClass as reviewParkClassAccess,
+  getParkPlays,
+  teacherOverrideTier
 } from '../../api'
+import FlowchartPreview from '../../components/teacher/FlowchartPreview.vue'
 
 Chart.register(
   BarController, BarElement, LineController, LineElement, PointElement,
@@ -372,7 +633,14 @@ const gradeId = ref(null)
 const lessons = ref([])
 const lessonId = ref(null)
 const classes = ref([])
+const classesReady = ref(false)
 const classId = ref(null)
+const classLabel = (row) => {
+  const grade = row?.gradeName || ''
+  const name = row?.name || ''
+  if (!grade || name.includes(grade)) return name
+  return `${grade} ${name}`
+}
 const classLoginCode = ref('')
 const codeExpiresAt = ref('')
 const codeLoading = ref(false)
@@ -391,12 +659,20 @@ let eventSource = null
 const detailVisible = ref(false)
 const detailMode = ref('submitted')
 const detailAct = ref(null)
+const flowchartVisible = ref(false)
+const flowchartStudent = ref(null)
 
 const parkApps = ref([])
 const parkLoading = ref(false)
+const parkSummary = ref([])
+const parkRecent = ref([])
 const parkPendingCount = computed(() => parkApps.value.filter((r) => r.status === 'PENDING').length)
 
+const applyingTiers = ref(false)
+const clearingLesson = ref(false)
 const quiz = computed(() => data.value.quizSummary || {})
+const tierRoster = computed(() => data.value.tierRoster || {})
+const tierStudents = computed(() => tierRoster.value.students || [])
 const evaluation = computed(() => data.value.evaluationSummary || {})
 
 const codeExpiresHint = computed(() => {
@@ -417,6 +693,33 @@ const detailRows = computed(() => {
   return detailMode.value === 'submitted'
     ? (detailAct.value.submittedStudents || [])
     : (detailAct.value.unsubmittedStudents || [])
+})
+
+const detailHasTheme = computed(() =>
+  detailMode.value === 'submitted' && detailRows.value.some((row) => row.surveyTheme)
+)
+
+const themeActivity = computed(() =>
+  (data.value.activities || []).find((act) => Array.isArray(act.surveyThemes)) || null
+)
+
+const themeGroups = computed(() => {
+  const rows = themeActivity.value?.surveyThemes || []
+  const grouped = new Map()
+  const missing = []
+  rows.forEach((row) => {
+    const theme = String(row.surveyTheme || '').trim()
+    if (!theme) {
+      missing.push(row.realName)
+      return
+    }
+    if (!grouped.has(theme)) grouped.set(theme, [])
+    grouped.get(theme).push(row.realName)
+  })
+  const groups = [...grouped.entries()]
+    .map(([theme, names]) => ({ theme, names }))
+    .sort((a, b) => b.names.length - a.names.length || a.theme.localeCompare(b.theme, 'zh-CN'))
+  return { rows, groups, missing, filled: rows.length - missing.length }
 })
 
 const matrixColumns = computed(() =>
@@ -447,7 +750,11 @@ const matrixRows = computed(() => {
       const submitted = act.submittedStudents?.find((x) => x.studentId === s.studentId)
       row.cells[act.index] = {
         done: submittedIds.has(s.studentId),
-        score: submitted?.score ?? null
+        score: submitted?.score ?? null,
+        flowchart: submitted?.flowchart || null,
+        flowchartScore: submitted?.flowchartScore ?? submitted?.score ?? null,
+        flowchartVersion: submitted?.flowchartVersion,
+        flowchartPassed: submitted?.flowchartPassed
       }
     }
   }
@@ -554,13 +861,104 @@ const formatTime = (t) => {
 const cellClass = (cell) => (cell?.done ? 'done' : 'undone')
 const cellText = (cell) => {
   if (!cell?.done) return '✗'
+  if (cell.flowchart && cell.flowchartScore != null) return `✓${cell.flowchartScore}`
   return cell.score != null ? `✓${cell.score}` : '✓'
+}
+
+const tierTagType = (lv) => {
+  if (lv === 'A') return 'success'
+  if (lv === 'B') return 'warning'
+  return 'danger'
+}
+
+const changeRosterTier = async (row, value) => {
+  const next = value === 'FOLLOW' ? null : value
+  try {
+    await ElMessageBox.confirm(
+      '指定后六年级第2课及后续课时将按此档呈现支架，确定？',
+      '调整课堂档位',
+      { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' }
+    )
+  } catch {
+    return
+  }
+  applyingTiers.value = true
+  try {
+    await teacherOverrideTier({ studentId: row.studentId, tier: next || 'CLEAR' })
+    ElMessage.success(`${row.realName} 的档位已更新`)
+    await loadData()
+  } catch (e) {
+    ElMessage.error(e?.message || '档位更新失败')
+  } finally {
+    applyingTiers.value = false
+  }
+}
+
+const applySuggestedOne = async (row) => {
+  applyingTiers.value = true
+  try {
+    await teacherOverrideTier({ studentId: row.studentId, tier: row.suggestedTier || 'B' })
+    ElMessage.success(`已按建议将 ${row.realName} 指定为 ${row.suggestedTier}`)
+    await loadData()
+  } catch (e) {
+    ElMessage.error(e?.message || '指定失败')
+  } finally {
+    applyingTiers.value = false
+  }
+}
+
+const applyAllSuggested = async () => {
+  if (!tierStudents.value.length) return
+  try {
+    await ElMessageBox.confirm(
+      `将按本课表现建议，为 ${tierStudents.value.length} 名学生指定课堂档位，供第2课使用。确定？`,
+      '按建议一键分档',
+      { type: 'warning', confirmButtonText: '确定分档', cancelButtonText: '取消' }
+    )
+  } catch {
+    return
+  }
+  applyingTiers.value = true
+  try {
+    for (const row of tierStudents.value) {
+      await teacherOverrideTier({ studentId: row.studentId, tier: row.suggestedTier || 'B' })
+    }
+    ElMessage.success('已按本课表现指定课堂档位，第2课将按此分档')
+    await loadData()
+  } catch (e) {
+    ElMessage.error(e?.message || '批量分档失败')
+  } finally {
+    applyingTiers.value = false
+  }
 }
 
 const openDetail = (act, mode) => {
   detailAct.value = act
   detailMode.value = mode
   detailVisible.value = true
+}
+
+const flowchartTitle = computed(() => {
+  const name = flowchartStudent.value?.realName || '学生'
+  return `${name} 的流程图`
+})
+
+const openFlowchart = (row) => {
+  flowchartStudent.value = row
+  flowchartVisible.value = true
+}
+
+const openCellFlowchart = (row, actIndex) => {
+  const cell = row?.cells?.[actIndex]
+  if (!cell?.flowchart) return
+  openFlowchart({
+    realName: row.realName,
+    flowchart: cell.flowchart,
+    flowchartScore: cell.flowchartScore,
+    score: cell.score,
+    flowchartVersion: cell.flowchartVersion,
+    flowchartPassed: cell.flowchartPassed
+  })
 }
 
 const parkStatusText = (s) => ({
@@ -577,26 +975,65 @@ const parkStatusType = (s) => ({
   REVOKED: 'danger'
 }[s] || 'info')
 
+const formatDuration = (seconds) => {
+  const n = Math.max(0, Number(seconds) || 0)
+  const m = Math.floor(n / 60)
+  const s = n % 60
+  if (m <= 0) return `${s}秒`
+  return `${m}分${s}秒`
+}
+
 const loadParkApps = async () => {
-  if (!classId.value) {
+  if (!classId.value || !lessonId.value) {
     parkApps.value = []
+    parkSummary.value = []
+    parkRecent.value = []
     return
   }
   parkLoading.value = true
   try {
-    const res = await getParkApplications(classId.value)
-    parkApps.value = res.data || []
+    const apps = await getParkApplications(classId.value, lessonId.value)
+    parkApps.value = apps.data || []
   } catch {
     parkApps.value = []
+  }
+  try {
+    const plays = await getParkPlays(classId.value, lessonId.value)
+    parkSummary.value = plays.data?.summary || []
+    parkRecent.value = plays.data?.recent || []
+  } catch {
+    parkSummary.value = []
+    parkRecent.value = []
   } finally {
     parkLoading.value = false
   }
 }
 
+const reviewParkClass = async (action) => {
+  if (!classId.value || !lessonId.value) return
+  const lessonName = currentLessonTitle.value
+  const title = action === 'approve' ? '一键授权' : '一键关闭'
+  const message = action === 'approve'
+    ? `只为已完成「${lessonName}」全部探究活动、课堂小测和学习评价的学生开启这一课的游学乐园。其他课不变。`
+    : `只关闭「${lessonName}」的游学乐园。其他课的授权还在，学生可以继续上课。`
+  try {
+    await ElMessageBox.confirm(message, title, { type: 'warning' })
+    const res = await reviewParkClassAccess({ classId: classId.value, lessonId: lessonId.value, action })
+    const changed = res.data?.changed || 0
+    const skipped = res.data?.skipped || 0
+    ElMessage.success(action === 'approve'
+      ? `「${lessonName}」已授权 ${changed} 人，未完成的跳过 ${skipped} 人`
+      : `已关闭「${lessonName}」的游学乐园，其他课不受影响`)
+    await loadParkApps()
+  } catch (e) {
+    if (e !== 'cancel' && e !== 'close') ElMessage.error(e?.message || '操作失败')
+  }
+}
+
 const reviewPark = async (row, action) => {
   try {
-    await reviewParkAccess({ studentId: row.studentId, action })
-    ElMessage.success(action === 'approve' ? '已授权开启游学乐园' : action === 'reject' ? '已拒绝申请' : '已关闭访问')
+    await reviewParkAccess({ studentId: row.studentId, lessonId: row.lessonId || lessonId.value, action })
+    ElMessage.success(action === 'approve' ? '已授权这一课' : action === 'reject' ? '已拒绝这一课的申请' : '已关闭这一课')
     await loadParkApps()
   } catch (e) {
     ElMessage.error(e?.message || '操作失败')
@@ -646,19 +1083,56 @@ const guideStudent = async (row) => {
   }
 }
 
-const broadcastCountdown = async () => {
-  if (!classId.value) return
-  try {
-    await teacherIntervene({
-      type: 'broadcast',
-      classId: classId.value,
-      lessonId: lessonId.value || undefined,
-      message: '还有5分钟，请抓紧提交'
-    })
-    ElMessage.success('全班倒计时提醒已发送')
-  } catch {
-    ElMessage.error('发送失败')
+const findActivityByType = (type) => (data.value.activities || []).find((a) => a.type === type)
+
+const remindListedStudents = async (students, act, message) => {
+  if (!classId.value || !lessonId.value || !act || !students?.length) return
+  let ok = 0
+  for (const row of students) {
+    try {
+      await teacherIntervene({
+        type: 'remind',
+        classId: classId.value,
+        targetStudentId: row.studentId,
+        lessonId: lessonId.value,
+        activityIndex: act.index,
+        message
+      })
+      ok += 1
+    } catch { /* 单个失败继续 */ }
   }
+  if (ok) ElMessage.success(`已向 ${ok} 名学生发送提醒`)
+  else ElMessage.error('发送失败')
+}
+
+const remindQuizUnsubmitted = () => {
+  const act = findActivityByType('QUIZ')
+  return remindListedStudents(quiz.value.unsubmittedStudents, act, '请尽快完成课堂小测')
+}
+
+const remindEvalUnsubmitted = () => {
+  const act = findActivityByType('EVALUATION')
+  return remindListedStudents(evaluation.value.unsubmittedStudents, act, '请尽快完成学习评价')
+}
+
+const guideLowQuizStudents = async () => {
+  const list = quiz.value.lowScoreStudents || []
+  if (!classId.value || !list.length) return
+  let ok = 0
+  for (const row of list) {
+    try {
+      await teacherIntervene({
+        type: 'guide',
+        classId: classId.value,
+        targetStudentId: row.studentId,
+        lessonId: lessonId.value,
+        content: '课堂小测得分偏低，建议回顾本课探究与教材后再练习。'
+      })
+      ok += 1
+    } catch { /* 单个失败继续 */ }
+  }
+  if (ok) ElMessage.success(`已向 ${ok} 名低分学生发送学习建议`)
+  else ElMessage.error('发送失败')
 }
 
 const markCurrentLesson = async () => {
@@ -668,6 +1142,40 @@ const markCurrentLesson = async () => {
     ElMessage.success('已设为班级当前课时，学生登录后将自动进入')
   } catch {
     ElMessage.error('设置失败')
+  }
+}
+
+const currentLessonTitle = computed(() => {
+  const fromData = data.value.lessonTitle
+  if (fromData) return fromData
+  return lessons.value.find((l) => l.id === lessonId.value)?.title || '当前课时'
+})
+
+const currentClassName = computed(() => {
+  return data.value.className || classes.value.find((c) => c.id === classId.value)?.name || '当前班级'
+})
+
+const clearCurrentLessonRecords = async () => {
+  if (!classId.value || !lessonId.value) return
+  try {
+    await ElMessageBox.confirm(
+      `确定清除「${currentClassName.value}」在「${currentLessonTitle.value}」的全部上课记录吗？探究提交、流程图、小测、评价、本课积分和访问记录都会删除，学生可重新作答。前测和课堂分档不会清除。此操作不可恢复。`,
+      '清除当前课记录',
+      { type: 'warning', confirmButtonText: '确定清除', cancelButtonText: '取消' }
+    )
+  } catch {
+    return
+  }
+  clearingLesson.value = true
+  try {
+    const res = await clearLessonClassRecords(lessonId.value, classId.value)
+    ElMessage.success(res.message || '已清除本课上课记录')
+    await loadData()
+    await loadParkApps()
+  } catch (e) {
+    ElMessage.error(e?.message || '清除失败')
+  } finally {
+    clearingLesson.value = false
   }
 }
 
@@ -825,12 +1333,27 @@ const copyLoginCode = async () => {
   }
 }
 
-const loadData = async () => {
+let dashboardLoading = false
+let silentQueued = false
+let silentTimer = null
+const scheduleSilentReload = () => {
+  if (silentTimer) return
+  silentTimer = setTimeout(() => {
+    silentTimer = null
+    loadData(true)
+  }, 4000)
+}
+const loadData = async (silent = false) => {
   if (!classId.value || !lessonId.value) {
     data.value = {}
     return
   }
-  loading.value = true
+  if (dashboardLoading) {
+    if (silent) silentQueued = true
+    return
+  }
+  dashboardLoading = true
+  if (!silent) loading.value = true
   try {
     const res = await getLessonActivityDashboard(lessonId.value, classId.value)
     data.value = res.data || {}
@@ -838,10 +1361,15 @@ const loadData = async () => {
     renderChart()
     renderRadarCharts()
   } catch {
-    ElMessage.error('加载学情数据失败')
-    data.value = {}
+    if (!silent) ElMessage.error('加载学情数据失败')
+    if (!silent) data.value = {}
   } finally {
+    dashboardLoading = false
     loading.value = false
+    if (silentQueued) {
+      silentQueued = false
+      scheduleSilentReload()
+    }
   }
 }
 
@@ -855,7 +1383,7 @@ const connectSse = () => {
   const token = localStorage.getItem('token')
   eventSource = new EventSource(`/api/dashboard/sse/${classId.value}?token=${token}`)
   eventSource.addEventListener('connected', () => { sseConnected.value = true })
-  eventSource.addEventListener('dashboard', () => { loadData() })
+  eventSource.addEventListener('dashboard', () => { scheduleSilentReload() })
   eventSource.onerror = () => { sseConnected.value = false }
 }
 
@@ -867,7 +1395,7 @@ const onGradeChange = async () => {
 
 const onLessonChange = async () => {
   syncQuery()
-  await loadData()
+  await Promise.all([loadData(), loadParkApps()])
 }
 
 const onClassChange = async () => {
@@ -884,6 +1412,7 @@ onMounted(async () => {
   ])
   grades.value = gradeRes.data || []
   classes.value = clsRes.data || []
+  classesReady.value = true
 
   const qGrade = route.query.gradeId ? Number(route.query.gradeId) : null
   const qLesson = route.query.lessonId ? Number(route.query.lessonId) : null
@@ -902,7 +1431,7 @@ onMounted(async () => {
   } else if (classes.value.length) {
     classId.value = classes.value[0].id
   } else {
-    classId.value = 1
+    classId.value = null
   }
 
   syncQuery()
@@ -1093,7 +1622,8 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
 .action-btn.orange { background: linear-gradient(135deg, #f97316, #fb923c); }
 .action-btn.pink { background: linear-gradient(135deg, #ec4899, #f472b6); }
 .action-btn.indigo { background: linear-gradient(135deg, #4338ca, #6366f1); }
-.action-btn.teal { background: linear-gradient(135deg, #0d9488, #14b8a6); }
+.action-btn.red { background: linear-gradient(135deg, #dc2626, #f87171); }
+.action-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .icon-btn {
   width: 36px; height: 36px;
   border: 1px solid rgba(255,255,255,0.4);
@@ -1165,14 +1695,114 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
 
 .progress-section,
 .matrix-section,
-.park-section {
+.park-section,
+.analysis-section {
   margin: 16px 20px 0;
   background: #fff;
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
 }
+.analysis-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+@media (max-width: 1100px) {
+  .analysis-section { grid-template-columns: 1fr; }
+}
+.analysis-col .section-head { margin-bottom: 8px; }
+.analysis-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.analysis-tip {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+}
+.stat-pills,
+.eval-dim-row,
+.weak-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #475569;
+}
+.stat-pills span,
+.eval-dim-row span {
+  background: #f1f5f9;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.weak-tag {
+  background: #fff7ed;
+  color: #c2410c;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.name-block { margin-top: 10px; }
+.name-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
+}
+.name-label.warn { color: #b45309; }
+.name-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.name-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #334155;
+}
+.name-chip small { color: #64748b; font-size: 11px; }
+.name-chip.warn {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #9a3412;
+}
+.name-chip.warn small { color: #c2410c; }
 .matrix-section { margin-bottom: 20px; }
+.theme-count { color: #5b4fc7; font-weight: 700; font-size: 13px; }
+.theme-list { display: grid; gap: 10px; }
+.theme-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #f8fafc;
+}
+.theme-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.theme-head span { color: #5b4fc7; font-weight: 700; }
+.theme-card p { margin: 0; color: #334155; line-height: 1.6; }
+.theme-missing { margin: 10px 0 0; color: #64748b; font-size: 13px; }
+.tier-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #475569;
+}
+.suggest-reason {
+  margin-left: 6px;
+  color: #64748b;
+  font-size: 12px;
+}
+.park-actions { display: flex; gap: 8px; }
+.park-sub { margin: 14px 0 8px; font-size: 14px; color: #334155; }
+.park-lesson { margin-left: 6px; color: #5b4fc7; font-weight: 700; }
 .park-tip {
   margin: -4px 0 12px;
   font-size: 13px;
@@ -1265,6 +1895,7 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
 }
 .act-btn.outline { background: #fff; color: #5b4fc7; border: 1px solid #c4b5fd; }
 .act-btn.sm { padding: 4px 8px; font-size: 11px; }
+.act-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .activity-grid {
   display: grid;
@@ -1289,7 +1920,17 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
 .matrix-legend .undone { color: #f56c6c; }
 .done { color: #67c23a; font-weight: bold; }
 .undone { color: #f56c6c; }
+.is-fc { cursor: pointer; text-decoration: underline; }
 
 .empty-page { padding: 48px 20px; }
 .empty-hint { text-align: center; color: #94a3b8; font-size: 13px; padding: 12px; grid-column: 1 / -1; }
+.fc-zoom-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #475569;
+}
+.fc-zoom-meta strong { color: #0f172a; }
 </style>

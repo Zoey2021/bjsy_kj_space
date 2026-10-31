@@ -1,0 +1,230 @@
+[
+  {
+    "id": 1765872057390,
+    "class_name": "五年级5班",
+    "team_name": "一二一二",
+    "game_name": "待定游戏",
+    "game_desc": "请在后续课程中补充游戏描述",
+    "members": [
+      {
+        "name": "陈正修",
+        "is_leader": true
+      },
+      {
+        "name": "杨知熠",
+        "is_leader": false
+      },
+      {
+        "name": "许家瑞",
+        "is_leader": false
+      },
+      {
+        "name": "周玹名",
+        "is_leader": false
+      },
+      {
+        "name": "华怡琳",
+        "is_leader": false
+      }
+    ],
+    "created_at": "2025-12-16 16:00:57",
+    "submitter": "陈正修",
+    "access_code": "379959"
+  },
+  {
+    "id": 1765940872734,
+    "class_name": "五年级1班",
+    "team_name": "白璧啊拜拜",
+    "game_name": "待定游戏",
+    "game_desc": "请在后续课程中补充游戏描述",
+    "members": [
+      {
+        "name": "白雨萱",
+        "is_leader": true
+      },
+      {
+        "name": "胥锦辰",
+        "is_leader": false
+      },
+      {
+        "name": "周恬苡",
+        "is_leader": false
+      },
+      {
+        "name": "符煦和",
+        "is_leader": false
+      },
+      {
+        "name": "范久陌",
+        "is_leader": false
+      }
+    ],
+    "created_at": "2025-12-17 11:07:52",
+    "submitter": "白雨萱",
+    "access_code": "team_501_01"
+  },
+  {
+    "id": 1765941112096,
+    "class_name": "五年级1班",
+    "team_name": "hahahha",
+    "game_name": "待定游戏",
+    "game_desc": "请在后续课程中补充游戏描述",
+    "members": [
+      {
+        "name": "陈致远",
+        "is_leader": true
+      },
+      {
+        "name": "宋若初",
+        "is_leader": false
+      },
+      {
+        "name": "张嘉轩",
+        "is_leader": false
+      },
+      {
+        "name": "朱弈苒",
+        "is_leader": false
+      },
+      {
+        "name": "褚佳涛",
+        "is_leader": false
+      }
+    ],
+    "created_at": "2025-12-17 11:11:52",
+    "submitter": "陈致远",
+    "access_code": "team_501_02"
+  },
+  {
+    "id": 1765975235089,
+    "class_name": "五年级9班",
+    "team_name": "有意思小队！",
+    "game_name": "待定游戏",
+    "game_desc": "请在后续课程中补充游戏描述",
+    "members": [
+      {
+        "name": "蔡瑞灏",
+        "is_leader": true
+      },
+      {
+        "name": "胡恩睿",
+        "is_leader": false
+      },
+      {
+        "name": "胡佳荻",
+        "is_leader": false
+      },
+      {
+        "name": "计晨冉",
+        "is_leader": false
+      }
+    ],
+    "created_at": "2025-12-17 20:40:35",
+    "submitter": "蔡瑞灏",
+    "access_code": "team_509_01",
+    "ai_game_name": "《魔法箭大冒险》",
+    "ai_game_desc": "是一款射击闯关游戏。玩家用空格键发射魔法箭，目标是击败 10 只移动怪物（每只 + 10 分），需躲避怪物靠近，通过精准射击达成胜利条件！",
+    "ai_chat_notes": ""
+  },
+  {
+    "id": 1765975274212,
+    "class_name": "五年级9班",
+    "team_name": "caicai",
+    "game_name": "待定游戏",
+    "game_desc": "请在后续课程中补充游戏描述",
+    "members": [
+      {
+        "name": "蔡武桐",
+        "is_leader": true
+      },
+      {
+        "name": "章语萌",
+        "is_leader": false
+      },
+      {
+        "name": "诸葛天然",
+        "is_leader": false
+      },
+      {
+        "name": "邓钰晨",
+        "is_leader": false
+      },
+      {
+        "name": "陈垣滔",
+        "is_leader": false
+      }
+    ],
+    "created_at": "2025-12-17 20:41:14",
+    "submitter": "蔡武桐",
+    "access_code": "team_509_02",
+    "ai_game_name": "《魔法贪吃蛇》",
+    "ai_game_desc": "是一款冒险收集游戏。玩家用键盘控制小蛇移动，目标是吃掉 20 个食物获胜，但需避开墙壁障碍。幸运的是，每收集 5 个食物会出现金色星星，触发 5 秒穿墙魔法（蛇身半透明闪烁），让玩家体验刺激的无敌冲刺！",
+    "ai_chat_notes": ""
+  },
+  {
+    "id": 1765976909578,
+    "class_name": "五年级9班",
+    "team_name": "嘻嘻哈哈",
+    "game_name": "待定游戏",
+    "game_desc": "请在后续课程中补充游戏描述",
+    "members": [
+      {
+        "name": "俞洪博",
+        "is_leader": true
+      },
+      {
+        "name": "郝嘉懿",
+        "is_leader": false
+      },
+      {
+        "name": "郑家树",
+        "is_leader": false
+      },
+      {
+        "name": "郑祺恒",
+        "is_leader": false
+      }
+    ],
+    "created_at": "2025-12-17 21:08:29",
+    "submitter": "俞洪博",
+    "access_code": "team_509_03",
+    "ai_game_name": "《彩虹滑板大冒险》",
+    "ai_game_desc": "是一款竞速闯关游戏。玩家通过键盘（←→↑+ 空格）控制冲浪者，在彩虹赛道收集 20 个贝壳并躲避随机海浪（触碰会减速），通过消耗贝壳补充加速能量，最终抵达彩虹门通关。适合 Python 初学者实现的策略性小游戏！",
+    "ai_chat_notes": ""
+  },
+  {
+    "id": 1765977619068,
+    "class_name": "五年级9班",
+    "team_name": "创意无限",
+    "game_name": "待定游戏",
+    "game_desc": "请在后续课程中补充游戏描述",
+    "members": [
+      {
+        "name": "房家琦",
+        "is_leader": true
+      },
+      {
+        "name": "陈鸿瑞",
+        "is_leader": false
+      },
+      {
+        "name": "张修齐",
+        "is_leader": false
+      },
+      {
+        "name": "王庄迪",
+        "is_leader": false
+      },
+      {
+        "name": "张心陶",
+        "is_leader": false
+      }
+    ],
+    "created_at": "2025-12-17 21:20:19",
+    "submitter": "房家琦",
+    "access_code": "team_509_04",
+    "ai_game_name": "《跳跳乐》",
+    "ai_game_desc": "跳跳乐》是一款平台跳跃游戏。玩家通过空格键控制小人蓄力跳跃，目标是 1 分钟内连续跳到左右移动的平台上获得高分，需精准控制跳跃力度避免掉落。挑战在于应对移动平台的位移变化，适合用 Python 实现的节奏型小游戏！",
+    "ai_chat_notes": ""
+  }
+]

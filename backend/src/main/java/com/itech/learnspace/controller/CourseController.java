@@ -15,16 +15,20 @@ public class CourseController {
 
     private final CourseService courseService;
     private final AuthService authService;
+    private final com.itech.learnspace.service.AccountAccessService accountAccessService;
 
-    public CourseController(CourseService courseService, AuthService authService) {
+    public CourseController(CourseService courseService, AuthService authService,
+                            com.itech.learnspace.service.AccountAccessService accountAccessService) {
         this.courseService = courseService;
         this.authService = authService;
+        this.accountAccessService = accountAccessService;
     }
 
     /** 教材册列表（配套 MAIN / 校本 SCHOOL） */
     @GetMapping("/textbooks")
     public ApiResponse<List<Map<String, Object>>> textbooks(@RequestParam(defaultValue = "MAIN") String type) {
-        return ApiResponse.ok(courseService.listTextbooks(type));
+        SysUser user = authService.currentUser();
+        return ApiResponse.ok(accountAccessService.filterTextbooks(user, courseService.listTextbooks(type)));
     }
 
     /** 某一册下的单元与课时树 */
@@ -32,7 +36,9 @@ public class CourseController {
     public ApiResponse<Map<String, Object>> gradeOutline(@PathVariable Long gradeId) {
         SysUser user = authService.currentUser();
         Long studentId = "STUDENT".equals(user.getRole()) ? user.getId() : null;
-        return ApiResponse.ok(courseService.getGradeOutline(gradeId, studentId));
+        Map<String, Object> outline = courseService.getGradeOutline(gradeId, studentId);
+        accountAccessService.assertBook(user, outline);
+        return ApiResponse.ok(outline);
     }
 
     /** 全量课程树（兼容） */
@@ -48,6 +54,11 @@ public class CourseController {
     public ApiResponse<Map<String, Object>> getLesson(@PathVariable Long lessonId) {
         SysUser user = authService.currentUser();
         Long studentId = "STUDENT".equals(user.getRole()) ? user.getId() : null;
-        return ApiResponse.ok(courseService.getLessonDetail(lessonId, studentId));
+        Map<String, Object> detail = courseService.getLessonDetail(lessonId, studentId);
+        accountAccessService.assertBook(user,
+                detail.get("gradeName") == null ? "" : String.valueOf(detail.get("gradeName")),
+                detail.get("gradeDescription") == null ? "" : String.valueOf(detail.get("gradeDescription")),
+                detail.get("textbookType") == null ? "" : String.valueOf(detail.get("textbookType")));
+        return ApiResponse.ok(detail);
     }
 }

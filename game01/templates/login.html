@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Python+AI小游戏设计课程</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Comic Sans MS', 'Segoe UI', Arial, sans-serif; }
+        body {
+            background-color: #f0f7ff;
+            background-image: radial-gradient(#b8d4ff 1.5px, transparent 1.5px);
+            background-size: 30px 30px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 420px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        p.sub { text-align: center; color: #666; margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin: 12px 0 6px; color: #2c5aa0; }
+        select, input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 2px solid #d6e4ff;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select:focus, input:focus { outline: none; border-color: #4d8eff; box-shadow: 0 0 0 3px rgba(77,142,255,0.2); }
+        button {
+            width: 100%;
+            margin-top: 18px;
+            padding: 12px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(120deg, #4d8eff, #6aa8ff);
+            color: white;
+            font-weight: bold;
+            font-size: 1.05rem;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(77,142,255,0.25);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(77,142,255,0.3); }
+        .msg { margin-top: 12px; color: #e63946; font-weight: bold; min-height: 24px; text-align: center; }
+        .success { color: #2e8b57; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>学生登录</h1>
+        <p class="sub">选择班级并输入你的学号</p>
+        <form id="login-form">
+            <label for="class-select">班级</label>
+            <select id="class-select" required>
+                <option value="">请选择班级</option>
+                {% for c in class_list %}
+                <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="student-id">学号</label>
+            <input type="number" id="student-id" placeholder="请输入你的学号" required min="1">
+
+            <button type="submit"><i class="fas fa-sign-in-alt"></i> 登录</button>
+            <div class="msg" id="login-msg"></div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const msgEl = document.getElementById('login-msg');
+
+        async function loginCheck(className, studentId) {
+            const res = await fetch('/api/login-check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ class_name: className, student_id: studentId })
+            });
+            return res;
+        }
+
+        async function doLogin(className, studentId) {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ class_name: className, student_id: studentId })
+            });
+            return res;
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            msgEl.textContent = '';
+
+            const className = document.getElementById('class-select').value;
+            const studentId = document.getElementById('student-id').value.trim();
+
+            if (!className || !studentId) {
+                msgEl.textContent = '请选择班级并填写学号';
+                return;
+            }
+
+            try {
+                const checkRes = await loginCheck(className, studentId);
+                const checkData = await checkRes.json();
+                if (!checkRes.ok || !checkData.found) {
+                    msgEl.textContent = checkData.error || '未找到对应学生';
+                    return;
+                }
+
+                const confirmed = window.confirm(`请确认：${checkData.student.name} 同学吗？`);
+                if (!confirmed) return;
+
+                const loginRes = await doLogin(className, studentId);
+                const loginData = await loginRes.json();
+                if (!loginRes.ok) {
+                    msgEl.textContent = loginData.error || '登录失败';
+                    return;
+                }
+
+                msgEl.textContent = '登录成功，正在跳转...';
+                msgEl.classList.add('success');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 500);
+            } catch (err) {
+                msgEl.textContent = '网络或服务器错误，请重试';
+            }
+        });
+    </script>
+</body>
+</html>
+
+

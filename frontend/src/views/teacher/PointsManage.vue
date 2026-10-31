@@ -2,7 +2,7 @@
   <div class="points-page">
     <div class="page-head">
       <h2>课堂积分</h2>
-      <p>完成环节得积分，班级排行榜与兑换商城</p>
+      <p>完成环节得积分，班级排行榜与兑换商城。上课前可在排行榜页重置本班积分。</p>
     </div>
     <el-tabs v-model="tab">
       <el-tab-pane label="积分排行榜" name="ranking">
@@ -44,6 +44,7 @@
             {{ mall.applyOpen ? '学生可在兑换商城申请' : '学生暂不能申请兑换' }}
           </span>
         </div>
+        <p class="shop-note">按一学期 18 节课、每节大约 11～15 分来定价。零食、文具、表扬信是大多数同学期末能换到的；奶茶留给积分更高的同学。游学乐园每分钟消耗 2 积分，从可兑积分里扣，星星和等级不降。</p>
         <MallGiftGrid :items="mall.items || []" />
         <h3 class="sec-title">本班兑换申请</h3>
         <el-table :data="mall.orders || []" stripe empty-text="该班暂无兑换申请">
@@ -160,6 +161,7 @@ onMounted(async () => {
   margin-bottom: 12px;
 }
 .rule-row label { width: 160px; color: #334155; }
+.shop-note { margin: 0 0 14px; color: #64748b; font-size: 13px; line-height: 1.6; }
 .shop-toolbar {
   display: flex;
   flex-wrap: wrap;

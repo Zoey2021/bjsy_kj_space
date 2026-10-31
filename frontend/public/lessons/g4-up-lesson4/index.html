@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据的安全 — 探究活动</title>
+<script>
+(function () {
+  try {
+    if (new URLSearchParams(location.search).get('embedded') === '1') {
+      document.documentElement.classList.add('embedded-mode');
+    }
+  } catch (e) {}
+})();
+</script>
+<style>
+:root { --p:#09d587; --pd:#099c62; --ink:#17324d; --muted:#5c6b78; --line:#d7efe4; --bg:#f4fbf7; }
+* { box-sizing: border-box; }
+body { margin:0; color:var(--ink); background:var(--bg); font-family:"Microsoft YaHei","PingFang SC",sans-serif; line-height:1.7; }
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+.page { width: min(1080px, calc(100% - 16px)); margin: 0 auto; padding: 12px 0 32px; }
+.tabs { display:flex; gap:8px; margin-bottom:10px; }
+.tabs button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:8px 14px; font-weight:700; color:var(--pd); }
+.tabs button.on { background:var(--p); color:#073222; border-color:var(--pd); }
+.panel { display:none; }
+.panel.on { display:block; }
+.card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:18px; margin:0 0 14px; box-shadow:0 8px 24px rgba(9,156,98,.06); }
+.kicker { color:var(--pd); font-weight:800; letter-spacing:.06em; font-size:13px; }
+h2 { margin:4px 0 8px; font-size:24px; }
+h2::before { content:"◼"; color:var(--p); font-size:.7em; margin-right:8px; }
+h3 { margin:0 0 8px; }
+.lead { color:var(--muted); margin:0 0 12px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+label { display:block; color:var(--muted); font-size:14px; margin:8px 0 4px; }
+input, textarea { width:100%; border:1px solid #b7e4cf; border-radius:10px; padding:8px 10px; }
+.btn { border:1px solid var(--pd); background:var(--p); color:#073222; border-radius:10px; min-height:42px; padding:8px 16px; font-weight:800; }
+.btn:disabled { opacity:.45; cursor:not-allowed; }
+.tip { background:#fff8e8; border:1px solid #f3e0a8; border-radius:12px; padding:10px 12px; color:#7a5b12; }
+.idcard { background:linear-gradient(160deg,#f7fffb,#e7f8ef); border:1px solid #b7e4cf; border-radius:16px; padding:16px; min-height:210px; }
+.idcard .name { font-size:22px; font-weight:800; }
+.idcard .meta { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.idcard small { color:var(--muted); }
+.qbtn { display:block; width:100%; text-align:left; margin:8px 0; background:#fff; border:1px solid #cfe8db; border-radius:10px; padding:10px 12px; }
+.qbtn.ok { border-color:var(--pd); background:#e8faf1; }
+.qbtn.bad { border-color:#cf5d58; background:#fff5f4; }
+.fb { display:none; margin-top:12px; padding:12px 14px; border-radius:12px; }
+.fb.show { display:block; }
+.fb.ok { background:#e8faf1; border:1px solid #9eddbb; color:#0d6b42; }
+.fb.bad { background:#fff1f0; border:1px solid #f0b4ae; color:#8d3530; }
+.law { background:#0f6b49; color:#fff; border-radius:16px; padding:16px; }
+.law strong { color:#b6f3d6; }
+html.embedded-mode .tabs, body.embedded-mode .tabs { display:none; }
+html.embedded-mode .page { width:100%; padding:4px 2px 24px; }
+@media (max-width:800px) { .grid2, .grid3 { grid-template-columns:1fr; } h2 { font-size:20px; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <nav class="tabs" id="tabs">
+    <button type="button" data-step="1" class="on">探究一</button>
+    <button type="button" data-step="2">探究二</button>
+    <button type="button" data-step="3">探究三</button>
+  </nav>
+
+  <section class="panel on" id="panel1">
+    <div class="card">
+      <div class="kicker">探究一</div>
+      <h2>我的数字名片</h2>
+      <p class="lead">在数字化学习中，我们经常要建立个人档案。先生成一张名片，再完成个人信息安全挑战。五题都答对，本探究才完成。</p>
+      <div class="grid2">
+        <div>
+          <label for="input-name">姓名</label>
+          <input id="input-name" type="text" placeholder="请输入你的姓名">
+          <label for="input-birth">出生日期</label>
+          <input id="input-birth" type="date">
+          <label for="input-school">学校</label>
+          <input id="input-school" type="text" placeholder="请输入学校名称">
+          <label for="input-class">班级</label>
+          <input id="input-class" type="text" placeholder="如：四年级1班">
+          <label for="input-hobby">兴趣爱好</label>
+          <textarea id="input-hobby" rows="2" placeholder="你最喜欢做什么？"></textarea>
+          <p class="tip">姓名、生日、学校属于敏感个人数据。在真实的网络里，不要随意发给陌生人或填到不可信的网站。</p>
+        </div>
+        <div class="idcard" id="id-card">
+          <div class="name" id="card-name">[姓名]</div>
+          <div id="card-school">[学校名称]</div>
+          <div class="meta">
+            <div><small>出生日期</small><div id="card-birth">YYYY-MM-DD</div></div>
+            <div><small>班级</small><div id="card-class">[班级]</div></div>
+          </div>
+          <div style="margin-top:12px"><small>兴趣爱好</small><div id="card-hobby">[我的兴趣爱好]</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>个人信息安全挑战</h3>
+      <p class="lead" id="q1progress">问题 1 / 5</p>
+      <div id="q1"></div>
+      <div class="fb" id="fb1"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel2">
+    <div class="card">
+      <div class="kicker">探究二</div>
+      <h2>商业数据小侦探</h2>
+      <p class="lead">企业也要保护数据。如果购物网站泄露了你的电话，会发生什么？先看这三张卡片，再完成挑战。</p>
+      <div class="grid3">
+        <div class="card"><h3>数据泄露风险</h3><p class="lead">用户数据被盗后，可能被用来诈骗，让消费者受损失。</p></div>
+        <div class="card"><h3>企业的保护措施</h3><p class="lead">加密存储、设置防火墙、定期安全检查。企业有责任保护用户数据。</p></div>
+        <div class="card"><h3>我们的责任</h3><p class="lead">不在不明网站随意注册，不泄露他人隐私。保护数据安全，人人有责。</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>商业数据安全挑战</h3>
+      <p class="lead" id="q2progress">问题 1 / 5</p>
+      <div id="q2"></div>
+      <div class="fb" id="fb2"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel3">
+    <div class="card">
+      <div class="kicker">探究三</div>
+      <h2>国家安全守护者</h2>
+      <div class="grid2">
+        <div class="card"><h3>气象数据也是情报？</h3><p class="lead">温度、风向看起来普通。如果被恶意收集，可能暴露军事基地或农业机密。</p></div>
+        <div class="card"><h3>防灾减灾的工具</h3><p class="lead">准确的气象数据能帮助预测台风和洪水。保护这些数据，就是保护国家安全。</p></div>
+      </div>
+      <div class="law">
+        <h3 style="color:#fff">法律小课堂</h3>
+        <p>我国制定了《中华人民共和国数据安全法》，专门保护数据安全。作为数字公民，我们要知法守法。</p>
+        <p><strong>施行时间：</strong>2021年9月1日</p>
+        <p><strong>核心目标：</strong>规范数据处理，保障数据安全，促进开发利用。</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>国家安全挑战</h3>
+      <p class="lead" id="q3progress">问题 1 / 5</p>
+      <div id="q3"></div>
+      <div class="fb" id="fb3"></div>
+    </div>
+  </section>
+</div>
+<script>
+const urlParams = new URLSearchParams(location.search);
+const IS_EMBEDDED = urlParams.get('embedded') === '1';
+const notified = new Set();
+const QUIZ = {
+  1: [
+    { q: '在刚才生成的名片中，哪项信息属于敏感个人数据？', options: ['我喜欢的颜色', '我的真实姓名和出生日期', '我的兴趣爱好', '我读几年级'], answer: 1, why: '姓名和出生日期可以标识一个人，属于敏感个人数据。' },
+    { q: '不认识的人在网上问“你家住在哪里”，你该怎么办？', options: ['告诉他详细住址', '告诉他小区名字', '礼貌拒绝，不透露住址', '把家门口的照片发给他'], answer: 2, why: '家庭住址很敏感，告诉陌生人可能带来安全风险。' },
+    { q: '电话号码被泄露，最可能发生什么？', options: ['你会收到很多中奖贺卡', '你会接到很多骚扰或诈骗电话', '手机会自动升级', '话费会变多'], answer: 1, why: '电话号码泄露后，很容易接到骚扰和诈骗。' },
+    { q: '游戏里有人要用装备换你的真实姓名和学校，你应该：', options: ['立刻交换', '只告诉姓名', '坚决拒绝', '先问他的姓名再交换'], answer: 2, why: '不能用真实的个人信息去换虚拟物品。' },
+    { q: '保护个人数据，哪种做法是对的？', options: ['任何网站都填真实信息', '把全家身份证号记在备忘录', '不在不明链接里输入个人信息', '用生日当所有账号的密码'], answer: 2, why: '不在来路不明的网页里填写个人信息，是保护自己的第一步。' }
+  ],
+  2: [
+    { q: '购物网站的数据被窃取，受影响最大的是？', options: ['网站背景颜色', '商品价格', '用户的账号密码和支付信息', '广告位'], answer: 2, why: '泄露后，用户的隐私和财产最危险。' },
+    { q: '企业保护数据，常见的技术手段是？', options: ['把数据打印出来放仓库', '对重要数据加密存储', '把数据发给所有员工', '不装安全软件'], answer: 1, why: '加密能减少数据被非法读取。' },
+    { q: '企业为什么要定期做安全检查？', options: ['为了让员工更忙', '为了看电脑干不干净', '为了发现并修复漏洞，防止入侵', '为了换办公桌'], answer: 2, why: '定期检查能早点发现隐患。' },
+    { q: '网站要你输入银行卡密码才能领“免费礼品”，这通常是？', options: ['网站福利', '一种常见的诈骗', '银行的正式要求', '在测试诚实'], answer: 1, why: '索要银行卡密码的活动，通常是诈骗。' },
+    { q: '作为消费者，怎样保护商业数据安全？', options: ['随便在网站注册', '所有网站用同一个简单密码', '不随意点来源不明的促销链接', '把账号借给陌生人'], answer: 2, why: '不明链接可能是钓鱼网站。' }
+  ],
+  3: [
+    { q: '气象数据为什么也需要保护？', options: ['因为气象数据很值钱', '因为可能涉及国家安全和军事机密', '因为是预报员的隐私', '因为很难收集'], answer: 1, why: '特定地区的气象数据，可能暴露重要设施的环境特征。' },
+    { q: '我国专门保护数据安全的法律是？', options: ['《网络安全法》', '《个人信息保护法》', '《中华人民共和国数据安全法》', '《未成年人保护法》'], answer: 2, why: '《数据安全法》从 2021 年 9 月 1 日起施行。' },
+    { q: '发现有人非法收集我国重要地理或气象数据，应该：', options: ['走开，不关我的事', '向他要报酬', '及时向国家安全机关举报', '帮他一起收集'], answer: 2, why: '维护国家安全是公民的责任。' },
+    { q: '《数据安全法》的主要目的是？', options: ['限制大家使用互联网', '规范数据处理，保障数据安全，促进开发利用', '让数据变得更贵', '让黑客找不到工作'], answer: 1, why: '法律要同时保护数据安全，并让数据能被正当使用。' },
+    { q: '哪一项属于维护国家数据安全？', options: ['在军事禁区附近拍摄并上传', '不随意发布国内重要设施的照片', '把公司内部数据发给竞争对手', '传播国家机密'], answer: 1, why: '不随意发布敏感照片，是基本的安全意识。' }
+  ]
+};
+const progress = { 1: 0, 2: 0, 3: 0 };
+
+function $(id) { return document.getElementById(id); }
+function notify(step) {
+  if (!window.parent || window.parent === window || notified.has(step)) return;
+  notified.add(step);
+  const idx = parseInt(urlParams.get('activityIndex') || String(step), 10);
+  window.parent.postMessage({
+    type: 'LEARN_SPACE_SUBMIT',
+    payload: { activityIndex: Number.isFinite(idx) ? idx : step, step, stepCompleted: true, source: 'g4-up-lesson4' }
+  }, '*');
+}
+function switchStep(step) {
+  document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('on', p.id === 'panel' + step));
+  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', Number(b.dataset.step) === step));
+}
+function cardReady() {
+  return ['input-name', 'input-birth', 'input-school', 'input-class'].every((id) => $(id).value.trim());
+}
+function updateCard() {
+  $('card-name').textContent = $('input-name').value.trim() || '[姓名]';
+  $('card-birth').textContent = $('input-birth').value || 'YYYY-MM-DD';
+  $('card-school').textContent = $('input-school').value.trim() || '[学校名称]';
+  $('card-class').textContent = $('input-class').value.trim() || '[班级]';
+  $('card-hobby').textContent = $('input-hobby').value.trim() || '[我的兴趣爱好]';
+}
+function renderQuiz(step) {
+  const list = QUIZ[step];
+  const i = progress[step];
+  const box = $('q' + step);
+  const fb = $('fb' + step);
+  $('q' + step + 'progress').textContent = i >= list.length
+    ? '五题都答对了'
+    : '问题 ' + (i + 1) + ' / ' + list.length;
+  if (i >= list.length) {
+    box.innerHTML = '';
+    fb.className = 'fb show ok';
+    fb.textContent = step === 1
+      ? '名片和挑战都完成了。姓名、生日、学校不要随便告诉陌生人。'
+      : step === 2
+        ? '商业数据泄露会威胁账号和支付安全。不点不明链接，是在保护自己。'
+        : '数据安全也关系国家安全。发现违法收集重要数据，要向有关部门反映。';
+    notify(step);
+    return;
+  }
+  const item = list[i];
+  fb.className = 'fb';
+  box.innerHTML = '<p><strong>' + item.q + '</strong></p>';
+  item.options.forEach((text, idx) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'qbtn';
+    btn.textContent = String.fromCharCode(65 + idx) + '. ' + text;
+    btn.addEventListener('click', () => {
+      if (step === 1 && !cardReady()) {
+        fb.className = 'fb show bad';
+        fb.textContent = '请先把姓名、出生日期、学校和班级填好，再答题。';
+        return;
+      }
+      box.querySelectorAll('.qbtn').forEach((b) => { b.classList.remove('ok', 'bad'); });
+      if (idx === item.answer) {
+        box.querySelectorAll('.qbtn').forEach((b) => { b.disabled = true; });
+        btn.classList.add('ok');
+        fb.className = 'fb show ok';
+        fb.textContent = '回答正确。' + item.why;
+        progress[step] += 1;
+        setTimeout(() => renderQuiz(step), 500);
+      } else {
+        btn.classList.add('bad');
+        fb.className = 'fb show bad';
+        fb.textContent = '再想一想。' + item.why;
+      }
+    });
+    box.appendChild(btn);
+  });
+}
+
+['input-name', 'input-birth', 'input-school', 'input-class', 'input-hobby'].forEach((id) => {
+  $(id).addEventListener('input', updateCard);
+});
+if (!IS_EMBEDDED) {
+  document.querySelectorAll('#tabs button').forEach((btn) => {
+    btn.addEventListener('click', () => switchStep(Number(btn.dataset.step)));
+  });
+}
+(function init() {
+  if (IS_EMBEDDED) document.body.classList.add('embedded-mode');
+  const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+  switchStep(step >= 1 && step <= 3 ? step : 1);
+  renderQuiz(1);
+  renderQuiz(2);
+  renderQuiz(3);
+})();
+</script>
+</body>
+</html>

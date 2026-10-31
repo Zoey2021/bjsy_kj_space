@@ -69,7 +69,8 @@ import { reportHintUsed } from '../../api'
 const props = defineProps({
   lessonId: { type: Number, required: true },
   activityIndex: { type: Number, required: true },
-  content: { type: Object, default: null }
+  content: { type: Object, default: null },
+  preview: { type: Boolean, default: false }
 })
 
 const expanded = ref(false)
@@ -110,6 +111,10 @@ watch(
 const revealNext = async () => {
   if (revealed.value >= hints.value.length) return
   const next = revealed.value
+  if (props.preview) {
+    revealed.value = next + 1
+    return
+  }
   reporting.value = true
   try {
     await reportHintUsed({

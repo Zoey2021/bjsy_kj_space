@@ -47,4 +47,16 @@ public class LearnSubmission {
     public void preUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    /** 本次提交新获得的积分。不入库，只随本次提交结果返回。 */
+    @Transient
+    private Integer pointsAwarded;
+
+    /** 提交后的排名积分。不入库。 */
+    @Transient
+    private Integer earnedPoints;
+
+    /** 提交后的可兑奖积分。不入库。 */
+    @Transient
+    private Integer redeemablePoints;
 }

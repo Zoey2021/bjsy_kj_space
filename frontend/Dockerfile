@@ -13,3 +13,6 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # 构建时 PDF 可能为 600，nginx 进程无法读取会 403
 RUN find /usr/share/nginx/html/textbooks -name '*.pdf' -exec chmod a+r {} \; 2>/dev/null || true
 EXPOSE 80
+# 直接启动 Nginx，避免官方 entrypoint 在 overlayfs 上卡死
+ENTRYPOINT ["nginx"]
+CMD ["-g", "daemon off;"]

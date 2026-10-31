@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python+AI小游戏设计课程 - 五年级</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Comic Sans MS', 'Segoe UI', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f7ff;
+            background-image: radial-gradient(#b8d4ff 1.5px, transparent 1.5px);
+            background-size: 30px 30px;
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #4d8eff;
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(77, 142, 255, 0.2);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #ffcc00;
+            color: #333;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .python-icon {
+            color: #ffd43b;
+            margin-right: 10px;
+        }
+        
+        .ai-icon {
+            color: #ff6b9d;
+            margin-left: 10px;
+        }
+        
+        .courses-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .course-card {
+            background-color: white;
+            border-radius: 20px;
+            padding: 25px 20px;
+            text-align: center;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            position: relative;
+            border: 5px solid transparent;
+        }
+        
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .course-card.active {
+            border-color: #4d8eff;
+        }
+        
+        .course-card.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .course-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .course-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c5aa0;
+        }
+        
+        .course-desc {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+            min-height: 40px;
+        }
+        
+        .lock-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: #aaa;
+            font-size: 1.2rem;
+        }
+        
+        .course-number {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: #4d8eff;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        /* 课程详情区域 */
+        .course-detail {
+            background-color: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .course-detail.active {
+            display: block;
+        }
+        
+        .course-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px dashed #e0e0e0;
+        }
+        
+        /* 弹幕/跑马灯 */
+        .marquee {
+            background: #e8f4ff;
+            border: 2px dashed #a0c8ff;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            overflow: hidden;
+            position: relative;
+            height: 40px;
+            display: flex;
+            align-items: center;
+        }
+        .marquee-content {
+            white-space: nowrap;
+            display: inline-block;
+            animation: marquee 12s linear infinite;
+            color: #2c5aa0;
+            font-weight: 600;
+        }
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        
+        .back-button {
+            background-color: #f0f0f0;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+        }
+        
+        .back-button:hover {
+            background-color: #e0e0e0;
+        }
+        
+        /* 组队池样式 */
+        .team-pool {
+            background-color: #e8f4ff;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 3px dashed #a0c8ff;
+        }
+        
+        .team-pool h3 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .teams-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            min-height: 60px;
+        }
+        
+        .team {
+            background-color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .team-leader {
+            font-weight: bold;
+            color: #ff6b00;
+        }
+        
+        /* 学生池样式 */
+        .student-pool {
+            background-color: #f9f9f9;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .student-pool h3 {
+            color: #2c5aa0;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .team-button {
+            background-color: #4d8eff;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+        }
+        
+        .team-button:hover {
+            background-color: #3a7cff;
+        }
+        
+        .team-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .students-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .student {
+            background-color: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .student:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .student.selected {
+            background-color: #cce5ff;
+            border: 2px solid #4d8eff;
+        }
+        
+        .student.team-member {
+            background-color: #e8ffe8;
+            border: 2px solid #4caf50;
+            cursor: default;
+        }
+        
+        .student.team-member:hover {
+            transform: none;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+        }
+        
+        .student-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #4d8eff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .student-name {
+            font-weight: 500;
+        }
+        
+        /* 组队对话框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background-color: white;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .modal-step {
+            display: none;
+        }
+        
+        .modal-step.active {
+            display: block;
+        }
+        
+        .modal-title {
+            color: #2c5aa0;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .modal-desc {
+            margin-bottom: 25px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+            gap: 5px;
+        }
+        
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #999;
+        }
+        
+        .step.active {
+            background-color: #4d8eff;
+            color: white;
+        }
+        
+        .step.completed {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .step-line {
+            height: 3px;
+            width: 40px;
+            background-color: #e0e0e0;
+            align-self: center;
+        }
+        
+        .step-line.completed {
+            background-color: #4caf50;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        .modal-button {
+            padding: 12px 30px;
+            border-radius: 30px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .modal-button.primary {
+            background-color: #4d8eff;
+            color: white;
+        }
+        
+        .modal-button.primary:hover {
+            background-color: #3a7cff;
+        }
+        
+        .modal-button.secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .modal-button.secondary:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .modal-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .game-name-input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        
+        .game-name-input:focus {
+            outline: none;
+            border-color: #4d8eff;
+        }
+        
+        .game-desc-input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            font-size: 1.1rem;
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .game-desc-input:focus {
+            outline: none;
+            border-color: #4d8eff;
+        }
+        
+        .selected-students {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            min-height: 60px;
+        }
+        
+        .leader-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .leader-option {
+            background-color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .leader-option:hover {
+            border-color: #4d8eff;
+            background-color: #f0f7ff;
+        }
+        
+        .leader-option.selected {
+            border-color: #4d8eff;
+            background-color: #e1eeff;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4caf50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1001;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        
+        .notification.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .courses-container {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            }
+            
+            .students-container {
+                justify-content: center;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .course-card {
+                padding: 20px 15px;
+            }
+            
+            .course-icon {
+                font-size: 2.5rem;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fab fa-python python-icon"></i>Python+AI小游戏设计课程<i class="fas fa-robot ai-icon"></i></h1>
+            <p class="subtitle">学习使用Python和AI提示词来创造有趣的小游戏！共5节课，从创意到实现</p>
+            <div id="user-actions" style="position:absolute; top:15px; right:15px; display:flex; align-items:center; gap:6px;">
+                <div id="user-menu" style="position:relative;">
+                    <button id="user-menu-btn" class="team-button" style="padding:8px 14px; font-size:0.95rem;">
+                        <span id="user-info" style="font-weight:bold;">{% if student %}你好，{{ student.name }}{% else %}你好，同学！{% endif %}</span>
+                        <i class="fas fa-caret-down"></i>
+                    </button>
+                    <div id="user-menu-list" style="display:none; position:absolute; right:0; margin-top:6px; background:#fff; border:1px solid #e0e0e0; border-radius:10px; box-shadow:0 8px 18px rgba(0,0,0,0.08); overflow:hidden; min-width:140px; z-index:1200;">
+                        <button id="logout-btn" style="width:100%; padding:10px 14px; border:none; background:#fff; cursor:pointer; text-align:left;">退出登录</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="courses-container">
+            <!-- 课程1 -->
+            <div class="course-card active" data-course="1" onclick="window.location.href='/team'">
+                <div class="course-number">1</div>
+                <div class="course-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="course-title">组队与游戏界定</div>
+                <div class="course-desc">组建你的团队，确定要开发的游戏创意</div>
+                <div class="lock-icon"><i class="fas fa-lock-open"></i></div>
+            </div>
+            
+            <!-- 课程2 -->
+            <div class="course-card locked" data-course="2">
+                <div class="course-number">2</div>
+                <div class="course-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="course-title">游戏规则与变量</div>
+                <div class="course-desc">清楚描述游戏规则，找出变量和游戏规则</div>
+                <div class="lock-icon"><i class="fas fa-lock"></i></div>
+            </div>
+            
+            <!-- 课程3 -->
+            <div class="course-card locked" data-course="3">
+                <div class="course-number">3</div>
+                <div class="course-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="course-title">算法设计与流程图</div>
+                <div class="course-desc">设计算法，站在用户的角度思考流程图</div>
+                <div class="lock-icon"><i class="fas fa-lock"></i></div>
+            </div>
+            
+            <!-- 课程4 -->
+            <div class="course-card locked" data-course="4">
+                <div class="course-number">4</div>
+                <div class="course-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="course-title">验证与AI对话</div>
+                <div class="course-desc">验证算法，使用AI对话验证代码</div>
+                <div class="lock-icon"><i class="fas fa-lock"></i></div>
+            </div>
+            
+            <!-- 课程5 -->
+            <div class="course-card locked" data-course="5">
+                <div class="course-number">5</div>
+                <div class="course-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="course-title">测试与评选</div>
+                <div class="course-desc">互相测试游戏，评选最佳作品</div>
+                <div class="lock-icon"><i class="fas fa-lock"></i></div>
+            </div>
+        </div>
+        
+        <!-- 课程1详情 -->
+        <div class="course-detail active" id="course-1-detail">
+            <div class="course-header">
+                <button class="back-button" id="back-to-courses">
+                    <i class="fas fa-arrow-left"></i> 返回课程列表
+                </button>
+                <h2>课程1：组队与游戏界定</h2>
+                <button class="team-button" id="create-team-btn" onclick="window.location.href='/team'">
+                    <i class="fas fa-plus-circle"></i> 组建团队
+                </button>
+            </div>
+
+            <div class="marquee">
+                <div class="marquee-content" id="marquee-content">还没有团队，快去组建吧！</div>
+            </div>
+            
+            <div class="team-pool">
+                <h3><i class="fas fa-swimming-pool"></i> 组队池</h3>
+                <div class="teams-container" id="teams-container">
+                    <!-- 已组队的团队会显示在这里 -->
+                    <div class="empty-teams">暂无团队，点击右上角"组建团队"按钮创建第一个团队！</div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <!-- 组队对话框 -->
+    <div class="modal" id="team-modal">
+        <div class="modal-content">
+            <button class="close-modal" id="close-modal">&times;</button>
+            
+            <!-- 步骤1：选择队友 -->
+            <div class="modal-step active" id="step-1">
+                <div class="step-indicator">
+                    <div class="step active">1</div>
+                    <div class="step-line"></div>
+                    <div class="step">2</div>
+                    <div class="step-line"></div>
+                    <div class="step">3</div>
+                    <div class="step-line"></div>
+                    <div class="step">4</div>
+                    <div class="step-line"></div>
+                    <div class="step">5</div>
+                </div>
+                
+                <h3 class="modal-title">第一步：选择你的队友</h3>
+                <p class="modal-desc">请选择3-5名同学作为你的队友。你可以点击学生名字进行选择，已选中的同学会高亮显示。</p>
+                
+                <div class="selected-students" id="selected-students">
+                    <!-- 已选中的学生会显示在这里 -->
+                    <div class="empty-selection">尚未选择任何队友</div>
+                </div>
+                
+                <div class="students-container modal-students" id="modal-students">
+                    <!-- 学生名单会动态生成 -->
+                </div>
+                
+                <div class="modal-footer">
+                    <button class="modal-button secondary" id="cancel-team">取消</button>
+                    <button class="modal-button primary" id="next-step-1" disabled>下一步：选择队长</button>
+                </div>
+            </div>
+            
+            <!-- 步骤2：选择队长 -->
+            <div class="modal-step" id="step-2">
+                <div class="step-indicator">
+                    <div class="step completed">1</div>
+                    <div class="step-line completed"></div>
+                    <div class="step active">2</div>
+                    <div class="step-line"></div>
+                    <div class="step">3</div>
+                    <div class="step-line"></div>
+                    <div class="step">4</div>
+                    <div class="step-line"></div>
+                    <div class="step">5</div>
+                </div>
+                
+                <h3 class="modal-title">第二步：选择队长</h3>
+                <p class="modal-desc">请从你选择的队友中指定一名同学作为队长。队长将负责团队的主要协调工作。</p>
+                
+                <div class="leader-options" id="leader-options">
+                    <!-- 队长选项会动态生成 -->
+                </div>
+                
+                <div class="modal-footer">
+                    <button class="modal-button secondary" id="prev-step-2">上一步</button>
+                    <button class="modal-button primary" id="next-step-2" disabled>下一步：游戏名称</button>
+                </div>
+            </div>
+            
+            <!-- 步骤3：团队名称 -->
+            <div class="modal-step" id="step-3">
+                <div class="step-indicator">
+                    <div class="step completed">1</div>
+                    <div class="step-line completed"></div>
+                    <div class="step completed">2</div>
+                    <div class="step-line completed"></div>
+                    <div class="step active">3</div>
+                    <div class="step-line"></div>
+                    <div class="step">4</div>
+                    <div class="step-line"></div>
+                    <div class="step">5</div>
+                </div>
+                
+                <h3 class="modal-title">第三步：为团队取名字</h3>
+                <p class="modal-desc">为你们的游戏设计团队取一个酷酷的名字吧！</p>
+                
+                <input type="text" class="game-name-input" id="team-name-input" placeholder="例如：创意星球队、代码小达人队..." maxlength="30">
+                <p class="modal-desc"><small>名称最多30个字符</small></p>
+                
+                <div class="modal-footer">
+                    <button class="modal-button secondary" id="prev-step-3">上一步</button>
+                    <button class="modal-button primary" id="next-step-3" disabled>下一步：游戏名称</button>
+                </div>
+            </div>
+            
+            <!-- 步骤4：游戏名称 -->
+            <div class="modal-step" id="step-4">
+                <div class="step-indicator">
+                    <div class="step completed">1</div>
+                    <div class="step-line completed"></div>
+                    <div class="step completed">2</div>
+                    <div class="step-line completed"></div>
+                    <div class="step completed">3</div>
+                    <div class="step-line completed"></div>
+                    <div class="step active">4</div>
+                    <div class="step-line"></div>
+                    <div class="step">5</div>
+                </div>
+                
+                <h3 class="modal-title">第四步：确定游戏名称</h3>
+                <p class="modal-desc">为你们的游戏起一个有趣的名字！</p>
+                
+                <input type="text" class="game-name-input" id="game-name-input" placeholder="例如：太空冒险、数字迷宫、猜词大师..." maxlength="30">
+                <p class="modal-desc"><small>名称最多30个字符</small></p>
+                
+                <div class="modal-footer">
+                    <button class="modal-button secondary" id="prev-step-4">上一步</button>
+                    <button class="modal-button primary" id="next-step-4" disabled>下一步：游戏描述</button>
+                </div>
+            </div>
+            
+            <!-- 步骤5：游戏描述 -->
+            <div class="modal-step" id="step-5">
+                <div class="step-indicator">
+                    <div class="step completed">1</div>
+                    <div class="step-line completed"></div>
+                    <div class="step completed">2</div>
+                    <div class="step-line completed"></div>
+                    <div class="step completed">3</div>
+                    <div class="step-line completed"></div>
+                    <div class="step completed">4</div>
+                    <div class="step-line completed"></div>
+                    <div class="step active">5</div>
+                </div>
+                
+                <h3 class="modal-title">第五步：描述你的游戏</h3>
+                <p class="modal-desc">简要描述这是一个怎么样的游戏？玩家需要做什么？有什么特别之处？</p>
+                
+                <textarea class="game-desc-input" id="game-desc-input" placeholder="例如：这是一个太空射击游戏，玩家控制一艘飞船，躲避陨石并射击外星人。游戏会越来越难，还有各种道具可以收集..."></textarea>
+                <p class="modal-desc"><small>请用3-5句话描述你的游戏</small></p>
+                
+                <div class="modal-footer">
+                    <button class="modal-button secondary" id="prev-step-5">上一步</button>
+                    <button class="modal-button primary" id="finish-team">完成组队</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 通知 -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notification-text">组队成功！</span>
+    </div>
+    
+    <script>
+        // 全局状态
+        let teams = [];
+        let studentsData = {
+            all_students: [],
+            available_students: [],
+            class_name: '',
+            total_count: 0,
+            available_count: 0
+        };
+        let selectedStudents = [];
+        let selectedLeader = null;
+        let currentStep = 1;
+        
+        // DOM元素
+        const courseCards = document.querySelectorAll('.course-card');
+        const courseDetail = document.getElementById('course-1-detail');
+        const backToCoursesBtn = document.getElementById('back-to-courses');
+        const createTeamBtn = document.getElementById('create-team-btn');
+        const teamsContainer = document.getElementById('teams-container');
+        const marqueeContent = document.getElementById('marquee-content');
+        const studentsContainer = document.getElementById('students-container');
+        const availableCount = document.getElementById('available-count');
+        const classTotalEl = document.getElementById('class-total');
+        const teamModal = document.getElementById('team-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        const cancelTeamBtn = document.getElementById('cancel-team');
+        const modalStudentsContainer = document.getElementById('modal-students');
+        const selectedStudentsContainer = document.getElementById('selected-students');
+        const nextStep1Btn = document.getElementById('next-step-1');
+        const prevStep2Btn = document.getElementById('prev-step-2');
+        const nextStep2Btn = document.getElementById('next-step-2');
+        const prevStep3Btn = document.getElementById('prev-step-3');
+        const nextStep3Btn = document.getElementById('next-step-3');
+        const prevStep4Btn = document.getElementById('prev-step-4');
+        const nextStep4Btn = document.getElementById('next-step-4');
+        const prevStep5Btn = document.getElementById('prev-step-5');
+        const finishTeamBtn = document.getElementById('finish-team');
+        const leaderOptionsContainer = document.getElementById('leader-options');
+        const teamNameInput = document.getElementById('team-name-input');
+        const gameNameInput = document.getElementById('game-name-input');
+        const gameDescInput = document.getElementById('game-desc-input');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notification-text');
+        const userInfo = document.getElementById('user-info');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userMenuBtn = document.getElementById('user-menu-btn');
+        const userMenuList = document.getElementById('user-menu-list');
+        const serverStudent = {% if student %}{{ student|tojson }}{% else %}null{% endif %};
+        
+        // 获取已组队的学生名单
+        function getTeamedStudents() {
+            const teamedStudents = new Set();
+            teams.forEach(team => {
+                team.members.forEach(member => {
+                    teamedStudents.add(member.name);
+                });
+            });
+            return teamedStudents;
+        }
+        
+        // 初始化学生列表
+        function initStudentsList() {
+            const teamedStudents = getTeamedStudents();
+            const availableStudents = studentsData.all_students.filter(student => !teamedStudents.has(student.name));
+            
+            classTotalEl.textContent = studentsData.total_count || studentsData.all_students.length;
+            availableCount.textContent = `${studentsData.available_count ?? availableStudents.length}人可选`;
+            studentsContainer.innerHTML = '';
+            
+            studentsData.all_students.forEach(student => {
+                const studentEl = document.createElement('div');
+                studentEl.className = 'student';
+                if (teamedStudents.has(student.name)) {
+                    studentEl.classList.add('team-member');
+                }
+                
+                const firstChar = student.name.charAt(0);
+                
+                studentEl.innerHTML = `
+                    <div class="student-avatar">${firstChar}</div>
+                    <div class="student-name">${student.name}</div>
+                `;
+                
+                studentsContainer.appendChild(studentEl);
+            });
+        }
+        
+        // 初始化团队列表
+        function initTeamsList() {
+            teamsContainer.innerHTML = '';
+            
+            if (teams.length === 0) {
+                teamsContainer.innerHTML = '<div class="empty-teams">暂无团队，点击右上角"组建团队"按钮创建第一个团队！</div>';
+                marqueeContent.textContent = '还没有团队，快去组建吧！';
+                return;
+            }
+            
+            // 跑马灯文字
+            const marqueeText = teams.map(team => {
+                const leader = team.members.find(m => m.is_leader);
+                const memberNames = team.members.map(m => m.name).join('、');
+                return `${team.team_name}（队长：${leader ? leader.name : '未设定'}，成员：${memberNames}） 已组队`;
+            }).join(' ｜ ');
+            marqueeContent.textContent = marqueeText;
+
+            teams.forEach(team => {
+                const teamEl = document.createElement('div');
+                teamEl.className = 'team';
+                
+                const membersList = team.members.map(member => {
+                    return member.is_leader ?
+                        `<span class="team-leader">${member.name}(队长)</span>` : 
+                        `<span>${member.name}</span>`;
+                }).join('、');
+                
+                teamEl.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <div>
+                            <strong class="team-link" data-id="${team.id}">团队：${team.team_name || '未命名团队'}</strong> ｜ 游戏：${team.game_name}
+                            <div style="margin-top:4px; font-size:0.9rem; color:#666;">${membersList} 组队成功！</div>
+                        </div>
+                        <button class="team-button" style="padding:6px 12px; font-size:0.85rem; white-space:nowrap;" onclick="window.location.href='/ai-chat?team_id=${team.id}'">
+                            <i class="fas fa-key"></i> 进入AI对话
+                        </button>
+                    </div>
+                `;
+
+                // 点击团队名查看详情
+                teamEl.querySelector('.team-link').addEventListener('click', () => showTeamDetail(team));
+                
+                teamsContainer.appendChild(teamEl);
+            });
+        }
+
+        // 团队详情模态
+        function showTeamDetail(team) {
+            const modal = document.getElementById('team-detail-modal');
+            const body = document.getElementById('team-detail-body');
+            const leader = team.members.find(m => m.is_leader);
+            const members = team.members.map(m => m.name).join('、');
+            body.innerHTML = `
+                <p><strong>团队名称：</strong>${team.team_name}</p>
+                <p><strong>游戏名称：</strong>${team.game_name}</p>
+                <p><strong>队长：</strong>${leader ? leader.name : '未设定'}</p>
+                <p><strong>队员：</strong>${members}</p>
+                <p><strong>游戏简介：</strong>${team.game_desc}</p>
+                <div style="margin-top:20px; text-align:center;">
+                    <button class="team-button" onclick="window.location.href='/ai-chat?team_id=${team.id}'" style="padding:10px 20px;">
+                        <i class="fas fa-key"></i> 进入AI对话
+                    </button>
+                </div>
+            `;
+            modal.classList.add('active');
+        }
+        
+        // 初始化组队对话框学生列表
+        function initModalStudentsList() {
+            const teamedStudents = getTeamedStudents();
+            const availableStudents = studentsData.all_students.filter(student => !teamedStudents.has(student.name));
+            
+            modalStudentsContainer.innerHTML = '';
+            
+            availableStudents.forEach(student => {
+                const studentEl = document.createElement('div');
+                studentEl.className = 'student';
+                studentEl.dataset.name = student.name;
+                
+                const firstChar = student.name.charAt(0);
+                
+                studentEl.innerHTML = `
+                    <div class="student-avatar">${firstChar}</div>
+                    <div class="student-name">${student.name}</div>
+                `;
+                
+                studentEl.addEventListener('click', () => {
+                    if (studentEl.classList.contains('selected')) {
+                        studentEl.classList.remove('selected');
+                        selectedStudents = selectedStudents.filter(name => name !== student.name);
+                    } else {
+                        if (selectedStudents.length >= 5) {
+                            showNotification('最多只能选择5名队友！');
+                            return;
+                        }
+                        studentEl.classList.add('selected');
+                        selectedStudents.push(student.name);
+                    }
+                    
+                    updateSelectedStudentsDisplay();
+                    updateNextStep1Button();
+                });
+                
+                modalStudentsContainer.appendChild(studentEl);
+            });
+        }
+        
+        // 更新已选择学生显示
+        function updateSelectedStudentsDisplay() {
+            selectedStudentsContainer.innerHTML = '';
+            
+            if (selectedStudents.length === 0) {
+                selectedStudentsContainer.innerHTML = '<div class="empty-selection">尚未选择任何队友</div>';
+                return;
+            }
+            
+            selectedStudents.forEach(student => {
+                const studentEl = document.createElement('div');
+                studentEl.className = 'student';
+                
+                const firstChar = student.charAt(0);
+                
+                studentEl.innerHTML = `
+                    <div class="student-avatar">${firstChar}</div>
+                    <div class="student-name">${student}</div>
+                    <i class="fas fa-times"></i>
+                `;
+                
+                studentEl.querySelector('.fa-times').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectedStudents = selectedStudents.filter(name => name !== student);
+                    
+                    const modalStudent = document.querySelector(\`.modal-students .student[data-name="${student}"]\`);
+                    if (modalStudent) {
+                        modalStudent.classList.remove('selected');
+                    }
+                    
+                    updateSelectedStudentsDisplay();
+                    updateNextStep1Button();
+                    
+                    if (selectedLeader === student) {
+                        selectedLeader = null;
+                        if (currentStep >= 2) {
+                            initLeaderOptions();
+                        }
+                    }
+                });
+                
+                selectedStudentsContainer.appendChild(studentEl);
+            });
+        }
+        
+        function updateNextStep1Button() {
+            nextStep1Btn.disabled = selectedStudents.length < 3 || selectedStudents.length > 5;
+        }
+        
+        function initLeaderOptions() {
+            leaderOptionsContainer.innerHTML = '';
+            selectedLeader = null;
+            
+            selectedStudents.forEach(student => {
+                const optionEl = document.createElement('div');
+                optionEl.className = 'leader-option';
+                optionEl.dataset.name = student;
+                
+                const firstChar = student.charAt(0);
+                
+                optionEl.innerHTML = `
+                    <div class="student-avatar">${firstChar}</div>
+                    <div class="student-name">${student}</div>
+                `;
+                
+                optionEl.addEventListener('click', () => {
+                    document.querySelectorAll('.leader-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    optionEl.classList.add('selected');
+                    selectedLeader = student;
+                    nextStep2Btn.disabled = false;
+                });
+                
+                leaderOptionsContainer.appendChild(optionEl);
+            });
+            
+            nextStep2Btn.disabled = true;
+        }
+        
+        function goToStep(step) {
+            document.querySelectorAll('.modal-step').forEach(stepEl => {
+                stepEl.classList.remove('active');
+            });
+            
+            document.getElementById(`step-${step}`).classList.add('active');
+            currentStep = step;
+            updateStepIndicator(step);
+        }
+        
+        function updateStepIndicator(currentStep) {
+            const steps = document.querySelectorAll('.step');
+            const stepLines = document.querySelectorAll('.step-line');
+            
+            steps.forEach(step => step.classList.remove('active', 'completed'));
+            stepLines.forEach(line => line.classList.remove('completed'));
+            
+            for (let i = 1; i <= 5; i++) {
+                const stepEl = steps[i - 1];
+                if (i < currentStep) {
+                    stepEl.classList.add('completed');
+                    if (i < 5) {
+                        stepLines[i - 1].classList.add('completed');
+                    }
+                } else if (i === currentStep) {
+                    stepEl.classList.add('active');
+                }
+            }
+        }
+        
+        function showNotification(message) {
+            notificationText.textContent = message;
+            notification.classList.add('active');
+            
+            setTimeout(() => {
+                notification.classList.remove('active');
+            }, 3000);
+        }
+        
+        function resetTeamModal() {
+            selectedStudents = [];
+            selectedLeader = null;
+            currentStep = 1;
+            teamNameInput.value = '';
+            gameNameInput.value = '';
+            gameDescInput.value = '';
+            nextStep3Btn.disabled = true;
+            nextStep4Btn.disabled = true;
+            
+            document.querySelectorAll('.modal-students .student').forEach(studentEl => {
+                studentEl.classList.remove('selected');
+            });
+            
+            updateSelectedStudentsDisplay();
+            updateNextStep1Button();
+            goToStep(1);
+        }
+        
+        async function loadStudents() {
+            let data = { all_students: [], available_students: [], total_count: 0, available_count: 0 };
+            const res = await fetch('/api/students');
+            if (res.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            if (res.ok) {
+                data = await res.json();
+            }
+            // 如果当前班级数据为空，尝试从教师接口按班级名获取（防止班级匹配问题）
+            if ((data.total_count || 0) === 0 && serverStudent && serverStudent.class_name) {
+                const adminRes = await fetch(`/api/admin/students?class_name=${encodeURIComponent(serverStudent.class_name)}`);
+                if (adminRes.ok) {
+                    data = await adminRes.json();
+                }
+            }
+            studentsData = data;
+        }
+
+        async function loadTeams() {
+            let data = { teams: [] };
+            const res = await fetch('/api/teams');
+            if (res.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            if (res.ok) {
+                data = await res.json();
+            }
+            // 如果为空，尝试教师接口
+            if ((!data.teams || data.teams.length === 0) && serverStudent && serverStudent.class_name) {
+                const adminRes = await fetch(`/api/admin/teams?class_name=${encodeURIComponent(serverStudent.class_name)}`);
+                if (adminRes.ok) {
+                    data = await adminRes.json();
+        }
+            }
+            teams = data.teams || [];
+        }
+
+        async function refreshDataAndRender() {
+            await loadStudents();
+            await loadTeams();
+            initStudentsList();
+            initTeamsList();
+            updateUserInfo();
+        }
+
+        async function createTeamOnServer(payload) {
+            const res = await fetch('/api/teams', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || '创建失败');
+            }
+            return data;
+        }
+
+        async function fetchMe() {
+            // 优先使用服务端注入的学生信息，减少一次请求
+            if (serverStudent) {
+                return { logged_in: true, student: serverStudent };
+            }
+            const res = await fetch('/api/me');
+            if (!res.ok) return null;
+            return res.json();
+        }
+
+        async function updateUserInfo() {
+            const me = await fetchMe();
+            if (!me || !me.logged_in) {
+                window.location.href = '/login';
+                return;
+            }
+            const s = me.student;
+            if (userInfo) {
+                userInfo.textContent = `你好，${s.name}`;
+            }
+        }
+
+        // 初始化页面
+        function initPage() {
+            refreshDataAndRender();
+
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    await fetch('/logout', { method: 'POST' });
+                } catch (e) {}
+                window.location.href = '/login';
+            });
+
+            userMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const visible = userMenuList.style.display === 'block';
+                userMenuList.style.display = visible ? 'none' : 'block';
+            });
+
+            document.addEventListener('click', () => {
+                userMenuList.style.display = 'none';
+            });
+
+            courseCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    if (card.classList.contains('locked')) {
+                        showNotification('该课程尚未解锁，请先完成前面的课程！');
+                        return;
+                    }
+                    
+                    // 课程1直接跳转组队页面
+                    if (card.dataset.course === '1') {
+                        window.location.href = '/team';
+                        return;
+                    }
+
+                    courseCards.forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    courseDetail.classList.add('active');
+                });
+            });
+            
+            backToCoursesBtn.addEventListener('click', () => {
+                courseDetail.classList.remove('active');
+            });
+            
+            createTeamBtn.addEventListener('click', () => {
+                window.location.href = '/team';
+            });
+            
+            closeModalBtn.addEventListener('click', () => {
+                teamModal.classList.remove('active');
+                resetTeamModal();
+            });
+            
+            cancelTeamBtn.addEventListener('click', () => {
+                teamModal.classList.remove('active');
+                resetTeamModal();
+            });
+            
+            nextStep1Btn.addEventListener('click', () => {
+                initLeaderOptions();
+                goToStep(2);
+            });
+            
+            prevStep2Btn.addEventListener('click', () => {
+                goToStep(1);
+            });
+            
+            nextStep2Btn.addEventListener('click', () => {
+                goToStep(3);
+            });
+            
+            prevStep3Btn.addEventListener('click', () => {
+                goToStep(2);
+            });
+            
+            nextStep3Btn.addEventListener('click', () => {
+                if (teamNameInput.value.trim().length === 0) {
+                    showNotification('请输入团队名称！');
+                    return;
+                }
+                
+                goToStep(4);
+            });
+            
+            prevStep4Btn.addEventListener('click', () => {
+                goToStep(3);
+            });
+            
+            nextStep4Btn.addEventListener('click', () => {
+                if (gameNameInput.value.trim().length === 0) {
+                    showNotification('请输入游戏名称！');
+                    return;
+                }
+                goToStep(5);
+            });
+
+            prevStep5Btn.addEventListener('click', () => {
+                goToStep(4);
+            });
+
+            finishTeamBtn.addEventListener('click', async () => {
+                const teamName = teamNameInput.value.trim();
+                const gameName = gameNameInput.value.trim();
+                const gameDesc = gameDescInput.value.trim();
+
+                if (teamName.length === 0) {
+                    showNotification('请输入团队名称！');
+                    return;
+                }
+                
+                if (gameName.length === 0) {
+                    showNotification('请输入游戏名称！');
+                    return;
+                }
+                
+                if (gameDesc.length === 0) {
+                    showNotification('请输入游戏描述！');
+                    return;
+                }
+                
+                if (!selectedLeader) {
+                    showNotification('请选择队长！');
+                    return;
+                }
+
+                try {
+                    const membersSnapshot = [...selectedStudents];
+                    await createTeamOnServer({
+                        team_name: teamName,
+                        game_name: gameName,
+                        game_desc: gameDesc,
+                        members: selectedStudents,
+                        leader: selectedLeader
+                    });
+
+                    await refreshDataAndRender();
+                teamModal.classList.remove('active');
+                resetTeamModal();
+                    showNotification(`组队成功！${membersSnapshot.join('、')}组成了"${teamName}"团队`);
+                } catch (err) {
+                    showNotification(err.message);
+                }
+            });
+            
+            // 定时刷新看板与弹幕
+            setInterval(refreshDataAndRender, 8000);
+
+            teamNameInput.addEventListener('input', () => {
+                nextStep3Btn.disabled = teamNameInput.value.trim().length === 0;
+            });
+
+            gameNameInput.addEventListener('input', () => {
+                nextStep4Btn.disabled = gameNameInput.value.trim().length === 0;
+            });
+            
+            teamModal.addEventListener('click', (e) => {
+                if (e.target === teamModal) {
+                    teamModal.classList.remove('active');
+                    resetTeamModal();
+                }
+            });
+        
+            // 团队详情模态关闭
+            document.getElementById('close-team-detail').addEventListener('click', () => {
+                document.getElementById('team-detail-modal').classList.remove('active');
+            });
+
+            document.getElementById('team-detail-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'team-detail-modal') {
+                    e.target.classList.remove('active');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+    <!-- 团队详情模态 -->
+    <div class="modal" id="team-detail-modal">
+        <div class="modal-content">
+            <button class="close-modal" id="close-team-detail">&times;</button>
+            <h3 class="modal-title">团队详情</h3>
+            <div id="team-detail-body"></div>
+        </div>
+    </div>
+</body>
+</html>

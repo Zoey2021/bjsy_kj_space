@@ -11,7 +11,7 @@
       <h2 class="panel-title">配套课程</h2>
       <el-row :gutter="12" class="grade-row">
         <el-col
-          v-for="g in mainGradeGroups"
+          v-for="g in visibleMainGroups"
           :key="g.key"
           :span="6"
         >
@@ -47,12 +47,15 @@
                 v-for="slot in g.slots"
                 :key="slot.book.id"
                 class="book-slot"
-                :class="{ 'book-slot-locked': !canOpenBook(g.key) }"
-                @click="openBook(g.key, slot.book.id)"
+                :class="{ 'book-slot-locked': !canOpenVolume(g.key, slot.volume) }"
+                @click="openBook(g.key, slot.book)"
               >
                 <div class="book-thumb">
                   <img v-if="slot.book.coverUrl" :src="slot.book.coverUrl" :alt="slot.book.name" loading="lazy" decoding="async" />
                   <div v-else class="thumb-placeholder">封面</div>
+                  <div v-if="!canOpenVolume(g.key, slot.volume)" class="slot-mask">
+                    {{ volumeLockText(g.key, slot.volume) }}
+                  </div>
                 </div>
                 <div class="book-label">{{ slot.book.name }}</div>
               </div>
@@ -78,11 +81,13 @@
                 v-for="book in series.books"
                 :key="book.id"
                 class="book-slot"
-                @click="openSchoolBook(book.id)"
+                :class="{ 'book-slot-locked': !schoolBookOpen(book) }"
+                @click="openSchoolBook(book)"
               >
                 <div class="book-thumb school-thumb">
                   <img v-if="book.coverUrl" :src="book.coverUrl" :alt="book.name" loading="lazy" decoding="async" />
                   <div v-else class="thumb-placeholder school-ph">本</div>
+                  <div v-if="!schoolBookOpen(book)" class="slot-mask">{{ schoolLockText(book) }}</div>
                 </div>
                 <div class="book-label">{{ book.name }}</div>
               </div>
@@ -97,10 +102,12 @@
                 v-for="slot in integratedInquiry.slots"
                 :key="slot.key"
                 class="book-slot"
+                :class="{ 'book-slot-locked': !slot.ready }"
                 @click="openInquirySlot(slot)"
               >
                 <div class="book-thumb school-thumb">
                   <img :src="slot.coverUrl" :alt="slot.label" loading="lazy" decoding="async" />
+                  <div v-if="!slot.ready" class="slot-mask">资源正在建设中</div>
                 </div>
                 <div class="book-label">{{ slot.label }}</div>
               </div>
@@ -132,13 +139,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getTextbooks, getMe } from '../../api'
-import { groupSchoolTextbooks } from '../../utils/schoolTextbooks'
+import { groupSchoolTextbooks, provincialCourseUrl, openProvincialCourse } from '../../utils/schoolTextbooks'
+import { resolveTextbookPdfUrl } from '../../utils/textbookPdf'
 import { INTEGRATED_INQUIRY_COURSE } from '../../constants/pblModule'
 import {
   detectEnrollmentYear,
   getGradeAccess,
   getGradeBadge,
-  canEnterGrade,
+  canOpenBookVolume,
+  isDownVolumeLocked,
   getDefaultGradeScores,
   GRADE_ACCESS
 } from '../../utils/cohortGradeAccess'
@@ -174,24 +183,42 @@ const mainGradeGroups = computed(() => {
     .map((g) => {
       const row = byGrade[g]
       const slots = []
-      if (row.up) slots.push({ book: row.up })
-      if (row.down) slots.push({ book: row.down })
+      if (row.up) slots.push({ book: row.up, volume: '上' })
+      if (row.down) slots.push({ book: row.down, volume: '下' })
       return { key: g, cardTitle: row.cardTitle, slots }
     })
 })
 
 const schoolSeriesGroups = computed(() => groupSchoolTextbooks(schoolBooks.value))
 const integratedInquiry = INTEGRATED_INQUIRY_COURSE
+const visibleMainGroups = computed(() => mainGradeGroups.value)
 
 const gradeAccess = (gradeKey) => getGradeAccess(enrollmentYear.value, gradeKey)
 
 const gradeBadge = (gradeKey) => getGradeBadge(enrollmentYear.value, gradeKey)
 
-const canOpenBook = (gradeKey) => canEnterGrade(enrollmentYear.value, gradeKey)
+const canOpenVolume = (gradeKey, volume) => canOpenBookVolume(enrollmentYear.value, gradeKey, volume)
+
+const volumeLockText = (gradeKey, volume) => {
+  if (isDownVolumeLocked(gradeKey, volume)) return '暂未开放'
+  if (gradeAccess(gradeKey) === GRADE_ACCESS.COMPLETED) return '已完成'
+  return '尚未开始'
+}
+
+const schoolBookReady = (book) => {
+  if (book?.hasResource === true) return true
+  if (book?.hasResource === false) return false
+  return !!resolveTextbookPdfUrl(book)
+}
+
+const schoolBookOpen = (book) => !!provincialCourseUrl(book) || schoolBookReady(book)
+
+const schoolLockText = () => '资源正在建设中'
 
 const showPretest = (gradeKey) => {
   const year = String(enrollmentYear.value)
-  if (gradeKey === '四年级') return year === '2023'
+  // 四年级前测先对学生端隐藏，教师端入口保留
+  if (gradeKey === '四年级') return false
   if (gradeKey === '六年级') return year === '2021'
   return false
 }
@@ -218,11 +245,18 @@ const openGradeResult = (group) => {
 }
 
 onMounted(async () => {
-  const [main, school, meRes] = await Promise.all([
-    getTextbooks('MAIN'),
-    getTextbooks('SCHOOL'),
-    getMe().catch(() => ({ data: {} }))
-  ])
+  let main = { data: [] }
+  let school = { data: [] }
+  let meRes = { data: {} }
+  try {
+    ;[main, school, meRes] = await Promise.all([
+      getTextbooks('MAIN'),
+      getTextbooks('SCHOOL'),
+      getMe().catch(() => ({ data: {} }))
+    ])
+  } catch {
+    /* 拦截器已提示 */
+  }
   mainBooks.value = main.data || []
   schoolBooks.value = school.data || []
   const profile = meRes.data || {}
@@ -235,7 +269,8 @@ onMounted(async () => {
   }
 })
 
-const openBook = (gradeKey, gradeId) => {
+const openBook = (gradeKey, book) => {
+  const volume = book?.name ? String(book.name).match(/(上|下)册$/)?.[1] : null
   const access = gradeAccess(gradeKey)
   if (access === GRADE_ACCESS.COMPLETED) {
     ElMessage.info('该年级课程已完成，点击右上角「已完成」查看成绩')
@@ -245,14 +280,31 @@ const openBook = (gradeKey, gradeId) => {
     ElMessage.info('该年级课程尚未开始')
     return
   }
-  router.push(`/student/textbook/${gradeId}`)
+  if (!canOpenVolume(gradeKey, volume)) {
+    ElMessage.info('下册内容暂未开放')
+    return
+  }
+  router.push(`/student/textbook/${book.id}`)
 }
 
-const openSchoolBook = (gradeId) => {
-  router.push(`/student/textbook/${gradeId}`)
+const openSchoolBook = (book) => {
+  const external = provincialCourseUrl(book)
+  if (external) {
+    openProvincialCourse(external)
+    return
+  }
+  if (!schoolBookReady(book)) {
+    ElMessage.info('资源正在建设中')
+    return
+  }
+  router.push(`/student/textbook/${book.id}`)
 }
 
 const openInquirySlot = (slot) => {
+  if (!slot.ready) {
+    ElMessage.info('资源正在建设中')
+    return
+  }
   router.push(slot.studentRoute)
 }
 </script>
@@ -264,8 +316,8 @@ const openInquirySlot = (slot) => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   padding: 0;
   width: 100%;
   box-sizing: border-box;
@@ -500,6 +552,7 @@ const openInquirySlot = (slot) => {
 }
 
 .book-thumb {
+  position: relative;
   flex: 1;
   min-height: 0;
   width: 100%;
@@ -509,6 +562,21 @@ const openInquirySlot = (slot) => {
   border: 1px solid #cbd5e1;
   background: #fff;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+.slot-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.55);
+  letter-spacing: 0.04em;
 }
 .book-thumb img {
   width: 100%;

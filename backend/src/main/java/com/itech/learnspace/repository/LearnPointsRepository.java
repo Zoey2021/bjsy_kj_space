@@ -19,4 +19,8 @@ public interface LearnPointsRepository extends JpaRepository<LearnPoints, Long> 
 
     @Query("SELECT p.studentId, SUM(p.points) FROM LearnPoints p WHERE p.studentId IN ?1 AND p.points > 0 GROUP BY p.studentId")
     List<Object[]> rankByClassStudents(List<Long> studentIds);
+
+    long deleteByStudentIdIn(List<Long> studentIds);
+
+    long deleteByStudentIdInAndSourceTypeAndSourceIdIn(List<Long> studentIds, String sourceType, List<Long> sourceIds);
 }

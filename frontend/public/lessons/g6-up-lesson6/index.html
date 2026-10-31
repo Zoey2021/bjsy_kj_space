@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第6课 猜数字算法设计 — 探究活动</title>
+<style>
+:root{
+  --p:#264653; --s:#2a9d8f; --a:#e9c46a; --l:#f4a261; --c:#e76f51;
+  --bg:#F8F9FA; --card:#fff; --tx:#333; --tx2:#666; --bd:#E0E0E0;
+  --r:12px; --rs:8px; --sh:0 2px 12px rgba(0,0,0,.08);
+  --ok:#16A06B; --no:#D64545; --brand:#2a9d8f;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:var(--bg);color:var(--tx);line-height:1.6}
+
+.top-bar{background:linear-gradient(135deg,var(--p),var(--s));color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--sh)}
+.top-bar h1{font-size:22px;font-weight:700}
+.top-bar .subtitle{font-size:13px;opacity:.9;margin-top:4px}
+
+.tab-nav{display:flex;gap:8px;padding:16px 24px;background:#fff;border-bottom:2px solid var(--bd);position:sticky;top:0;z-index:10;flex-wrap:wrap}
+.tab-btn{padding:10px 22px;border-radius:var(--rs);border:none;background:#F0F0F0;color:var(--tx2);cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;font-family:inherit}
+.tab-btn.active{background:var(--s);color:#fff;box-shadow:0 2px 8px rgba(42,157,143,.3)}
+.tab-btn:hover:not(.active){background:#E8E8E8}
+
+.container{padding:20px 24px;max-width:1100px;margin:0 auto}
+.step-panel{display:none}
+.step-panel.active{display:block}
+
+.card{background:var(--card);border-radius:var(--r);padding:20px;box-shadow:var(--sh);margin-bottom:16px;border:1.5px solid var(--bd)}
+.card-title{font-size:16px;font-weight:700;color:var(--p);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;margin:0 0 8px;color:var(--p)}
+.section-title .dot{width:9px;height:9px;border-radius:50%;background:var(--s);flex-shrink:0}
+.muted{color:var(--tx2);font-size:13.5px}
+code{font-family:"SF Mono",Menlo,Consolas,monospace;background:#E8F4F2;color:var(--p);padding:1px 7px;border-radius:6px;font-size:13.5px;font-weight:700}
+
+.tip-box{background:linear-gradient(135deg,#E8F4F2,#F0FAF8);border-left:4px solid var(--s);border-radius:0 var(--rs) var(--rs) 0;padding:12px 16px;margin:12px 0;font-size:13px}
+.hint-box{background:linear-gradient(135deg,#FFF8E7,#FFF5E0);border:1.5px solid var(--a);border-radius:var(--r);padding:12px 16px;margin:12px 0;font-size:13px;color:var(--tx)}
+.stage-badge{display:inline-flex;align-items:center;gap:8px;background:#E8F4F2;color:var(--p);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:800;margin-bottom:12px}
+.stage-badge.done{background:#d8f3e7;color:#0f7a4d}
+
+.rule-box{background:#F8F9FA;border:1px dashed var(--bd);border-radius:12px;padding:14px 18px;font-size:14.5px;line-height:2;margin:10px 0 14px}
+.rule-box b{color:var(--p)}
+
+.pool{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 4px}
+.chip{background:#fff;border:2px solid var(--bd);border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;font-family:inherit;color:var(--tx);cursor:pointer;transition:.2s;text-align:left;line-height:1.5}
+.chip:hover:not(.used):not(.off){transform:translateY(-2px);border-color:var(--s);color:var(--s)}
+.chip.used{background:#E8F4F2;border-color:var(--s);color:var(--p);cursor:default}
+.chip.rightpick{background:#E8F4F2;border-color:var(--ok);color:#0f7a4d}
+.chip.wrongpick{background:#FFF5F5;border-color:var(--c);color:#9c1f22;animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+.var-badges{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 4px}
+.vbadge{border-radius:12px;padding:12px 18px;font-size:14.5px;font-weight:800;background:linear-gradient(135deg,var(--p),var(--s));color:#fff;box-shadow:0 4px 12px rgba(38,70,83,.2)}
+.vbadge small{display:block;font-weight:600;font-size:12px;opacity:.9;margin-top:2px}
+
+.model-table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+.model-table th{background:var(--p);color:#fff;border:1px solid var(--p);padding:9px 8px;font-size:13.5px}
+.model-table td{border:1px solid var(--bd);padding:10px 8px;text-align:center}
+.model-table td.lab{background:#F8F9FA;font-weight:800;color:var(--p);white-space:nowrap}
+.opt-inline{display:inline-flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.opt-pill{border:2px solid var(--bd);background:#fff;border-radius:999px;padding:6px 13px;font-size:13px;font-weight:700;font-family:inherit;color:var(--tx);cursor:pointer;transition:.2s}
+.opt-pill:hover:not(:disabled){border-color:var(--s);color:var(--s)}
+.opt-pill:disabled{cursor:default}
+.opt-pill.right{background:#E8F4F2;border-color:var(--ok);color:#0f7a4d}
+.opt-pill.wrongpick{background:#FFF5F5;border-color:var(--c);color:#9c1f22;animation:shake .4s}
+
+.round-box{background:linear-gradient(160deg,#F0FAF8,#F8F9FA);border:1px solid var(--bd);border-radius:12px;padding:16px 20px;margin-bottom:14px}
+.round-box .rb-t{font-size:15px;font-weight:800;margin-bottom:4px;color:var(--p)}
+.round-box .rb-d{font-size:13.5px;color:var(--tx2)}
+.qdots{display:flex;gap:6px;margin-bottom:12px;align-items:center}
+.qdots span{width:30px;height:7px;border-radius:99px;background:#E0E0E0;transition:.3s}
+.qdots span.cur{background:var(--s)}
+.qdots span.ok{background:var(--ok)}
+.qdots .cnt{margin-left:8px;font-size:12.5px;color:var(--tx2);font-weight:700}
+
+.btn{padding:10px 20px;border:none;border-radius:var(--rs);cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;font-family:inherit}
+.btn-primary{background:var(--s);color:#fff}
+.btn-primary:hover{background:#21867a}
+.btn-secondary{background:#E0E0E0;color:var(--tx)}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+
+.feedback{margin-top:14px;border-radius:12px;padding:14px 16px;font-size:14px;display:none;border-left:5px solid;line-height:1.8}
+.feedback.show{display:block}
+.feedback.ok{background:#E8F4F2;border-color:var(--ok);color:#0f6b45}
+.feedback.no{background:#FFF5F5;border-color:var(--c);color:#8f1c20}
+.feedback.info{background:#EEF4FE;border-color:#4a7cf6;color:#1c4a9e}
+.feedback b{font-size:15px}
+.feedback p{margin:6px 0 0}
+
+.success-bar{display:none;margin-top:12px;padding:12px 16px;border-radius:10px;background:#E8F4F2;border:1.5px solid var(--s);color:#0f6b45;font-weight:700;font-size:14px}
+.success-bar.show{display:block}
+
+/* 流程图画板（沿用第3课类名） */
+.board-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.pal{border:2.4px solid #111;background:#fff;font-weight:800;padding:8px 14px;cursor:pointer;color:#111;font-family:inherit}
+.pal.pill{border-radius:999px}
+.pal.box{border-radius:4px}
+.pal.para{border:none;background:transparent;padding:0;width:168px;height:58px}
+.pal.dia{border:none;background:transparent;padding:0;width:108px;height:72px}
+.pal svg{width:100%;height:100%;display:block;pointer-events:none}
+.pal.wait{box-shadow:0 0 0 3px rgba(234,122,45,.35)}
+.pal.loop{border-radius:10px;color:#c2410c;border-color:#ea7a2d}
+.pal.loop.on{background:#fff7ed;box-shadow:0 0 0 3px rgba(234,122,45,.45)}
+.fn.loop-src{outline:3px solid #ea7a2d;outline-offset:3px}
+.flow-plus.loop-target{box-shadow:0 0 0 3px rgba(37,99,235,.45)}
+.flow-loop-x{position:absolute;z-index:6;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;font-weight:800;line-height:1;padding:0;cursor:pointer;font-family:inherit}
+.zoom-btn{border:1.5px solid #c6d8f7;background:#fff;border-radius:10px;padding:7px 12px;font-weight:800;cursor:pointer;font-family:inherit}
+.flow-board{position:relative;min-height:560px;overflow:auto;border:1.5px solid #c6d8f7;border-radius:14px;background-color:#fbfcff;background-image:linear-gradient(#e7eef8 1px,transparent 1px),linear-gradient(90deg,#e7eef8 1px,transparent 1px);background-size:28px 28px}
+.flow-stage{position:relative;transform-origin:top center}
+.flow-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.fn{position:absolute;display:flex;align-items:center;justify-content:center;background:#fff;border:2.4px solid #111;font-weight:800;z-index:2}
+.fn.pill{border-radius:999px}
+.fn.box{border-radius:4px}
+.fn.para,.fn.dia{border:none;background:transparent}
+.fn-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.fn-lab{position:relative;z-index:1;text-align:center;outline:none;max-width:130px;line-height:1.25;word-break:break-all;padding:0 8px}
+.fn-lab.ph{color:#94a3b8;font-weight:700}
+.fn-x{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;font-weight:800;line-height:1;z-index:3;padding:0;cursor:pointer;font-family:inherit}
+.fn.dia .fn-x{top:6px;right:10px;left:auto}
+.flow-plus{position:absolute;z-index:4;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;border:2px solid #ea7a2d;background:#fff;color:#ea7a2d;font-weight:900;font-size:20px;line-height:1;padding:0;cursor:pointer;font-family:inherit}
+.flow-plus.on{background:#ea7a2d;color:#fff}
+.flow-lab{position:absolute;z-index:3;transform:translate(-50%,-100%);font-weight:800;color:#333;background:#fbfcff;padding:0 4px}
+
+/* 猜数字游戏机 */
+.game-shell{background:linear-gradient(160deg,#1d3a36,#1e4d47 60%,#2a6b5f);border-radius:16px;padding:22px 24px;color:#e8fff8;position:relative;overflow:hidden}
+.game-shell::after{content:"";position:absolute;right:-30px;top:-30px;width:150px;height:150px;border-radius:50%;background:rgba(42,157,143,.22)}
+.g-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:relative}
+.g-head .robot{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--s),var(--p));display:grid;place-items:center;font-size:26px;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.g-head h4{margin:0;font-size:17px}
+.g-head p{margin:0;font-size:12.5px;opacity:.8}
+.g-count{margin-left:auto;background:rgba(255,255,255,.14);border-radius:999px;padding:6px 16px;font-size:13.5px;font-weight:800}
+.g-log{margin:16px 0 0;max-height:200px;overflow:auto;display:flex;flex-direction:column;gap:7px;font-size:14px;position:relative}
+.g-log .line{background:rgba(255,255,255,.08);border-radius:10px;padding:8px 14px;display:flex;gap:10px;align-items:center}
+.g-log .line .no{opacity:.6;font-size:12.5px;min-width:42px}
+.g-log .line.hi{background:rgba(52,211,153,.18);color:#7ff0c4}
+.g-log .line.up{color:#ffd9a8}
+.g-log .line.down{color:#a8d4ff}
+.g-input-row{display:flex;gap:10px;margin-top:16px;position:relative;flex-wrap:wrap}
+.g-input-row input{flex:1;min-width:130px;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;font-size:18px;color:#fff;font-family:inherit;text-align:center;font-weight:800}
+.g-input-row input::placeholder{color:rgba(255,255,255,.45);font-weight:600;font-size:14px}
+.g-input-row input:focus{outline:none;border-color:#7dd3c0;background:rgba(255,255,255,.16)}
+.g-input-row button{border:none;border-radius:10px;padding:12px 26px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,#34D399,#10B981);color:#06301e}
+.g-input-row button:disabled{opacity:.4;cursor:not-allowed}
+.g-msg{margin-top:12px;font-size:14.5px;font-weight:700;min-height:22px;position:relative}
+.g-msg.up{color:#ffd9a8}.g-msg.down{color:#a8d4ff}.g-msg.win{color:#7ff0c4}
+
+.open-area{width:100%;min-height:96px;border:2px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:14.5px;font-family:inherit;resize:vertical;line-height:1.7;outline:none}
+.open-area:focus{border-color:var(--s)}
+.open-meta{font-size:12.5px;color:var(--tx2);margin-top:6px}
+
+body.embedded-mode{background:#fff}
+body.embedded-mode .top-bar{padding:12px 16px}
+body.embedded-mode .top-bar .subtitle{display:none}
+body.embedded-mode .tab-nav{display:none!important}
+body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
+
+@media(max-width:640px){
+  .card{padding:16px}
+  .top-bar h1{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <h1>第6课 猜数字算法设计</h1>
+    <div class="subtitle">探究活动 — 抽象建模 · 设计算法 · 验证优化</div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" type="button" onclick="switchTab(1)">探究一：抽象建模</button>
+  <button class="tab-btn" type="button" onclick="switchTab(2)">探究二：设计算法</button>
+  <button class="tab-btn" type="button" onclick="switchTab(3)">探究三：验证优化</button>
+</div>
+
+<!-- ==================== 探究一 ==================== -->
+<div class="step-panel active" id="panel1">
+<div class="container">
+
+<div class="card">
+  <div class="card-title">任务说明</div>
+  <div class="tip-box">
+    用算法解决问题：<strong>问题分析 → 抽象建模 → 设计算法 → 验证优化</strong>。<br>
+    本探究：从猜数字规则里找出<strong>会变化的量（变量）</strong>，并完成建模表。
+  </div>
+</div>
+
+<div class="card">
+  <span class="stage-badge" id="badge1a">第 1 关 · 抓变量</span>
+  <h3 class="section-title"><span class="dot"></span>从规则里找出「会变的量」</h3>
+  <div class="rule-box">
+    <b>猜数字游戏的规则</b><br>
+    1. 随机产生一个 <b>1 到 100</b> 的正整数。<br>
+    2. 输入数字开始猜。<br>
+    3. 判断是否猜中：猜中输出「正确」；猜错再进行判断——猜大了提示「大了」，猜小了提示「小了」。
+  </div>
+  <p class="muted" style="margin:0 0 6px;font-weight:700">想一想：游戏每一局都不一样、需要用符号来记录的，是哪两个量？点选下面的卡片（选 2 个）。</p>
+  <div class="pool" id="pool1"></div>
+  <div class="feedback" id="fb-pool"></div>
+  <div class="var-badges" id="var-badges" style="display:none">
+    <div class="vbadge">da<small>电脑随机产生的数字</small></div>
+    <div class="vbadge">cai<small>用户输入的数字</small></div>
+  </div>
+</div>
+
+<div class="card" id="card-model" style="display:none">
+  <span class="stage-badge" id="badge1b">第 2 关 · 建模表</span>
+  <h3 class="section-title"><span class="dot"></span>完成「猜数字游戏」建模表</h3>
+  <p class="muted" style="margin-top:-2px">给变量起名字要简洁好记。表格里每一格点选一个正确答案。</p>
+  <table class="model-table" id="model-table"></table>
+  <div class="feedback" id="fb-model"></div>
+  <div class="success-bar" id="ok1">探究一完成！变量 da、cai 和它们的来源都清楚了。</div>
+</div>
+
+</div>
+</div>
+
+<!-- ==================== 探究二 ==================== -->
+<div class="step-panel" id="panel2">
+<div class="container">
+
+<div class="card">
+  <div class="card-title">任务说明</div>
+  <div class="tip-box">
+    猜数字算法里藏着<strong>分支结构</strong>（大了还是小了）和<strong>循环结构</strong>（猜错再判断）。<br>
+    先当一回计算机，再亲手画出流程图。
+  </div>
+</div>
+
+<div class="card">
+  <span class="stage-badge" id="badge2a">第 1 关 · 当一回计算机</span>
+  <h3 class="section-title"><span class="dot"></span>已知电脑的数 da＝55，你输入的数是 cai，计算机会输出什么？</h3>
+  <p class="muted" style="margin-top:-2px">计算机是按顺序判断的：先看 <code>cai＝da？</code>，再看 <code>cai＜da？</code>。别抢答哦。</p>
+  <div class="qdots" id="q2-dots"></div>
+  <div id="q2-area"></div>
+</div>
+
+<div class="card" id="card-flow" style="display:none">
+  <span class="stage-badge" id="badge2b">第 2 关 · 画流程图</span>
+  <h3 class="section-title"><span class="dot"></span>画出猜数字算法流程图</h3>
+  <div class="hint-box">
+    <strong>任务：</strong>画出猜数字算法流程图——开始 → 产生随机数 da → 输入 cai → 判断是否猜中 → 大了 / 小了 → 猜错则循环回「输入」。
+  </div>
+  <p class="muted">先点箭头上的 <b>＋</b>，再点要插入的图形，箭头会自动连好。猜错要回到输入，用<strong>循环线</strong>从左边绕回去。双击图形可以写字，点 × 可以删掉。</p>
+  <div class="board-tools" id="shapeBar">
+    <button class="pal pill" type="button" data-shape="pill">圆角矩形</button>
+    <button class="pal box" type="button" data-shape="box">长方形</button>
+    <button class="pal para" type="button" data-shape="para" aria-label="平行四边形"><svg viewBox="0 0 168 58"><polygon points="22,4 164,4 146,54 4,54" fill="#fff" stroke="#111" stroke-width="2.4"/><text x="84" y="34" text-anchor="middle" font-size="15" font-weight="800" fill="#111">平行四边形</text></svg></button>
+    <button class="pal dia" type="button" data-shape="dia" aria-label="菱形"><svg viewBox="0 0 108 72"><polygon points="54,4 104,36 54,68 4,36" fill="#fff" stroke="#111" stroke-width="2.4"/><text x="54" y="40" text-anchor="middle" font-size="15" font-weight="800" fill="#111">菱形</text></svg></button>
+    <button class="pal loop" type="button" id="flowLoop">循环线</button>
+    <button class="zoom-btn" type="button" id="flowZoomOut">缩小</button>
+    <button class="zoom-btn" type="button" id="flowZoomIn">放大</button>
+    <span class="muted" id="shapeHint">先点一个图形，再点箭头上的 ＋，图形会自动连进去。</span>
+  </div>
+  <div id="board" class="flow-board"></div>
+  <div class="feedback" id="fb-flow"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" type="button" id="btn-submit-flow">提交流程图</button>
+    <button class="btn btn-secondary" type="button" id="btn-reset-flow">清空画板</button>
+  </div>
+  <div class="success-bar" id="ok2">探究二完成！你已经画出带分支和循环的猜数字流程图。</div>
+</div>
+
+</div>
+</div>
+
+<!-- ==================== 探究三 ==================== -->
+<div class="step-panel" id="panel3">
+<div class="container">
+
+<div class="card">
+  <div class="card-title">任务说明</div>
+  <div class="tip-box">
+    设计好的算法要先<strong>运行验证</strong>。先玩一局猜数字，再给规则「升级」，并写下你的想法。
+  </div>
+</div>
+
+<div class="card">
+  <span class="stage-badge" id="badge3a">第 1 关 · 玩一玩，验证算法</span>
+  <h3 class="section-title"><span class="dot"></span>和电脑玩一局猜数字（1～100）</h3>
+  <p class="muted" style="margin-top:-2px">根据「大了 / 小了」的提示不断调整，猜中即过关。</p>
+
+  <div class="game-shell">
+    <div class="g-head">
+      <div class="robot">🤖</div>
+      <div>
+        <h4>电脑：我已经想好一个 1～100 的数了</h4>
+        <p>请输入你猜的数，我会告诉你「大了」还是「小了」</p>
+      </div>
+      <div class="g-count" id="g-count">已猜 0 次</div>
+    </div>
+    <div class="g-log" id="g-log"></div>
+    <div class="g-input-row">
+      <input id="g-in" type="number" min="1" max="100" placeholder="输入 1～100 的整数" inputmode="numeric">
+      <button type="button" id="g-btn">猜！</button>
+      <button type="button" id="g-new" style="display:none;background:linear-gradient(135deg,#a5d8cf,#2a9d8f);color:#06301e">再来一局</button>
+    </div>
+    <div class="g-msg" id="g-msg"></div>
+  </div>
+  <div class="feedback" id="fb-game"></div>
+</div>
+
+<div class="card" id="card-upgrade" style="display:none">
+  <span class="stage-badge" id="badge3b">第 2 关 · 升级算法</span>
+  <h3 class="section-title"><span class="dot"></span>新规则：最多只能猜 5 次，流程图要怎么改？</h3>
+  <p class="muted" style="margin-top:-2px">选一选：下面哪些改动是<strong>需要</strong>的？（可多选）</p>
+  <div class="pool" id="pool-up"></div>
+  <div class="feedback" id="fb-up"></div>
+
+  <div id="q-struct" style="display:none;margin-top:20px">
+    <h3 class="section-title"><span class="dot"></span>「每猜一次次数就加 1、反复判断」——这用的是哪种控制结构？</h3>
+    <div class="pool" id="pool-struct"></div>
+    <div class="feedback" id="fb-struct"></div>
+  </div>
+</div>
+
+<div class="card" id="card-open" style="display:none">
+  <span class="stage-badge" id="badge3c">第 3 关 · 开放题</span>
+  <h3 class="section-title"><span class="dot"></span>你有什么想法让猜数字游戏更好玩？</h3>
+  <p class="muted" style="margin-top:-2px">自由填写你的想法（至少写 8 个字）。</p>
+  <textarea class="open-area" id="open-idea" placeholder="例如：可以加计时、限次、排行榜、提示音……"></textarea>
+  <div class="open-meta" id="open-meta">已写 0 字（至少 8 字）</div>
+  <div class="btn-row">
+    <button class="btn btn-primary" type="button" id="btn-open">提交想法</button>
+  </div>
+  <div class="feedback" id="fb-open"></div>
+  <div class="success-bar" id="ok3">探究三完成！游戏验证、升级方案和你的想法都齐了。</div>
+</div>
+
+</div>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+function $(sel, root) { return (root || document).querySelector(sel); }
+function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+function switchTab(n) {
+  n = Number(n);
+  if (!(n >= 1 && n <= 3)) n = 1;
+  $$('.tab-btn').forEach(function (b, i) { b.classList.toggle('active', i === n - 1); });
+  $$('.step-panel').forEach(function (p, i) { p.classList.toggle('active', i === n - 1); });
+}
+window.switchTab = switchTab;
+
+var urlParams = new URLSearchParams(location.search);
+var IS_EMBEDDED = urlParams.get('embedded') === '1';
+var learnSpaceNotifiedSteps = {};
+
+function notifyLearnSpaceComplete(step, extra) {
+  if (!window.parent || window.parent === window) return;
+  if (learnSpaceNotifiedSteps[step]) return;
+  learnSpaceNotifiedSteps[step] = true;
+  var params = new URLSearchParams(location.search);
+  var idx = parseInt(params.get('activityIndex') || params.get('step') || String(step), 10);
+  var payload = {
+    activityIndex: isFinite(idx) ? idx : step,
+    step: step,
+    stepCompleted: true,
+    source: 'g6-up-lesson6'
+  };
+  if (extra && typeof extra === 'object') {
+    for (var k in extra) {
+      if (Object.prototype.hasOwnProperty.call(extra, k)) payload[k] = extra[k];
+    }
+  }
+  window.parent.postMessage({ type: 'LEARN_SPACE_SUBMIT', payload: payload }, '*');
+}
+
+var S = {
+  a1v: false, a1: false,
+  a2r: 0, a2rOk: 0, a2round: false, a2: false,
+  gameWon: false, up: false, struct: false, open: false, a3: false
+};
+
+/* ========== 探究一：抓变量 ========== */
+var POOL1 = [
+  { t: '电脑随机产生的数字', ok: true },
+  { t: '用户输入的数字', ok: true },
+  { t: '「1 到 100」这个范围', ok: false, why: '范围是固定不变的规则，不是会变的量。' },
+  { t: '「正确」这句话', ok: false, why: '这是计算机输出的提示语，固定不变。' },
+  { t: '「输入」这个动作', ok: false, why: '动作是过程，不是需要记录的量。' },
+  { t: '数字 100', ok: false, why: '100 是范围的上限，每一局都一样。' }
+];
+var picks1 = [];
+
+function paintPool1() {
+  var host = $('#pool1');
+  host.innerHTML = '';
+  POOL1.forEach(function (c, i) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    var cls = 'chip';
+    if (picks1.indexOf(i) >= 0) cls += ' used';
+    if (picks1.indexOf(i) >= 0 && c.ok) cls += ' rightpick';
+    b.className = cls;
+    b.textContent = c.t;
+    b.addEventListener('click', function () { pickVar(i, b); });
+    host.appendChild(b);
+  });
+}
+
+function pickVar(i, btn) {
+  var c = POOL1[i];
+  if (picks1.indexOf(i) >= 0) return;
+  var fb = $('#fb-pool');
+  if (c.ok) {
+    picks1.push(i);
+    btn.classList.add('used', 'rightpick');
+    fb.className = 'feedback ok show';
+    fb.innerHTML = '<b>✓ 找到了！</b><p>' + (picks1.length === 1
+      ? '电脑每次随机产生的数都不一样，它是一个<b>变量</b>。还有一位呢？'
+      : '两个变量都找到了！我们用 <code>da</code> 和 <code>cai</code> 给它们起名字。') + '</p>';
+    if (picks1.length >= 2) {
+      S.a1v = true;
+      $('#var-badges').style.display = 'flex';
+      $('#card-model').style.display = '';
+      paintModel();
+      $('#badge1a').textContent = '第 1 关 · 抓变量 ✓';
+      $('#badge1a').classList.add('done');
+    }
+  } else {
+    btn.classList.add('wrongpick');
+    setTimeout(function () { btn.classList.remove('wrongpick'); }, 600);
+    fb.className = 'feedback no show';
+    fb.innerHTML = '<b>再想想：</b><p>' + c.why + ' 我们要找的是<b>每一局都会变</b>、需要用符号记录的量。</p>';
+  }
+}
+
+/* ========== 探究一：建模表 ========== */
+var MODEL_ROWS = [
+  {
+    lab: 'da', q: '这个变量记录什么？',
+    opts: ['电脑随机产生的数字', '用户输入的数字', '固定的数字 55'], right: 0,
+    q2: '数据从哪里来？',
+    opts2: ['随机产生，范围 1～100', '用户从键盘输入', '老师口头宣布'], right2: 0
+  },
+  {
+    lab: 'cai', q: '这个变量记录什么？',
+    opts: ['电脑随机产生的数字', '用户输入的数字', '屏幕上的提示语'], right: 1,
+    q2: '数据从哪里来？',
+    opts2: ['随机产生，范围 1～100', '用户从键盘输入', '自动等于 da'], right2: 1
+  }
+];
+var modelDone = {};
+
+function paintModel() {
+  var host = $('#model-table');
+  var h = '<thead><tr><th style="width:80px">变量名</th><th>它记录什么？</th><th>数据从哪里来？</th></tr></thead><tbody>';
+  MODEL_ROWS.forEach(function (r, ri) {
+    h += '<tr><td class="lab"><code>' + r.lab + '</code></td>';
+    h += '<td><div class="opt-inline" data-g="q' + ri + '">' +
+      r.opts.map(function (o, i) {
+        return '<button type="button" class="opt-pill" data-ri="' + ri + '" data-k="q" data-i="' + i + '" data-right="' + r.right + '">' + o + '</button>';
+      }).join('') + '</div></td>';
+    h += '<td><div class="opt-inline" data-g="s' + ri + '">' +
+      r.opts2.map(function (o, i) {
+        return '<button type="button" class="opt-pill" data-ri="' + ri + '" data-k="s" data-i="' + i + '" data-right="' + r.right2 + '">' + o + '</button>';
+      }).join('') + '</div></td>';
+    h += '</tr>';
+  });
+  h += '</tbody>';
+  host.innerHTML = h;
+  $$('#model-table .opt-pill').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var ri = +b.getAttribute('data-ri');
+      var k = b.getAttribute('data-k');
+      var i = +b.getAttribute('data-i');
+      var right = +b.getAttribute('data-right');
+      var key = k + ri;
+      if (modelDone[key]) return;
+      var group = b.parentElement;
+      if (i === right) {
+        b.classList.add('right');
+        Array.prototype.forEach.call(group.children, function (x) { x.disabled = true; });
+        modelDone[key] = true;
+        var fb = $('#fb-model');
+        fb.className = 'feedback ok show';
+        var doneCount = Object.keys(modelDone).length;
+        if (doneCount >= 4) {
+          S.a1 = true;
+          fb.innerHTML = '<b>🎉 建模表完成！</b><p>规则被我们「翻译」成了两个变量和它们的关系。抽象建模这一步，完成！</p>';
+          $('#badge1b').textContent = '第 2 关 · 建模表 ✓';
+          $('#badge1b').classList.add('done');
+          $('#ok1').classList.add('show');
+          notifyLearnSpaceComplete(1);
+        } else {
+          fb.innerHTML = '<b>✓ 填对了！</b><p>还剩 ' + (4 - doneCount) + ' 格。</p>';
+        }
+      } else {
+        b.classList.add('wrongpick');
+        setTimeout(function () { b.classList.remove('wrongpick'); }, 600);
+        var fb2 = $('#fb-model');
+        fb2.className = 'feedback no show';
+        fb2.innerHTML = '<b>不对哦：</b><p>' + (k === 'q'
+          ? '想一想这个名字是谁的数据：da 是<b>电脑</b>产生的，cai 是<b>用户</b>输入的。'
+          : 'da 是随机产生的，cai 是用户敲键盘输进去的。') + '</p>';
+      }
+    });
+  });
+}
+
+/* ========== 探究二：当一回计算机 ========== */
+var DA = 55;
+var R2 = [
+  { cai: 70, ans: 1, exp: '先判断 <code>cai＝da？</code>：70 ≠ 55，不是「是」；再判断 <code>cai＜da？</code>：70 ＜ 55 不成立 → 输出「<b>大了</b>」。' },
+  { cai: 30, ans: 2, exp: '计算机每次都<b>从头判断</b>：<code>cai＝da？</code> 否 → <code>cai＜da？</code> 30＜55 成立 → 输出「<b>小了</b>」。' },
+  { cai: 55, ans: 0, exp: '第一个条件 <code>cai＝da？</code> 就成立了 → 输出「<b>猜对了！</b>」，根本轮不到后面的判断。' }
+];
+var R2_OPTS = ['输出「猜对了！」', '输出「大了」', '输出「小了」'];
+
+function paintDots2() {
+  var h = '';
+  for (var i = 0; i < R2.length; i++) {
+    h += '<span class="' + (i < S.a2r ? 'ok' : (i === S.a2r ? 'cur' : '')) + '"></span>';
+  }
+  h += '<span class="cnt">' + (S.a2r >= R2.length ? '全部完成' : ('第 ' + (S.a2r + 1) + ' / ' + R2.length + ' 轮')) + '</span>';
+  $('#q2-dots').innerHTML = h;
+}
+
+function paintRound2() {
+  if (S.a2r >= R2.length) {
+    showFlowCard();
+    return;
+  }
+  var r = R2[S.a2r];
+  paintDots2();
+  var h = '<div class="round-box"><div class="rb-t">第 ' + (S.a2r + 1) + ' 轮　用户输入 cai＝' + r.cai + '</div>' +
+    '<div class="rb-d">计算机执行：① <code>cai＝da？</code>（' + r.cai + '＝' + DA + '？）　② 不成立再判断 <code>cai＜da？</code>（' + r.cai + '＜' + DA + '？）</div>' +
+    '<div class="pool" style="margin-top:12px" id="r2-opts"></div></div>';
+  $('#q2-area').innerHTML = h;
+  var host = $('#r2-opts');
+  R2_OPTS.forEach(function (t, i) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.textContent = t;
+    b.addEventListener('click', function () {
+      if (i === r.ans) {
+        b.classList.add('used', 'rightpick');
+        S.a2rOk++;
+        S.a2r++;
+        var box = $('#q2-area .round-box');
+        var f = document.createElement('div');
+        f.className = 'feedback ok show';
+        f.style.marginTop = '12px';
+        f.innerHTML = '<b>✓ 正确！</b><p>' + r.exp + '</p>';
+        box.appendChild(f);
+        paintDots2();
+        if (S.a2r >= R2.length) {
+          setTimeout(function () {
+            S.a2round = true;
+            $('#badge2a').textContent = '第 1 关 · 当一回计算机 ✓（答对 ' + S.a2rOk + ' / ' + R2.length + '）';
+            $('#badge2a').classList.add('done');
+            showFlowCard();
+          }, 700);
+        } else {
+          setTimeout(paintRound2, 1200);
+        }
+      } else {
+        b.classList.add('wrongpick');
+        setTimeout(function () { b.classList.remove('wrongpick'); }, 600);
+      }
+    });
+    host.appendChild(b);
+  });
+}
+
+function showFlowCard() {
+  $('#card-flow').style.display = '';
+  if (!flowInited) {
+    flow = freshFlow();
+    renderFlow();
+    flowInited = true;
+  }
+}
+
+/* ========== 探究二：流程图画板（第3课探究四逻辑） ========== */
+var FLOW_NW = { pill: 156, box: 180, para: 210, dia: 176 };
+var FLOW_NH = { pill: 54, box: 58, para: 72, dia: 112 };
+var FLOW_VGAP = 62;
+var FLOW_HGAP = 64;
+var FLOW_EMPTY_H = 46;
+var FLOW_DROP = 70;
+var FLOW_MERGE = 40;
+var flowScale = 1;
+var flowUid = 1;
+var pickSlot = null;
+var armedShape = null;
+var loopMode = null;
+var loopSourceId = null;
+var lastNodes = [];
+var flow = [];
+var flowInited = false;
+
+function flowId() { return 'f' + (flowUid++); }
+function freshFlow() {
+  flowUid = 1;
+  return [
+    { id: flowId(), kind: 'node', type: 'pill', text: '开始', fixed: true },
+    { id: flowId(), kind: 'node', type: 'pill', text: '结束', fixed: true }
+  ];
+}
+function sizeOf(block) {
+  if (block.kind === 'node') return { w: FLOW_NW[block.type], h: FLOW_NH[block.type] };
+  var yes = sizeList(block.yes);
+  var no = sizeList(block.no);
+  var branchH = Math.max(yes.h, no.h, FLOW_EMPTY_H);
+  return {
+    w: Math.max(FLOW_NW.dia, yes.w + FLOW_HGAP + no.w),
+    h: FLOW_NH.dia + FLOW_DROP + branchH + FLOW_MERGE,
+    yes: yes, no: no, branchH: branchH
+  };
+}
+function sizeList(list) {
+  if (!list.length) return { w: 88, h: FLOW_EMPTY_H, parts: [] };
+  var parts = list.map(sizeOf);
+  var h = 0;
+  parts.forEach(function (p, i) {
+    h += p.h;
+    if (i < parts.length - 1) h += FLOW_VGAP;
+  });
+  var ws = parts.map(function (p) { return p.w; });
+  return { w: Math.max.apply(null, ws), h: h, parts: parts };
+}
+function placeList(list, x, y, boxW) {
+  var sized = sizeList(list);
+  var nodes = [], arrows = [], slots = [];
+  if (!list.length) {
+    var cx0 = x + boxW / 2;
+    arrows.push({ pts: [cx0, y, cx0, y + FLOW_EMPTY_H], head: false });
+    slots.push({ x: cx0, y: y + FLOW_EMPTY_H / 2, list: list, index: 0 });
+    return { nodes: nodes, arrows: arrows, slots: slots, h: FLOW_EMPTY_H };
+  }
+  var cy = y;
+  list.forEach(function (block, i) {
+    var sz = sized.parts[i];
+    var bx = x + (boxW - sz.w) / 2;
+    var placed = placeBlock(block, bx, cy, sz);
+    placed.nodes.forEach(function (n) { nodes.push(n); });
+    placed.arrows.forEach(function (a) { arrows.push(a); });
+    placed.slots.forEach(function (s) { slots.push(s); });
+    if (i < list.length - 1) {
+      var cx = x + boxW / 2;
+      var y1 = cy + sz.h;
+      var y2 = y1 + FLOW_VGAP;
+      if (!block.loopTo) {
+        arrows.push({ pts: [cx, y1, cx, y2], head: true });
+        slots.push({ x: cx, y: (y1 + y2) / 2, list: list, index: i + 1 });
+      }
+      cy = y2;
+    } else cy += sz.h;
+  });
+  return { nodes: nodes, arrows: arrows, slots: slots, h: sized.h };
+}
+function placeBlock(block, x, y, sz) {
+  if (block.kind === 'node') {
+    return { nodes: [{ block: block, x: x, y: y, w: sz.w, h: sz.h }], arrows: [], slots: [] };
+  }
+  var nodes = [], arrows = [], slots = [];
+  var dx = x + (sz.w - FLOW_NW.dia) / 2;
+  nodes.push({ block: block, x: dx, y: y, w: FLOW_NW.dia, h: FLOW_NH.dia });
+  var diaCX = dx + FLOW_NW.dia / 2;
+  var diaBottom = y + FLOW_NH.dia;
+  var yesW = sz.yes.w, noW = sz.no.w;
+  var left = x + (sz.w - (yesW + FLOW_HGAP + noW)) / 2;
+  var branchTop = diaBottom + FLOW_DROP;
+  var yesX = left + yesW / 2;
+  var noX = left + yesW + FLOW_HGAP + noW / 2;
+  var jy = diaBottom + 24;
+  arrows.push({ pts: [diaCX, diaBottom, diaCX, jy, yesX, jy, yesX, branchTop], head: block.yes.length > 0, label: '是', lx: (diaCX + yesX) / 2, ly: jy - 2 });
+  arrows.push({ pts: [diaCX, jy, noX, jy, noX, branchTop], head: block.no.length > 0, label: '否', lx: (diaCX + noX) / 2, ly: jy - 2 });
+  var yesPlaced = placeList(block.yes, left, branchTop, yesW);
+  var noPlaced = placeList(block.no, left + yesW + FLOW_HGAP, branchTop, noW);
+  [yesPlaced, noPlaced].forEach(function (p) {
+    p.nodes.forEach(function (n) { nodes.push(n); });
+    p.arrows.forEach(function (a) { arrows.push(a); });
+    p.slots.forEach(function (s) { slots.push(s); });
+  });
+  if (block.yes.length) slots.push({ x: yesX, y: (jy + branchTop) / 2, list: block.yes, index: 0 });
+  if (block.no.length) slots.push({ x: noX, y: (jy + branchTop) / 2, list: block.no, index: 0 });
+  var branchBottom = branchTop + sz.branchH;
+  var mergeY = y + sz.h;
+  var yesLoop = block.yes.length > 0 && !!block.yes[block.yes.length - 1].loopTo;
+  var noLoop = block.no.length > 0 && !!block.no[block.no.length - 1].loopTo;
+  if (!yesLoop && sz.yes.h < sz.branchH) arrows.push({ pts: [yesX, branchTop + sz.yes.h, yesX, branchBottom], head: false });
+  if (!noLoop && sz.no.h < sz.branchH) arrows.push({ pts: [noX, branchTop + sz.no.h, noX, branchBottom], head: false });
+  if (!yesLoop) arrows.push({ pts: [yesX, branchBottom, yesX, mergeY, diaCX, mergeY], head: false });
+  if (!noLoop) arrows.push({ pts: [noX, branchBottom, noX, mergeY, diaCX, mergeY], head: false });
+  if (!yesLoop && block.yes.length) slots.push({ x: yesX, y: (branchBottom + mergeY) / 2, list: block.yes, index: block.yes.length });
+  if (!noLoop && block.no.length) slots.push({ x: noX, y: (branchBottom + mergeY) / 2, list: block.no, index: block.no.length });
+  return { nodes: nodes, arrows: arrows, slots: slots };
+}
+function slotOn(slot) {
+  return pickSlot && pickSlot.list === slot.list && pickSlot.index === slot.index;
+}
+function makePlus(slot) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'flow-plus' + (slotOn(slot) ? ' on' : '');
+  btn.textContent = '+';
+  btn.style.left = slot.x + 'px';
+  btn.style.top = slot.y + 'px';
+  if (loopMode === 'dst') btn.classList.add('loop-target');
+  btn.addEventListener('click', function (ev) {
+    ev.stopPropagation();
+    if (loopMode === 'src') {
+      var hint0 = $('#shapeHint');
+      if (hint0) hint0.textContent = '请先点出发的图形，再点上面要回到的 ＋。';
+      return;
+    }
+    if (loopMode === 'dst') {
+      finishLoop(slot);
+      return;
+    }
+    if (armedShape) {
+      pickSlot = slot;
+      insertShape(armedShape);
+      return;
+    }
+    pickSlot = slotOn(slot) ? null : slot;
+    var hint = $('#shapeHint');
+    if (hint) hint.textContent = pickSlot ? '已选中这个箭头。请点上面的图形，它会插进来并自动连上。' : '可以先点上面的图形，再点箭头上的 ＋。';
+    renderFlow();
+  });
+  return btn;
+}
+function makeNode(n) {
+  var block = n.block;
+  var kind = block.kind === 'if' ? 'dia' : block.type;
+  var el = document.createElement('div');
+  el.className = 'fn ' + kind + (loopSourceId === block.id ? ' loop-src' : '');
+  el.addEventListener('click', function (ev) {
+    if (loopMode !== 'src') return;
+    ev.stopPropagation();
+    if (block.fixed) {
+      var hint0 = $('#shapeHint');
+      if (hint0) hint0.textContent = '请点你画的步骤，不要点开始或结束。';
+      return;
+    }
+    loopSourceId = block.id;
+    loopMode = 'dst';
+    var hint = $('#shapeHint');
+    if (hint) hint.textContent = '再点上面要回到的箭头上的 ＋。线会从左边绕回去。';
+    renderFlow();
+  });
+  el.style.left = n.x + 'px';
+  el.style.top = n.y + 'px';
+  el.style.width = n.w + 'px';
+  el.style.height = n.h + 'px';
+  if (kind === 'dia') {
+    el.innerHTML = '<svg class="fn-svg" viewBox="0 0 176 112"><polygon points="88,4 172,56 88,108 4,56" fill="#fff" stroke="#111" stroke-width="2.4"/></svg>';
+  } else if (kind === 'para') {
+    el.innerHTML = '<svg class="fn-svg" viewBox="0 0 210 72"><polygon points="30,4 206,4 180,68 4,68" fill="#fff" stroke="#111" stroke-width="2.4"/></svg>';
+  }
+  var lab = document.createElement('div');
+  lab.className = 'fn-lab' + (block.text ? '' : ' ph');
+  lab.textContent = block.text || '双击输入';
+  if (!block.fixed) {
+    el.addEventListener('dblclick', function (ev) {
+      ev.preventDefault();
+      if (loopMode) return;
+      lab.contentEditable = 'true';
+      lab.classList.remove('ph');
+      if (lab.textContent === '双击输入') lab.textContent = '';
+      lab.focus();
+    });
+    lab.addEventListener('blur', function () {
+      lab.contentEditable = 'false';
+      block.text = lab.textContent.replace(/^\s+|\s+$/g, '');
+      if (!block.text) {
+        lab.textContent = '双击输入';
+        lab.classList.add('ph');
+      }
+    });
+    lab.addEventListener('pointerdown', function (ev) { if (lab.isContentEditable) ev.stopPropagation(); });
+    var xbtn = document.createElement('button');
+    xbtn.type = 'button';
+    xbtn.className = 'fn-x';
+    xbtn.setAttribute('aria-label', '删除');
+    xbtn.textContent = '×';
+    xbtn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      removeFrom(flow, block.id);
+      pickSlot = null;
+      renderFlow();
+    });
+    el.appendChild(xbtn);
+  }
+  el.appendChild(lab);
+  return el;
+}
+function renderFlow() {
+  var board = $('#board');
+  if (!board) return;
+  var sized = sizeList(flow);
+  var padX = 84, padY = 28;
+  var boxW = Math.max(sized.w, 240);
+  var placed = placeList(flow, padX, padY, boxW);
+  var width = boxW + padX * 2;
+  var height = Math.max(placed.h + padY * 2, 420);
+  board.innerHTML = '';
+  var holder = document.createElement('div');
+  holder.style.width = Math.ceil(width * flowScale) + 'px';
+  holder.style.height = Math.ceil(height * flowScale) + 'px';
+  holder.style.margin = '0 auto';
+  var stage = document.createElement('div');
+  stage.className = 'flow-stage';
+  stage.style.width = width + 'px';
+  stage.style.height = height + 'px';
+  stage.style.transform = 'scale(' + flowScale + ')';
+  holder.appendChild(stage);
+  board.appendChild(holder);
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'flow-svg');
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+  svg.innerHTML = '<defs><marker id="flowArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#222"/></marker></defs>';
+  placed.arrows.forEach(function (a) {
+    var pl = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    var pts = [];
+    for (var i = 0; i < a.pts.length; i += 2) pts.push(a.pts[i] + ',' + a.pts[i + 1]);
+    pl.setAttribute('points', pts.join(' '));
+    pl.setAttribute('fill', 'none');
+    pl.setAttribute('stroke', '#222');
+    pl.setAttribute('stroke-width', '2.3');
+    if (a.head) pl.setAttribute('marker-end', 'url(#flowArrow)');
+    svg.appendChild(pl);
+    if (a.label) {
+      var lab = document.createElement('div');
+      lab.className = 'flow-lab';
+      lab.textContent = a.label;
+      lab.style.left = a.lx + 'px';
+      lab.style.top = a.ly + 'px';
+      stage.appendChild(lab);
+    }
+  });
+  stage.appendChild(svg);
+  drawLoops(placed, svg, stage);
+  placed.nodes.forEach(function (n) { stage.appendChild(makeNode(n)); });
+  placed.slots.forEach(function (s) { stage.appendChild(makePlus(s)); });
+  lastNodes = placed.nodes;
+  $$('#shapeBar [data-shape]').forEach(function (btn) {
+    btn.classList.toggle('wait', !!pickSlot || btn.getAttribute('data-shape') === armedShape);
+  });
+  var loopBtn = $('#flowLoop');
+  if (loopBtn) loopBtn.classList.toggle('on', !!loopMode);
+}
+function drawLoops(placed, svg, stage) {
+  var railX = 30;
+  placed.nodes.forEach(function (src) {
+    if (!src.block.loopTo) return;
+    var slot = null;
+    placed.slots.forEach(function (s) {
+      if (slot) return;
+      if (s.index < s.list.length && s.list[s.index].id === src.block.loopTo) slot = s;
+    });
+    if (!slot) return;
+    var ySrc = src.y + src.h / 2;
+    var pts = [src.x, ySrc, railX, ySrc, railX, slot.y, slot.x - 16, slot.y];
+    var pl = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    var text = [];
+    for (var i = 0; i < pts.length; i += 2) text.push(pts[i] + ',' + pts[i + 1]);
+    pl.setAttribute('points', text.join(' '));
+    pl.setAttribute('fill', 'none');
+    pl.setAttribute('stroke', '#222');
+    pl.setAttribute('stroke-width', '2.3');
+    pl.setAttribute('marker-end', 'url(#flowArrow)');
+    svg.appendChild(pl);
+    var xbtn = document.createElement('button');
+    xbtn.type = 'button';
+    xbtn.className = 'flow-loop-x';
+    xbtn.setAttribute('aria-label', '删除循环线');
+    xbtn.textContent = '×';
+    xbtn.style.left = railX + 'px';
+    xbtn.style.top = ((ySrc + slot.y) / 2) + 'px';
+    xbtn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      delete src.block.loopTo;
+      renderFlow();
+    });
+    stage.appendChild(xbtn);
+  });
+}
+function finishLoop(slot) {
+  var hint = $('#shapeHint');
+  var src = findBlock(flow, loopSourceId);
+  var srcNode = nodeBox(loopSourceId);
+  if (!src || !srcNode) {
+    loopMode = null;
+    loopSourceId = null;
+    renderFlow();
+    return;
+  }
+  if (slot.index >= slot.list.length) {
+    if (hint) hint.textContent = '请点某个图形上方的 ＋，循环线会回到那个图形。';
+    return;
+  }
+  var target = slot.list[slot.index];
+  if (target.id === src.id) {
+    if (hint) hint.textContent = '循环线要回到上面的步骤，不能连回自己。';
+    return;
+  }
+  if (slot.y >= srcNode.y) {
+    if (hint) hint.textContent = '请点更上面的 ＋。循环线要从下面绕回上面。';
+    return;
+  }
+  src.loopTo = target.id;
+  loopMode = null;
+  loopSourceId = null;
+  if (hint) hint.textContent = '循环线已经从左边绕回去了。点线上的 × 可以删掉。';
+  renderFlow();
+}
+function nodeBox(id) {
+  for (var i = 0; i < lastNodes.length; i++) {
+    if (lastNodes[i].block.id === id) return lastNodes[i];
+  }
+  return null;
+}
+function findBlock(list, id) {
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id === id) return list[i];
+    if (list[i].kind === 'if') {
+      var found = findBlock(list[i].yes, id) || findBlock(list[i].no, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+function insertShape(type) {
+  if (loopMode) {
+    loopMode = null;
+    loopSourceId = null;
+  }
+  if (!pickSlot) {
+    armedShape = armedShape === type ? null : type;
+    var hint = $('#shapeHint');
+    if (hint) hint.textContent = armedShape ? '图形已选好。请点箭头上的 ＋，它会自动连进去。' : '可以先点上面的图形，再点箭头上的 ＋。';
+    renderFlow();
+    return;
+  }
+  armedShape = null;
+  var block = type === 'dia'
+    ? { id: flowId(), kind: 'if', text: '', yes: [], no: [] }
+    : { id: flowId(), kind: 'node', type: type, text: '' };
+  var appending = pickSlot.index === pickSlot.list.length;
+  var prev = pickSlot.index > 0 ? pickSlot.list[pickSlot.index - 1] : null;
+  pickSlot.list.splice(pickSlot.index, 0, block);
+  if (appending && prev && prev.loopTo) {
+    block.loopTo = prev.loopTo;
+    delete prev.loopTo;
+  }
+  pickSlot = null;
+  var hint2 = $('#shapeHint');
+  if (hint2) hint2.textContent = type === 'dia' ? '判断框已经连上，并分出「是」和「否」。双击可以写字。' : '图形已经连上箭头。双击可以写字，也可以再点别的 ＋。';
+  renderFlow();
+}
+function removeFrom(list, id) {
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id === id) {
+      var gone = [];
+      collectIds(list[i], gone);
+      list.splice(i, 1);
+      eachBlock(flow, function (b) { if (gone.indexOf(b.loopTo) >= 0) delete b.loopTo; });
+      return true;
+    }
+    if (list[i].kind === 'if' && (removeFrom(list[i].yes, id) || removeFrom(list[i].no, id))) return true;
+  }
+  return false;
+}
+function collectIds(block, ids) {
+  ids.push(block.id);
+  if (block.kind === 'if') {
+    block.yes.forEach(function (b) { collectIds(b, ids); });
+    block.no.forEach(function (b) { collectIds(b, ids); });
+  }
+}
+function eachBlock(list, fn) {
+  list.forEach(function (b) {
+    fn(b);
+    if (b.kind === 'if') { eachBlock(b.yes, fn); eachBlock(b.no, fn); }
+  });
+}
+function resetFlow() {
+  flow = freshFlow();
+  pickSlot = null;
+  armedShape = null;
+  loopMode = null;
+  loopSourceId = null;
+  var hint = $('#shapeHint');
+  if (hint) hint.textContent = '先点一个图形，再点箭头上的 ＋，图形会自动连进去。';
+  renderFlow();
+  var fb = $('#fb-flow');
+  if (fb) { fb.className = 'feedback'; fb.innerHTML = ''; }
+  $('#ok2').classList.remove('show');
+}
+
+function boardState() {
+  var types = {};
+  var written = 0;
+  var texts = [];
+  eachBlock(flow, function (b) {
+    if (b.fixed) return;
+    types[b.kind === 'if' ? 'dia' : b.type] = true;
+    var t = (b.text || '').replace(/^\s+|\s+$/g, '');
+    if (t) {
+      written += 1;
+      texts.push(t);
+    }
+  });
+  var loops = 0;
+  eachBlock(flow, function (b) { if (b.loopTo) loops += 1; });
+  if (!types.box || !types.dia || !types.para) {
+    return { ready: false, msg: '请先点箭头上的 ＋，再插入长方形、菱形和平行四边形。' };
+  }
+  if (written < 3) {
+    return { ready: false, msg: '请双击图形，至少写上三处内容。例如：产生 da、输入 cai、判断猜中、大了/小了。' };
+  }
+  if (!loops) {
+    return { ready: false, msg: '还缺少循环线。点「循环线」，先点下面的步骤，再点上面要回到的箭头上的 ＋。' };
+  }
+  var joined = texts.join(' ').toLowerCase();
+  // 宽松：文字里出现 da / cai / 大了 / 小了 之一即可
+  if (!/da|cai|大了|小了/.test(joined)) {
+    return { ready: false, msg: '再写一点关键词吧：例如 da、cai，或「大了」「小了」（宽松，写到其中一个就行）。' };
+  }
+  return { ready: true, msg: '' };
+}
+
+function submitFlow() {
+  var state = boardState();
+  var fb = $('#fb-flow');
+  if (!state.ready) {
+    fb.className = 'feedback no show';
+    fb.innerHTML = '<b>还差一点点：</b><p>' + state.msg + '</p>';
+    return;
+  }
+  if (!S.a2round && S.a2r < R2.length) {
+    fb.className = 'feedback no show';
+    fb.innerHTML = '<b>请先完成上面三轮「当一回计算机」。</b>';
+    return;
+  }
+  S.a2 = true;
+  fb.className = 'feedback ok show';
+  fb.innerHTML = '<b>🎉 流程图画好了！</b><p>开始 → 产生随机数 da → 输入 cai → 判断是否猜中 → 大了/小了，猜错再回到输入。这就是带分支和循环的算法。</p>';
+  $('#badge2b').textContent = '第 2 关 · 画流程图 ✓';
+  $('#badge2b').classList.add('done');
+  $('#ok2').classList.add('show');
+  notifyLearnSpaceComplete(2);
+}
+
+$$('#shapeBar [data-shape]').forEach(function (btn) {
+  btn.addEventListener('click', function () { insertShape(btn.getAttribute('data-shape')); });
+});
+var flowZoomIn = $('#flowZoomIn');
+var flowZoomOut = $('#flowZoomOut');
+if (flowZoomIn) flowZoomIn.addEventListener('click', function () {
+  flowScale = Math.min(1.45, Math.round((flowScale + 0.15) * 100) / 100);
+  renderFlow();
+});
+if (flowZoomOut) flowZoomOut.addEventListener('click', function () {
+  flowScale = Math.max(0.7, Math.round((flowScale - 0.15) * 100) / 100);
+  renderFlow();
+});
+var flowLoopBtn = $('#flowLoop');
+if (flowLoopBtn) flowLoopBtn.addEventListener('click', function () {
+  pickSlot = null;
+  armedShape = null;
+  if (loopMode) {
+    loopMode = null;
+    loopSourceId = null;
+    var hint = $('#shapeHint');
+    if (hint) hint.textContent = '可以先点上面的图形，再点箭头上的 ＋。';
+  } else {
+    loopMode = 'src';
+    loopSourceId = null;
+    var hint2 = $('#shapeHint');
+    if (hint2) hint2.textContent = '先点循环出发的图形（例如输出「大了」或「小了」）。';
+  }
+  renderFlow();
+});
+$('#btn-submit-flow').addEventListener('click', submitFlow);
+$('#btn-reset-flow').addEventListener('click', resetFlow);
+
+/* ========== 探究三：猜数字游戏 ========== */
+var secret = 0, tries = 0, over = false;
+
+function newGame() {
+  secret = 1 + Math.floor(Math.random() * 100);
+  tries = 0;
+  over = false;
+  $('#g-log').innerHTML = '';
+  $('#g-count').textContent = '已猜 0 次';
+  $('#g-msg').textContent = '';
+  $('#g-msg').className = 'g-msg';
+  $('#g-in').disabled = false;
+  $('#g-btn').disabled = false;
+  $('#g-new').style.display = 'none';
+  $('#g-in').value = '';
+}
+
+function guessOnce() {
+  if (over) return;
+  var v = parseInt($('#g-in').value, 10);
+  var msg = $('#g-msg');
+  if (isNaN(v) || v < 1 || v > 100) {
+    msg.className = 'g-msg';
+    msg.textContent = '请输入 1～100 之间的整数哦';
+    return;
+  }
+  tries++;
+  $('#g-count').textContent = '已猜 ' + tries + ' 次';
+  var log = $('#g-log');
+  var line = document.createElement('div');
+  line.className = 'line';
+  if (v === secret) {
+    over = true;
+    line.className = 'line hi';
+    line.innerHTML = '<span class="no">第 ' + tries + ' 次</span><span>cai＝' + v + '　→　🎉 猜对了！电脑的数就是 ' + secret + '</span>';
+    log.appendChild(line);
+    msg.className = 'g-msg win';
+    msg.textContent = '🎉 猜对了！你一共用了 ' + tries + ' 次。';
+    $('#g-in').disabled = true;
+    $('#g-btn').disabled = true;
+    $('#g-new').style.display = '';
+    S.gameWon = true;
+    paintGameFeedback();
+    $('#card-upgrade').style.display = '';
+    if (!S.up) paintUpgrade();
+    if (!S.struct) paintStruct();
+    $('#badge3a').textContent = '第 1 关 · 验证算法 ✓（' + tries + ' 次猜中）';
+    $('#badge3a').classList.add('done');
+    tryComplete3();
+  } else {
+    var up = v > secret;
+    line.className = 'line ' + (up ? 'up' : 'down');
+    line.innerHTML = '<span class="no">第 ' + tries + ' 次</span><span>cai＝' + v + '　→　' + (up ? '大了，往小猜 ↓' : '小了，往大猜 ↑') + '</span>';
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+    msg.className = 'g-msg ' + (up ? 'up' : 'down');
+    msg.textContent = up ? '大了！想一想：下一个数该往哪边调？' : '小了！想一想：下一个数该往哪边调？';
+  }
+  $('#g-in').value = '';
+  $('#g-in').focus();
+}
+
+function paintGameFeedback() {
+  var fb = $('#fb-game');
+  fb.className = 'feedback ok show';
+  fb.innerHTML = '<b>✅ 验证完成！</b><p>你（用户）<b>输入数据</b>，电脑（计算机）<b>处理数据</b>并<b>输出提示</b>——这就是完整的人机交互。猜错会回到「输入」——这就是<b>循环结构</b>。</p>';
+}
+
+/* ========== 探究三：升级 + 结构题 ========== */
+var UP_OPTS = [
+  { t: '① 新增一个变量（如 cs），记录已经猜了几次', ok: true },
+  { t: '② 每猜一次，cs 就加 1（cs＝cs＋1）', ok: true },
+  { t: '③ 判断前先看：cs ＞ 5 就结束游戏，输出「次数用完了」', ok: true },
+  { t: '④ 原来的流程图完全不用改', ok: false, why: '不限次数的算法根本不知道自己猜了几次，不改动就没法限制次数。' }
+];
+var STRUCT_OPTS = [
+  { t: '顺序结构', right: false, why: '顺序结构是从上往下做一遍，不会重复。' },
+  { t: '分支结构', right: false, why: '分支结构是选一条路走，不会反复回来。' },
+  { t: '循环结构', right: true, exp: '「猜错再判断」「次数加 1 再比较」都是<b>反复执行</b>——这就是循环结构。' }
+];
+var upPicks = [];
+
+function paintUpgrade() {
+  var host = $('#pool-up');
+  host.innerHTML = '';
+  UP_OPTS.forEach(function (o, i) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.textContent = o.t;
+    b.addEventListener('click', function () {
+      if (S.up) return;
+      if (o.ok) {
+        b.classList.add('used', 'rightpick');
+        if (upPicks.indexOf(i) < 0) upPicks.push(i);
+        var fb = $('#fb-up');
+        fb.className = 'feedback ok show';
+        fb.innerHTML = '<b>✓ 需要这条改动！</b><p>已确认 ' + upPicks.length + ' / 3 条。</p>';
+        if (upPicks.length >= 3) {
+          S.up = true;
+          fb.innerHTML = '<b>🎉 升级方案齐了！</b><p>新增变量 → 每次加 1 → 超过 5 次就结束。</p>';
+          $('#q-struct').style.display = '';
+          $('#badge3b').textContent = '第 2 关 · 升级算法 ✓';
+          $('#badge3b').classList.add('done');
+          tryComplete3();
+        }
+      } else {
+        b.classList.add('wrongpick');
+        setTimeout(function () { b.classList.remove('wrongpick'); }, 700);
+        var fb2 = $('#fb-up');
+        fb2.className = 'feedback no show';
+        fb2.innerHTML = '<b>这条不需要：</b><p>' + o.why + '</p>';
+      }
+    });
+    host.appendChild(b);
+  });
+}
+
+function paintStruct() {
+  var host = $('#pool-struct');
+  host.innerHTML = '';
+  STRUCT_OPTS.forEach(function (o) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.textContent = o.t;
+    b.addEventListener('click', function () {
+      if (S.struct) return;
+      var fb = $('#fb-struct');
+      if (o.right) {
+        b.classList.add('used', 'rightpick');
+        S.struct = true;
+        fb.className = 'feedback ok show';
+        fb.innerHTML = '<b>✓ 是循环结构！</b><p>' + o.exp + '</p>';
+        $('#card-open').style.display = '';
+        tryComplete3();
+      } else {
+        b.classList.add('wrongpick');
+        setTimeout(function () { b.classList.remove('wrongpick'); }, 600);
+        fb.className = 'feedback no show';
+        fb.innerHTML = '<b>再想想：</b><p>' + o.why + '</p>';
+      }
+    });
+    host.appendChild(b);
+  });
+}
+
+/* ========== 探究三：开放题 ========== */
+function countOpenChars(s) {
+  return String(s || '').replace(/\s/g, '').length;
+}
+
+function updateOpenMeta() {
+  var n = countOpenChars($('#open-idea').value);
+  $('#open-meta').textContent = '已写 ' + n + ' 字（至少 8 字）';
+}
+
+function submitOpen() {
+  var text = $('#open-idea').value;
+  var n = countOpenChars(text);
+  var fb = $('#fb-open');
+  if (n < 8) {
+    fb.className = 'feedback no show';
+    fb.innerHTML = '<b>再写一点：</b><p>至少写 8 个字，说说你的想法吧。</p>';
+    return;
+  }
+  S.open = true;
+  fb.className = 'feedback ok show';
+  fb.innerHTML = '<b>✓ 想法已提交！</b><p>谢谢你的创意，让猜数字游戏更有趣。</p>';
+  $('#badge3c').textContent = '第 3 关 · 开放题 ✓';
+  $('#badge3c').classList.add('done');
+  tryComplete3();
+}
+
+function tryComplete3() {
+  if (S.gameWon && S.up && S.struct && S.open && !S.a3) {
+    S.a3 = true;
+    $('#ok3').classList.add('show');
+    notifyLearnSpaceComplete(3, {
+      openIdea: String($('#open-idea').value || '').trim()
+    });
+  } else if (S.gameWon && S.up && S.struct && !S.open) {
+    $('#card-open').style.display = '';
+  }
+}
+
+$('#g-btn').addEventListener('click', guessOnce);
+$('#g-new').addEventListener('click', function () {
+  newGame();
+});
+$('#g-in').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') guessOnce();
+});
+$('#open-idea').addEventListener('input', updateOpenMeta);
+$('#btn-open').addEventListener('click', submitOpen);
+
+/* ========== 初始化 ========== */
+paintPool1();
+paintRound2();
+newGame();
+updateOpenMeta();
+
+var initStep = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+switchTab(isFinite(initStep) && initStep >= 1 && initStep <= 3 ? initStep : 1);
+if (IS_EMBEDDED) {
+  document.body.classList.add('embedded-mode');
+}
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI学习助手 - 变量与规则梳理</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .left-header {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #4d8eff 0%, #2c5aa0 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .left-header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .iframe-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            min-height: 700px;
+            border: none;
+        }
+        
+        .right-panel {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .right-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .right-header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .right-header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .form-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-group label i {
+            color: #4d8eff;
+        }
+        
+        .form-group textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4d8eff;
+        }
+        
+        .form-group textarea::placeholder {
+            color: #999;
+        }
+        
+        .char-count {
+            font-size: 0.85rem;
+            color: #999;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .save-btn {
+            background: linear-gradient(135deg, #4d8eff 0%, #2c5aa0 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(77, 142, 255, 0.3);
+        }
+        
+        .save-btn:active {
+            transform: translateY(0);
+        }
+        
+        .save-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .notification.error {
+            background: #f44336;
+        }
+        
+        .notification.active {
+            display: flex;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .right-panel {
+                width: 100%;
+                max-height: 50vh;
+            }
+            
+            .left-panel {
+                min-height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧：Dify智能体对话 -->
+        <div class="left-panel">
+            <div class="left-header">
+                <h2><i class="fas fa-robot"></i> AI学习助手</h2>
+                <button class="back-btn" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i> 返回
+                </button>
+            </div>
+            <div class="iframe-container">
+                <iframe
+                    id="dify-iframe"
+                    src="{{ dify_chatbot_url }}"
+                    style="width: 100%; height: 100%; min-height: 700px"
+                    frameborder="0"
+                    allow="microphone">
+                </iframe>
+            </div>
+        </div>
+        
+        <!-- 右侧：提交窗口 -->
+        <div class="right-panel">
+            <div class="right-header">
+                <h2><i class="fas fa-clipboard-list"></i> 记录变量与规则</h2>
+                <p>将梳理好的变量和规则记录到下方</p>
+            </div>
+            <div class="form-container">
+                <form id="submit-form">
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-list"></i>
+                            变量清单
+                        </label>
+                        <textarea
+                            id="variables"
+                            name="variables"
+                            placeholder="请将AI助手梳理的变量清单复制粘贴到这里...
+
+例如：
+• score (int) - 玩家获得的分数
+• health (int) - 角色的生命值
+• coins (int) - 玩家收集的金币数量"
+                            required></textarea>
+                        <div class="char-count">
+                            <span id="variables-count">0</span> 字符
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-sitemap"></i>
+                            规则清单
+                        </label>
+                        <textarea
+                            id="rules"
+                            name="rules"
+                            placeholder="请将AI助手梳理的规则清单复制粘贴到这里...
+
+例如：
+• 如果 health <= 0，则 gameState = '结束'
+• score = score + enemyScore
+• health = health - damage"
+                            required></textarea>
+                        <div class="char-count">
+                            <span id="rules-count">0</span> 字符
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="save-btn" id="save-btn">
+                        <i class="fas fa-save"></i>
+                        保存
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 通知 -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notification-text"></span>
+    </div>
+    
+    <script>
+        // 获取URL参数
+        const urlParams = new URLSearchParams(window.location.search);
+        let teamId = {{ team_id|default('null') }};
+        const accessCode = {{ access_code|tojson|default('null') }};
+        const teamAccessCode = {{ team_access_code|tojson|default('null') }};
+        
+        // 确保teamId是数字
+        if (teamId && typeof teamId === 'string') {
+            teamId = parseInt(teamId);
+            if (isNaN(teamId)) {
+                teamId = null;
+            }
+        }
+        
+        console.log('=== AI学习助手 - Dify会话隔离 ===');
+        console.log('团队ID:', teamId);
+        console.log('访问码:', teamAccessCode);
+        console.log('Dify iframe URL:', document.getElementById('dify-iframe').src);
+        console.log('✅ 每个团队使用独立的user参数，会话完全隔离');
+        
+        // 字符计数
+        const variablesTextarea = document.getElementById('variables');
+        const rulesTextarea = document.getElementById('rules');
+        const variablesCount = document.getElementById('variables-count');
+        const rulesCount = document.getElementById('rules-count');
+        
+        variablesTextarea.addEventListener('input', () => {
+            variablesCount.textContent = variablesTextarea.value.length;
+        });
+        
+        rulesTextarea.addEventListener('input', () => {
+            rulesCount.textContent = rulesTextarea.value.length;
+        });
+        
+        // 表单提交
+        document.getElementById('submit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const saveBtn = document.getElementById('save-btn');
+            const variables = variablesTextarea.value.trim();
+            const rules = rulesTextarea.value.trim();
+            
+            if (!variables || !rules) {
+                showNotification('请填写变量和规则内容', true);
+                return;
+            }
+            
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+            
+            try {
+                const requestData = {
+                    variables: variables,
+                    rules: rules
+                };
+                
+                // 添加team_id或access_code
+                if (teamId) {
+                    requestData.team_id = teamId;
+                }
+                if (teamAccessCode || accessCode) {
+                    requestData.access_code = teamAccessCode || accessCode;
+                }
+                
+                console.log('保存数据:', { ...requestData, variables: variables.substring(0, 50) + '...', rules: rules.substring(0, 50) + '...' });
+                
+                const response = await fetch('/api/teams/submit-variables-rules', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('响应状态:', response.status);
+                
+                const data = await response.json();
+                console.log('响应数据:', data);
+                
+                if (response.ok && data.success) {
+                    showNotification('保存成功！');
+                } else {
+                    showNotification(data.error || '保存失败，请稍后重试', true);
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+                showNotification('保存失败：' + error.message, true);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> 保存';
+            }
+        });
+        
+        // 显示通知
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notification-text');
+            
+            notificationText.textContent = message;
+            notification.className = 'notification' + (isError ? ' error' : '');
+            notification.classList.add('active');
+            
+            setTimeout(() => {
+                notification.classList.remove('active');
+            }, 3000);
+        }
+        
+        // 返回按钮
+        function goBack() {
+            if (accessCode || teamAccessCode) {
+                window.location.href = `/game-rules-detail?access_code=${accessCode || teamAccessCode}`;
+            } else if (teamId) {
+                window.location.href = `/game-rules-detail?team_id=${teamId}`;
+            } else {
+                window.location.href = '/second';
+            }
+        }
+    </script>
+</body>
+</html>

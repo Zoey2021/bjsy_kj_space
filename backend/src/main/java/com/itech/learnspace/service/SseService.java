@@ -33,14 +33,28 @@ public class SseService {
         return emitter;
     }
 
-    /** 学生端 SSE */
+    /** 学生端 SSE：同一学生只保留最新连接，避免重连占满数据库连接池 */
     public SseEmitter subscribeStudent(Long studentId) {
+        completeAll(studentEmitters.remove(studentId));
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
         studentEmitters.computeIfAbsent(studentId, k -> new CopyOnWriteArrayList<>()).add(emitter);
         bindLifecycle(studentEmitters, studentId, emitter);
         sendEvent(emitter, "connected", "SSE连接成功");
         log.info("学生 SSE 连接，studentId={}", studentId);
         return emitter;
+    }
+
+    private void completeAll(CopyOnWriteArrayList<SseEmitter> list) {
+        if (list == null || list.isEmpty()) {
+            return;
+        }
+        for (SseEmitter emitter : list) {
+            try {
+                emitter.complete();
+            } catch (Exception ignored) {
+                // 旧连接可能已断开
+            }
+        }
     }
 
     public void broadcast(Long classId, Object data) {

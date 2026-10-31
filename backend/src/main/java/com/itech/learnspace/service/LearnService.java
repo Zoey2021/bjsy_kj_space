@@ -2,6 +2,8 @@ package com.itech.learnspace.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.itech.learnspace.dto.SubmitRequest;
 import com.itech.learnspace.dto.VisitRequest;
 import com.itech.learnspace.entity.*;
@@ -9,10 +11,14 @@ import com.itech.learnspace.exception.BusinessException;
 import com.itech.learnspace.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class LearnService {
@@ -26,7 +32,6 @@ public class LearnService {
     private final SysUserRepository userRepository;
     private final SysConfigRepository configRepository;
     private final LearnSubmissionLogRepository submissionLogRepository;
-    private final DashboardService dashboardService;
     private final SseService sseService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -39,7 +44,6 @@ public class LearnService {
                         SysUserRepository userRepository,
                         SysConfigRepository configRepository,
                         LearnSubmissionLogRepository submissionLogRepository,
-                        DashboardService dashboardService,
                         SseService sseService) {
         this.submissionRepository = submissionRepository;
         this.progressRepository = progressRepository;
@@ -50,7 +54,6 @@ public class LearnService {
         this.userRepository = userRepository;
         this.configRepository = configRepository;
         this.submissionLogRepository = submissionLogRepository;
-        this.dashboardService = dashboardService;
         this.sseService = sseService;
     }
 
@@ -70,31 +73,79 @@ public class LearnService {
 
         submission.setTaskId(req.getTaskId());
         submission.setStudentId(studentId);
-        submission.setContentJson(req.getContentJson());
+        String contentToStore = req.getContentJson();
+        boolean draftSave = false;
+        boolean progressSave = false;
+        try {
+            JsonNode draftNode = objectMapper.readTree(contentToStore == null ? "{}" : contentToStore);
+            if (draftNode instanceof ObjectNode) {
+                ObjectNode obj = (ObjectNode) draftNode;
+                if (obj.path("draftSave").asBoolean(false)) {
+                    draftSave = true;
+                    obj.remove("draftSave");
+                }
+                if (obj.path("progressSave").asBoolean(false)) {
+                    progressSave = true;
+                    obj.remove("progressSave");
+                    if ("progress".equals(obj.path("type").asText())) {
+                        obj.remove("type");
+                    }
+                }
+                contentToStore = objectMapper.writeValueAsString(obj);
+            }
+        } catch (Exception ignored) {
+            draftSave = false;
+            progressSave = false;
+        }
+        contentToStore = mergeKeptProgress(submission.getContentJson(), contentToStore);
+        if (draftSave || progressSave) {
+            submission.setContentJson(contentToStore);
+            if (submission.getId() == null) {
+                submission.setStudySeconds(0);
+                submission.setStatus("SUBMITTED");
+            }
+            submissionRepository.save(submission);
+            return submission;
+        }
+
+        submission.setContentJson(contentToStore);
         submission.setStudySeconds(req.getStudySeconds() != null ? req.getStudySeconds() : 0);
-        submission.setScore(resolveSubmissionScore(task, req.getContentJson()));
+        submission.setScore(resolveSubmissionScore(task, contentToStore));
         submission.setStatus("SUBMITTED");
         submissionRepository.save(submission);
 
-        appendSubmissionLog(studentId, task, req.getContentJson(), submission.getScore(),
+        appendSubmissionLog(studentId, task, contentToStore, submission.getScore(),
                 req.getStudySeconds() != null ? req.getStudySeconds() : 0);
 
         // 更新课时学习进度
         updateLessonProgress(studentId, task.getLessonId());
 
         // 每完成一个活动 +2 积分（同一活动仅奖励一次）
-        awardActivityPoints(studentId, task.getLessonId(), req.getContentJson());
+        int awarded = awardActivityPoints(studentId, task.getLessonId(), req.getContentJson());
+        submission.setPointsAwarded(awarded);
+        submission.setEarnedPoints(nz(pointsRepository.sumEarnedByStudentId(studentId)));
+        submission.setRedeemablePoints(nz(pointsRepository.sumPointsByStudentId(studentId)));
 
         // 非工作台任务：首次提交仍按任务奖励（兼容旧逻辑）
         if (isFirstSubmit && !isWorkspaceSubmission(req.getContentJson())) {
             addPoints(studentId, task.getId(), task.getTitle(), "TASK", task.getId(), pointsPerTask());
         }
 
-        // 【关键】通过 SSE 实时通知教师看板刷新
+        // 事务提交后再通知教师端刷新，避免学生提交时扫描全校课时
         SysUser student = userRepository.findById(studentId).orElse(null);
         if (student != null && student.getClassId() != null) {
-            sseService.broadcast(student.getClassId(),
-                    dashboardService.buildDashboardData(student.getClassId()));
+            Long classId = student.getClassId();
+            Long lessonId = task.getLessonId();
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    Map<String, Object> ping = new HashMap<String, Object>();
+                    ping.put("refresh", Boolean.TRUE);
+                    ping.put("classId", classId);
+                    ping.put("lessonId", lessonId);
+                    sseService.broadcast(classId, ping);
+                }
+            });
         }
 
         return submission;
@@ -152,6 +203,95 @@ public class LearnService {
                 progressRepository.save(existing);
             });
         }
+    }
+
+    /** 新的保存不能把已经完成的探究、小测、评价从记录里清掉。 */
+    private String mergeKeptProgress(String oldJson, String newJson) {
+        try {
+            JsonNode newNode = objectMapper.readTree(newJson == null ? "{}" : newJson);
+            if (!(newNode instanceof ObjectNode)) {
+                return newJson;
+            }
+            ObjectNode base = (ObjectNode) newNode;
+            if (!StringUtils.hasText(oldJson)) {
+                return objectMapper.writeValueAsString(base);
+            }
+            JsonNode oldNode = objectMapper.readTree(oldJson);
+            if (!(oldNode instanceof ObjectNode)) {
+                return objectMapper.writeValueAsString(base);
+            }
+            ObjectNode oldObj = (ObjectNode) oldNode;
+            java.util.LinkedHashSet<Integer> done = new java.util.LinkedHashSet<Integer>();
+            addCompletedIndexes(done, oldObj.get("completedActivities"));
+            addCompletedIndexes(done, base.get("completedActivities"));
+            if (base.path("stepCompleted").asBoolean(false)) {
+                String type = base.path("type").asText("");
+                int act = base.path("activityIndex").asInt(0);
+                if (act > 0 && act < 10 && !"quiz".equals(type) && !"evaluation".equals(type)
+                        && !"progress".equals(type) && !"handin".equals(type)) {
+                    done.add(act);
+                }
+            }
+            ArrayNode arr = objectMapper.createArrayNode();
+            for (Integer idx : done) {
+                arr.add(idx);
+            }
+            if (arr.size() > 0 || oldObj.has("completedActivities")) {
+                base.set("completedActivities", arr);
+            }
+            copyIfAbsent(base, oldObj, "quizScore");
+            copyIfAbsent(base, oldObj, "correctCount");
+            copyIfAbsent(base, oldObj, "quizAnswers");
+            copyIfAbsent(base, oldObj, "dimensionScores");
+            copyIfAbsent(base, oldObj, "evaluationAnswers");
+            copyIfAbsent(base, oldObj, "activityDrafts");
+            if (!base.path("quizSubmitted").asBoolean(false) && quizKept(oldObj)) {
+                base.put("quizSubmitted", true);
+            }
+            if (!base.path("evaluationSubmitted").asBoolean(false) && evalKept(oldObj)) {
+                base.put("evaluationSubmitted", true);
+            }
+            if (!base.path("handedIn").asBoolean(false) && oldObj.path("handedIn").asBoolean(false)) {
+                base.put("handedIn", true);
+            }
+            if (!base.path("readingCompleted").asBoolean(false) && oldObj.path("readingCompleted").asBoolean(false)) {
+                base.put("readingCompleted", true);
+            }
+            return objectMapper.writeValueAsString(base);
+        } catch (Exception ex) {
+            return newJson;
+        }
+    }
+
+    private void addCompletedIndexes(java.util.Set<Integer> done, JsonNode array) {
+        if (array == null || !array.isArray()) {
+            return;
+        }
+        for (JsonNode item : array) {
+            int idx = item.asInt(0);
+            if ((idx > 0 && idx < 10) || idx == 98 || idx == 99) {
+                done.add(idx);
+            }
+        }
+    }
+
+    private void copyIfAbsent(ObjectNode base, ObjectNode oldObj, String field) {
+        if (!base.has(field) || base.get(field).isNull()) {
+            if (oldObj.has(field) && !oldObj.get(field).isNull()) {
+                base.set(field, oldObj.get(field));
+            }
+        }
+    }
+
+    private boolean quizKept(ObjectNode node) {
+        return node.path("quizSubmitted").asBoolean(false) || node.has("quizScore")
+                || node.has("dimensionScores") || "quiz".equals(node.path("type").asText());
+    }
+
+    private boolean evalKept(ObjectNode node) {
+        return node.path("evaluationSubmitted").asBoolean(false)
+                || "evaluation".equals(node.path("type").asText())
+                || (node.has("evaluationAnswers") && node.get("evaluationAnswers").size() > 0);
     }
 
     private int resolveSubmissionScore(CourseTask task, String contentJson) {
@@ -285,10 +425,10 @@ public class LearnService {
         }
     }
 
-    /** 每完成一个环节奖励积分；完整拓展任务额外加分 */
-    private void awardActivityPoints(Long studentId, Long lessonId, String contentJson) {
+    /** 每完成一个探究、课堂小测或学习评价奖励 2 分；同一环节只奖一次。返回本次新加的分数。 */
+    private int awardActivityPoints(Long studentId, Long lessonId, String contentJson) {
         if (!StringUtils.hasText(contentJson)) {
-            return;
+            return 0;
         }
         try {
             JsonNode node = objectMapper.readTree(contentJson);
@@ -296,45 +436,48 @@ public class LearnService {
             int activityIndex = node.path("activityIndex").asInt(0);
 
             if ("quiz".equals(type)) {
-                grantActivityPointsOnce(studentId, lessonId, 9, "完成课堂小测");
-                return;
+                return grantActivityPointsOnce(studentId, lessonId, 9, "完成课堂小测");
             }
             if ("evaluation".equals(type)) {
-                grantActivityPointsOnce(studentId, lessonId, 8, "完成学习评价");
-                return;
+                return grantActivityPointsOnce(studentId, lessonId, 8, "完成学习评价");
             }
             if (activityIndex >= 1 && activityIndex <= 6 && node.path("stepCompleted").asBoolean(false)) {
                 CourseLesson lesson = lessonRepository.findById(lessonId).orElse(null);
                 String lessonTitle = lesson != null ? lesson.getTitle() : "课时";
-                grantActivityPointsOnce(studentId, lessonId, activityIndex,
+                int gained = grantActivityPointsOnce(studentId, lessonId, activityIndex,
                         "完成探究" + activityIndex + "：" + lessonTitle);
                 if (isExtensionActivity(lessonId, activityIndex)) {
-                    grantBonusOnce(studentId, lessonId, activityIndex,
+                    gained += grantBonusOnce(studentId, lessonId, activityIndex,
                             "完整完成拓展任务：" + lessonTitle);
                 }
+                return gained;
             }
         } catch (Exception ignored) {
         }
+        return 0;
     }
 
-    private void grantActivityPointsOnce(Long studentId, Long lessonId, int slot, String desc) {
+    private int grantActivityPointsOnce(Long studentId, Long lessonId, int slot, String desc) {
         long sourceId = lessonId * 100L + slot;
         if (pointsRepository.existsByStudentIdAndSourceTypeAndSourceId(studentId, "ACTIVITY", sourceId)) {
-            return;
+            return 0;
         }
-        addPoints(studentId, sourceId, desc, "ACTIVITY", sourceId, pointsPerActivity());
+        int points = pointsPerActivity();
+        addPoints(studentId, sourceId, desc, "ACTIVITY", sourceId, points);
+        return points;
     }
 
-    private void grantBonusOnce(Long studentId, Long lessonId, int slot, String desc) {
+    private int grantBonusOnce(Long studentId, Long lessonId, int slot, String desc) {
         int bonus = extensionBonusPoints();
         if (bonus <= 0) {
-            return;
+            return 0;
         }
         long sourceId = lessonId * 100L + slot;
         if (pointsRepository.existsByStudentIdAndSourceTypeAndSourceId(studentId, "BONUS", sourceId)) {
-            return;
+            return 0;
         }
         addPoints(studentId, sourceId, desc, "BONUS", sourceId, bonus);
+        return bonus;
     }
 
     private boolean isExtensionActivity(Long lessonId, int activityIndex) {
@@ -342,29 +485,17 @@ public class LearnService {
         if (activities == null || !activities.isArray() || activities.size() == 0) {
             return false;
         }
-        boolean anyTagged = false;
-        int lastIndex = 0;
         JsonNode matched = null;
         for (JsonNode act : activities) {
-            int idx = act.path("index").asInt(0);
-            if (idx > lastIndex) {
-                lastIndex = idx;
-            }
-            String title = act.path("title").asText("");
-            if (title.contains("拓展")) {
-                anyTagged = true;
-            }
-            if (idx == activityIndex) {
+            if (act.path("index").asInt(0) == activityIndex) {
                 matched = act;
+                break;
             }
         }
         if (matched == null) {
             return false;
         }
-        if (anyTagged) {
-            return matched.path("title").asText("").contains("拓展");
-        }
-        return activityIndex == lastIndex;
+        return matched.path("title").asText("").contains("拓展");
     }
 
     private JsonNode loadWorkspaceActivities(Long lessonId) {

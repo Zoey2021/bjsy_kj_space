@@ -28,10 +28,12 @@ CREATE TABLE sys_user (
   class_id      BIGINT       NULL     COMMENT '学生所属班级ID（教师/管理员为空）',
   tier_override VARCHAR(4)   NULL     COMMENT '教师手动覆盖档位 A/B/C',
   status        TINYINT      NOT NULL DEFAULT 1 COMMENT '1启用 0禁用',
+  dingtalk_union_id VARCHAR(64) NULL COMMENT '钉钉用户unionId，仅本校教师绑定',
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_username (username),
+  UNIQUE KEY uk_dingtalk_union (dingtalk_union_id),
   KEY idx_role (role),
   KEY idx_class_id (class_id)
 ) ENGINE=InnoDB COMMENT='系统用户表';
@@ -349,8 +351,8 @@ INSERT INTO course_grade (name, sort_order, description, textbook_type, cover_ur
 ('二年级下册', 91, '科创启航 · 洞察未来科创启航（二年级下册）', 'SCHOOL', '/course-covers/kechuang-down.png', NULL),
 ('二年级上册', 92, '娃娃讲科技 · 少儿趣味科普课堂（二年级上册）', 'SCHOOL', '/course-covers/wawa-tech-up.png', NULL),
 ('二年级下册', 93, '娃娃讲科技 · 少儿趣味科普课堂（二年级下册）', 'SCHOOL', '/course-covers/wawa-tech-down.png', NULL),
-('上册', 94, '人工智能启蒙 · 人工智能启蒙（上册）', 'SCHOOL', '/course-covers/ai-enlighten-up.png', NULL),
-('下册', 95, '人工智能启蒙 · 人工智能启蒙（下册）', 'SCHOOL', '/course-covers/ai-enlighten-down.png', NULL);
+('上册', 94, '人工智能启蒙 · AI初体验·认识智能新朋友（上册）', 'SCHOOL', '/course-covers/ai-enlighten-up.png', NULL),
+('下册', 95, '人工智能启蒙 · 我是AI小玩家·探秘逻辑与未来（下册）', 'SCHOOL', '/course-covers/ai-enlighten-down.png', NULL);
 
 INSERT INTO course_unit (grade_id, name, sort_order, description) VALUES
 ((SELECT id FROM course_grade WHERE name='三年级上册' AND textbook_type='MAIN' LIMIT 1), '第一单元 感受信息社会', 1, NULL),
@@ -410,7 +412,7 @@ INSERT INTO course_lesson (unit_id, title, sort_order, content, duration_min) VA
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='三年级下册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 在线学习小能手' LIMIT 1), '第13课 资源收集途径', 3, '<p>本课属于《三年级下册》《第三单元 在线学习小能手》。</p><p>教材页码约第 53 页。请按教师课堂安排完成学习。</p>', 40),
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='三年级下册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 在线学习小能手' LIMIT 1), '第14课 资源整合加工', 4, '<p>本课属于《三年级下册》《第三单元 在线学习小能手》。</p><p>教材页码约第 57 页。请按教师课堂安排完成学习。</p>', 40),
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='三年级下册' AND cg.textbook_type='MAIN' AND cu.name='第三单元 在线学习小能手' LIMIT 1), '第15课 成果分享交流', 5, '<p>本课属于《三年级下册》《第三单元 在线学习小能手》。</p><p>教材页码约第 61 页。请按教师课堂安排完成学习。</p>', 40),
-((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='四年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 泛在的数据' LIMIT 1), '第1课 身边的数据', 1, '<p>本课属于《四年级上册》《第一单元 泛在的数据》。</p><p>教材页码约第 2 页。请按教师课堂安排完成学习。</p>', 40),
+((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='四年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 泛在的数据' LIMIT 1), '第1课 身边的数据', 1, '<p>本课学习<strong>身边的数据</strong>：从生活场景中发现数据，认识文字、数值、图像、声音、视频五类数据。</p><p>请从左侧依次完成<strong>环节1、环节2</strong>，完成后作答<strong>课堂小测</strong>。</p>', 40),
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='四年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 泛在的数据' LIMIT 1), '第2课 多样的数据', 2, '<p>本课属于《四年级上册》《第一单元 泛在的数据》。</p><p>教材页码约第 5 页。请按教师课堂安排完成学习。</p>', 40),
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='四年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 泛在的数据' LIMIT 1), '第3课 数据的价值', 3, '<p>本课属于《四年级上册》《第一单元 泛在的数据》。</p><p>教材页码约第 9 页。请按教师课堂安排完成学习。</p>', 40),
 ((SELECT cu.id FROM course_unit cu INNER JOIN course_grade cg ON cu.grade_id = cg.id WHERE cg.name='四年级上册' AND cg.textbook_type='MAIN' AND cu.name='第一单元 泛在的数据' LIMIT 1), '第4课 数据的安全', 4, '<p>本课属于《四年级上册》《第一单元 泛在的数据》。</p><p>教材页码约第 13 页。请按教师课堂安排完成学习。</p>', 40),
@@ -561,6 +563,48 @@ INSERT INTO learn_mall_item (code, name, icon, cost, sort_order, enabled) VALUES
 ('praise_letter', '表扬信', '💌', 20, 4, 1),
 ('milk_tea', '奶茶1份', '🧋', 50, 5, 1),
 ('info_blindbox', '信息盲盒小礼物', '🎁', 20, 6, 1);
+
+-- 四年级上册第1课：身边的数据学生工作台
+INSERT INTO course_resource (lesson_id, title, res_type, content_url, sort_order)
+SELECT cl.id, '身边的数据探究活动', 'WEB', '/lessons/g4-up-lesson1/index.html', 1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '四年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 泛在的数据' AND cl.title = '第1课 身边的数据'
+LIMIT 1;
+
+INSERT INTO course_task (lesson_id, title, description, task_type, config_json, max_score, sort_order)
+SELECT cl.id, '身边的数据探究', '四年级上第1课学生工作台：环节1场景匹配、环节2分类岛屿', 'EXTERNAL',
+  '{"layout":"student_workspace","lessonTitle":"第1课 身边的数据","objectives":"我能从身边的生活场景中发现数据，并能把文字、数值、图像、声音、视频正确分类。","introMap":{"title":"身边的数据","branches":[{"label":"3 本课学习目标","nodes":[{"text":"从生活场景中认出数据"},{"text":"区分文字、数值、图像、声音、视频"}]},{"label":"1. 核心学习内容","nodes":[{"text":"数据就在身边"},{"text":"五种常见数据类型"}]},{"label":"2. 课堂完成顺序","nodes":[{"text":"环节1：看场景，匹配数据类型"},{"text":"环节2：把数据分到对应岛屿"},{"text":"完成后作答课堂小测"}]}]},"activities":[{"index":1,"title":"场景匹配","step":1,"path":"/lessons/g4-up-lesson1/index.html","unlocked":true},{"index":2,"title":"分类岛屿","step":2,"path":"/lessons/g4-up-lesson1/index.html","unlocked":false}],"quiz":{"title":"课堂小测","unlocked":false,"unlockAfterActivity":2,"questions":[{"id":"k1","stem":"图书馆播放的故事录音，主要属于哪类数据？","options":["文字数据","声音数据","数值数据","图像数据"],"answer":1,"dimension":"知识掌握","explanation":"声音可以被录下来并播放，属于声音数据。"},{"id":"k2","stem":"电子温度计显示 28℃，这个“28”属于哪类数据？","options":["图像数据","视频数据","文字数据","数值数据"],"answer":3,"dimension":"知识掌握","explanation":"数字可以表示温度、数量、成绩等信息，属于数值数据。"},{"id":"a1","stem":"课程表中“周一 数学”这样的内容，主要属于哪类数据？","options":["文字数据","声音数据","图像数据","视频数据"],"answer":0,"dimension":"能力提升","explanation":"字、词、句子组成的内容属于文字数据。"},{"id":"a2","stem":"一张校园风景照片，主要属于哪类数据？","options":["声音数据","图像数据","数值数据","文字数据"],"answer":1,"dimension":"能力提升","explanation":"照片记录的是画面和图形，属于图像数据。"},{"id":"s1","stem":"记录植物生长变化的连续录像，主要属于哪类数据？","options":["视频数据","文字数据","声音数据","数值数据"],"answer":0,"dimension":"素养变化","explanation":"视频是连续变化的画面，常常还带有声音。"},{"id":"s2","stem":"“班级有 42 名同学”中的“42”主要属于哪类数据？","options":["图像数据","文字数据","数值数据","声音数据"],"answer":2,"dimension":"素养变化","explanation":"表示数量的数字属于数值数据。"}]}}',
+  100, 1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '四年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 泛在的数据' AND cl.title = '第1课 身边的数据'
+LIMIT 1;
+
+-- 四年级上册第2课：多样的数据学生工作台
+INSERT INTO course_resource (lesson_id, title, res_type, content_url, sort_order)
+SELECT cl.id, '多样的数据探究活动', 'WEB', '/lessons/g4-up-lesson2/index.html', 1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '四年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 泛在的数据' AND cl.title = '第2课 多样的数据'
+LIMIT 1;
+
+INSERT INTO course_task (lesson_id, title, description, task_type, config_json, max_score, sort_order)
+SELECT cl.id, '多样的数据探究', '四年级上第2课学生工作台：环节1身份证数据、环节2五种形式、环节3存储介质', 'EXTERNAL',
+  '{"layout":"student_workspace","lessonTitle":"第2课 多样的数据","objectives":"我能在同一对象上找出多种数据，辨认五种数据形式，并理解存储介质从古到今的变化。","evaluationHint":"完成三个探究环节后，请如实填写学习评价，再作答课堂小测。","introMap":{"title":"多样的数据","branches":[{"label":"3 本课学习目标","nodes":[{"text":"在同一对象上找出多种数据"},{"text":"辨认数字、文本、图片、音频、视频"},{"text":"了解存储介质的变化"}]},{"label":"1. 核心学习内容","nodes":[{"text":"数据形式是多样的"},{"text":"存储介质越新，容量越大、形式越多"}]},{"label":"2. 课堂完成顺序","nodes":[{"text":"环节1：寻找身份证上的数据"},{"text":"环节2：辨认五种数据形式"},{"text":"环节3：存储介质的变化"},{"text":"完成学习评价和课堂小测"}]}]},"evaluationForm":{"title":"学习评价","intro":"以下题目没有标准答案，请根据本课真实学习感受选择最符合的一项。","questions":[{"id":"e1","aspect":"学习兴趣","stem":"本课「多样的数据」的内容，你的学习兴趣如何？","options":["非常感兴趣，还想再找生活中的多种数据","比较感兴趣，愿意完成探究活动","一般，能跟着完成要求","不太感兴趣，觉得有点难"]},{"id":"e2","aspect":"难度感知","stem":"你觉得本课哪个环节最有挑战性？","options":["环节1：在身份证上找出各类数据","环节2：把素材配对到五种数据形式","环节3：给存储介质按从古到今排队","我觉得都不难，掌握较好"]},{"id":"e3","aspect":"学习信心","stem":"完成三个探究环节后，你对自己「认识多样的数据」的信心如何？","options":["非常有信心，能自己举出新例子","比较有信心，偶尔需要提示","信心一般，还需要多练习","还不太有信心，希望获得更多帮助"]}]},"activities":[{"index":1,"title":"寻找身份证上的数据","step":1,"path":"/lessons/g4-up-lesson2/index.html","unlocked":true},{"index":2,"title":"辨认五种数据形式","step":2,"path":"/lessons/g4-up-lesson2/index.html","unlocked":false},{"index":3,"title":"存储介质的变化","step":3,"path":"/lessons/g4-up-lesson2/index.html","unlocked":false}],"quiz":{"title":"课堂小测","unlocked":false,"unlockAfterActivity":3,"questions":[{"id":"k1","stem":"身份证上的信息主要属于哪一类数据？","options":["只有数字","文字、数字和图片等多种形式","只有图片","只有声音"],"answer":1,"dimension":"知识掌握","explanation":"身份证上同时包含姓名、出生日期等文字和数字信息，也包含照片，因此属于多种形式的数据。"},{"id":"k2","stem":"把一段声音保存下来，最合适的数据形式是？","options":["文本","音频","数字","图片"],"answer":1,"dimension":"知识掌握","explanation":"声音需要通过录音等方式保存，最合适的数据形式是音频。"},{"id":"a1","stem":"光盘通常使用什么方式读取数据？","options":["激光读取","用绳子编连","直接刻在骨片上","只靠手写"],"answer":0,"dimension":"能力提升","explanation":"光盘利用激光读取盘片上的数字信息，不是通过手写或实体刻写来读取。"},{"id":"a2","stem":"与甲骨、竹简相比，云盘的主要特点是？","options":["只能保存少量文字","必须刻写在实体材料上","通过网络存储和访问数据","不能保存图片"],"answer":2,"dimension":"能力提升","explanation":"云盘把数据存放在网络服务器中，使用者可以通过网络登录、上传和下载数据。"},{"id":"s1","stem":"下列哪项最能说明存储介质的发展趋势？","options":["容量越来越小","越来越依赖手工刻写","容量增大、携带和共享更方便","只能保存文字"],"answer":2,"dimension":"素养变化","explanation":"随着技术发展，存储容量不断增大，设备更便携，数据共享也更加方便。"}]}}',
+  100, 1
+FROM course_lesson cl
+INNER JOIN course_unit cu ON cl.unit_id = cu.id
+INNER JOIN course_grade cg ON cu.grade_id = cg.id
+WHERE cg.name = '四年级上册' AND cg.textbook_type = 'MAIN'
+  AND cu.name = '第一单元 泛在的数据' AND cl.title = '第2课 多样的数据'
+LIMIT 1;
 
 -- 五年级下册第8课：飞象探究单（试点）
 INSERT INTO course_resource (lesson_id, title, res_type, content_url, content_text, sort_order)

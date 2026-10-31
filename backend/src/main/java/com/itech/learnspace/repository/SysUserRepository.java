@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public interface SysUserRepository extends JpaRepository<SysUser, Long> {
     Optional<SysUser> findByUsername(String username);
+    Optional<SysUser> findByDingtalkUnionId(String dingtalkUnionId);
     List<SysUser> findByRole(String role);
     List<SysUser> findByClassId(Long classId);
     List<SysUser> findByRoleAndStatus(String role, Integer status);

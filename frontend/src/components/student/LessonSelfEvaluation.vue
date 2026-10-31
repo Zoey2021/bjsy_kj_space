@@ -46,10 +46,11 @@ import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   evaluation: { type: Object, default: () => ({}) },
-  submitting: { type: Boolean, default: false }
+  submitting: { type: Boolean, default: false },
+  seed: { type: Object, default: null }
 })
 
-const emit = defineEmits(['submit'])
+const emit = defineEmits(['submit', 'draft'])
 
 const questions = computed(() => props.evaluation?.questions || [])
 const answers = reactive({})
@@ -57,10 +58,35 @@ const submitted = ref(false)
 
 const optionLabel = (i) => String.fromCharCode(65 + i)
 
-watch(questions, () => {
-  submitted.value = false
-  Object.keys(answers).forEach((k) => delete answers[k])
+let muteDraft = 0
+const applySeed = (seed) => {
+  muteDraft += 1
+  try {
+    submitted.value = false
+    Object.keys(answers).forEach((k) => delete answers[k])
+    if (!seed || seed.mode === 'empty') return
+    ;(seed.answers || []).forEach((a, i) => {
+      if (a && a.selected != null) answers[i] = a.selected
+    })
+    if (seed.mode === 'result') submitted.value = true
+  } finally {
+    muteDraft -= 1
+  }
+}
+
+watch([questions, () => props.seed], () => {
+  applySeed(props.seed)
 }, { immediate: true })
+
+watch(answers, () => {
+  if (muteDraft > 0 || submitted.value) return
+  emit('draft', questions.value.map((q, i) => ({
+    questionId: q.id,
+    aspect: q.aspect,
+    selected: answers[i],
+    label: answers[i] != null ? q.options?.[answers[i]] : ''
+  })))
+}, { deep: true, flush: 'sync' })
 
 const submit = () => {
   const total = questions.value.length

@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>算法与问题解决 — 探究活动</title>
+<script>
+(function () {
+  try {
+    if (new URLSearchParams(location.search).get('embedded') === '1') {
+      document.documentElement.classList.add('embedded-mode');
+    }
+  } catch (e) {}
+})();
+</script>
 <style>
 :root {
   --p: #264653; --s: #2A9D8F; --a: #E9C46A; --l: #F4A261; --coral: #E76F51;
@@ -44,7 +53,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC
 /* ===== STEP 1: Flowchart Builder ===== */
 .fc-layout{display:flex;gap:16px;height:calc(100vh - 200px);min-height:540px}
 /* Left info panel — 题目 + Logo */
-.fc-info-panel{width:270px;min-width:270px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.fc-info-panel{width:210px;min-width:210px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
 .fc-info-title{font-size:15px;font-weight:700;color:var(--p);display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:2px solid rgba(42,157,143,.2)}
 .fc-info-desc{font-size:13px;color:var(--tx);line-height:1.75}
 .fc-logos-wrap{margin-top:auto;padding-top:6px;border-top:1px dashed rgba(42,157,143,.25)}
@@ -106,16 +115,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC
 .sym-io{background:#E3F2FD;border:1.5px solid #64B5F6;transform:skewX(-16deg)}
 .sym-proc{background:#E8F4F2;border:1.5px solid #2A9D8F;border-radius:2px}
 .sym-dec{width:16px;height:16px;background:#FEF9E7;border:1.5px solid #E9C46A;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
-.level-switch{display:flex;gap:6px;align-items:center}
-.level-switch button{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px}
-.level-switch button.on{background:#2A9D8F;border-color:#2A9D8F}
-.fc-canvas-inner{position:relative;width:1100px;height:850px}
-.fc-conn-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}
+.preview-tier{display:none;gap:6px;align-items:center;margin:0 0 10px;font-size:13px;font-weight:700;color:#64748b}
+.preview-tier button{border:1px solid #d0d7de;background:#fff;color:#264653;border-radius:999px;padding:4px 12px;cursor:pointer;font-weight:800}
+.preview-tier button.on{background:#2A9D8F;border-color:#2A9D8F;color:#fff}
+.fc-canvas-inner{position:relative;width:1100px;height:920px;overflow:visible;isolation:isolate}
+.fc-conn-svg{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;overflow:visible;pointer-events:none;background:transparent;fill:none}
+.fc-conn-svg .conn-line{fill:none;stroke:#264653;stroke-width:2.4;marker-end:url(#arrowhead);pointer-events:none}
+.fc-conn-svg .conn-hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
+.fc-conn-svg.mode-delete .conn-hit:hover{stroke:rgba(231,111,81,.28)}
+.fc-conn-svg .conn-line.is-hot{stroke:#E76F51}
 
 /* Nodes — 四种标准流程图形状 */
-.fc-node{position:absolute;cursor:move;user-select:none;z-index:10;transition:box-shadow .15s}
-.fc-node:hover{z-index:20}
-.fc-node.dragging{z-index:30;opacity:.85}
+.fc-node{position:absolute;cursor:move;user-select:none;z-index:20;transition:box-shadow .15s;overflow:visible}
+.fc-node:hover{z-index:30}
+.fc-node.dragging{z-index:40;opacity:.92}
 .fc-node .n-body{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;font-weight:600;line-height:1.3;transition:var(--tr)}
 .fc-node .n-text{position:relative;z-index:2;padding:4px 8px;word-break:break-word;pointer-events:none;max-width:100%}
 /* 开始/结束：圆角矩形 */
@@ -126,8 +139,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC
 /* 输入/输出：平行四边形 */
 .fc-node.type-io .n-body{width:150px;height:48px;background:#E3F2FD;border:2px solid #64B5F6;color:#1565C0;transform:skewX(-12deg);border-radius:2px}
 .fc-node.type-io .n-text{transform:skewX(12deg);display:block;width:100%}
-/* 判断：菱形 */
-.fc-node.type-decision .n-body{width:120px;height:80px;background:#FEF9E7;border:2px solid var(--a);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);color:var(--p)}
+/* 判断：旋转正方形，避免 clip-path 在部分电脑上把图块“画没” */
+.fc-node.type-decision .n-body{width:58px;height:58px;margin:11px auto 0;background:#FEF9E7;border:2px solid var(--a);transform:rotate(45deg);border-radius:4px;color:var(--p)}
+.fc-node.type-decision .n-text{transform:rotate(-45deg);width:92px}
 
 /* 四向连接点（上下左右） */
 .port{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--card);border:2px solid var(--s);z-index:40;cursor:crosshair;transition:opacity .15s,transform .15s,background .15s;opacity:0}
@@ -229,15 +243,272 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC
   .fc-canvas-wrap{height:450px}
   .code-layout{grid-template-columns:1fr}
 }
+.score-board{margin-top:4px;padding:8px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;font-size:12px;line-height:1.55;color:#334155}
+.score-board b{color:#0f766e}
+.score-board .ok{color:#15803d}
+.score-board .miss{color:#b45309}
+.score-board .vs-open{margin-top:8px;width:100%;border:0;background:#2A9D8F;color:#fff;border-radius:8px;padding:7px 8px;cursor:pointer;font-weight:700}
+.vote-sim{position:fixed;inset:0;z-index:400;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.vote-sim[hidden]{display:none !important}
+.vs-card{width:min(920px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px;padding:18px 20px 16px;box-shadow:0 24px 50px rgba(15,23,42,.2)}
+.vs-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+.vs-head h3{margin:0;font-size:18px;color:#1e293b}
+.vs-head p{margin:4px 0 0;font-size:13px;color:#64748b}
+.vs-close{border:0;background:#e2e8f0;border-radius:999px;padding:6px 12px;cursor:pointer;font-weight:700}
+.vs-bars{display:grid;grid-template-columns:1.2fr 1.2fr .9fr;gap:10px}
+.vs-item{border-radius:16px;padding:14px 12px 12px;text-align:center;position:relative;overflow:hidden}
+.vs-item span{display:block;font-size:13px;color:#475569}
+.vs-item b{display:block;font-size:36px;line-height:1.1;margin:4px 0;background:transparent}
+.vs-item small{color:#64748b}
+.vs-mini{display:block;height:10px;margin-top:10px;background:rgba(148,163,184,.35);border-radius:999px;overflow:hidden}
+.vs-mini i{display:block;height:100%;width:0;border-radius:999px;transition:width .2s;background:#94a3b8}
+.vs-item.a{background:#f3e8ff} .vs-item.a b{color:#6d28d9} .vs-item.a .vs-mini i{background:#7c3aed}
+.vs-item.b{background:#ffedd5} .vs-item.b b{color:#c2410c} .vs-item.b .vs-mini i{background:#f97316}
+.vs-item.x{background:#fce7f3} .vs-item.x b{color:#be123c} .vs-item.x .vs-mini i{background:#fb7185}
+.vs-total{display:flex;align-items:center;gap:10px;margin:14px 0}
+.vs-track{flex:1;height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+.vs-track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#f97316)}
+.vs-end{border:0;background:#e11d48;color:#fff;border-radius:10px;padding:7px 12px;cursor:pointer;font-weight:700}
+.vs-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#f8fafc;border-radius:16px;padding:10px}
+.vs-btn{border:0;border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:700;color:#fff}
+.vs-btn.a{background:#2563eb} .vs-btn.b{background:#ea580c}
+.vs-btn.sim{background:#f59e0b} .vs-btn.fill{background:#e11d48} .vs-btn.reset{background:#64748b}
+.vs-manual{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:4px 8px 4px 12px;font-size:13px}
+.vs-manual input{width:48px;border:0;outline:none;text-align:center}
+.vs-manual button{border:0;background:#2563eb;color:#fff;border-radius:999px;padding:6px 10px;cursor:pointer}
+.vs-log{background:#111827;color:#bef264;min-height:92px;max-height:140px;overflow:auto;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;margin:12px 0 8px}
+.vs-status{background:#f3e8ff;color:#6d28d9;border-radius:12px;padding:10px;text-align:center;font-weight:700;font-size:13px}
+
+.studio{display:flex;height:100vh;overflow:hidden;background:linear-gradient(180deg,#e8ecf4 0%,#eef1f8 100%)}
+.studio-nav{width:280px;flex-shrink:0;background:linear-gradient(180deg,#fafbfd 0%,#f1f5f9 100%);border-right:1px solid rgba(148,163,184,.35);box-shadow:4px 0 24px rgba(15,23,42,.04);display:flex;flex-direction:column;padding:0 0 12px}
+.studio-title{background:linear-gradient(135deg,#3730a3 0%,#4f46e5 55%,#6366f1 100%);color:#fff;font-size:15px;font-weight:700;padding:14px;line-height:1.45}
+.studio-menu{padding:10px;display:flex;flex-direction:column;gap:6px}
+.studio-item{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;padding:10px 12px;border:1px solid rgba(226,232,240,.9);border-radius:10px;background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);font-size:13px;color:#334155;cursor:pointer;font-family:inherit}
+.studio-item:hover{border-color:rgba(99,102,241,.35)}
+.studio-item.active{border-color:#6366f1;background:linear-gradient(135deg,#eef2ff 0%,#f5f3ff 100%);color:#4338ca;font-weight:600}
+.studio-item.done .done-tag{color:#10b981;font-weight:700;font-size:11px}
+.studio-item.muted{opacity:.55;cursor:default}
+.studio-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.studio-main .header{display:none}
+.studio-main .step-nav{display:none}
+.studio-main .main{flex:1;padding:12px 16px;max-width:none;overflow:hidden}
+.step-panel.active{height:100%}
+
+.ls-split{display:flex;gap:16px;height:100%;min-height:0}
+.ls-left{width:250px;min-width:230px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.ls-right{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.algo-read{align-items:stretch}
+.algo-read .algo-flow{
+  width:42%;
+  min-width:280px;
+  max-width:520px;
+  background:var(--card);
+  border-radius:var(--r);
+  box-shadow:var(--sh);
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  overflow:auto;
+}
+.algo-flow-cap{font-size:13px;color:var(--tx2);line-height:1.6;margin:0 0 10px}
+.algo-flow-img{display:block;width:100%;height:auto;max-height:100%;object-fit:contain;background:#fff;border-radius:10px;border:1px solid #e2e8f0}
+.algo-read .ls-right{overflow-y:auto}
+.model-summary{
+  margin-top:14px;
+  padding:14px 16px;
+  border-radius:12px;
+  background:linear-gradient(135deg,#ecfdf5,#f0fdfa);
+  border:1px solid #a7f3d0;
+  color:#065f46;
+  line-height:1.85;
+  font-size:14px;
+}
+.model-summary b{color:#047857}
+.step-fill{
+  font-size:15px;
+  line-height:2.05;
+  color:#1e293b;
+  margin:0 0 12px;
+  padding:12px 14px;
+  background:#f8fafc;
+  border-radius:12px;
+  border:1px solid #e2e8f0;
+}
+.step-fill .n{display:inline-block;min-width:2.2em;font-weight:800;color:var(--s)}
+.blank-in{
+  display:inline-block;
+  width:76px;
+  border:none;
+  border-bottom:2px solid #2A9D8F;
+  background:transparent;
+  text-align:center;
+  font-size:15px;
+  font-weight:700;
+  color:var(--p);
+  padding:2px 4px;
+  margin:0 3px;
+  font-family:inherit;
+}
+.blank-in.wide{width:92px}
+.blank-in.ok{border-bottom-color:#15803d;color:#15803d}
+.blank-in.bad{border-bottom-color:#b91c1c;color:#b91c1c;background:#fef2f2}
+.scaf-only-c,.scaf-only-a{display:none !important}
+body.tier-c .scaf-only-c{display:block !important}
+body.tier-c .story-card.scaf-only-c{display:grid !important}
+body.tier-c .init-chips.scaf-only-c{display:flex !important}
+.demo-tag{display:none;margin-left:8px;font-size:11px;font-weight:700;color:#0f766e;background:#ecfdf5;border-radius:999px;padding:2px 8px;vertical-align:middle}
+body.tier-c .demo-tag{display:inline-block}
+.blank-in[readonly]{border-bottom-color:#86efac;background:#f0fdf4;color:#15803d}
+.algo-challenge{margin-top:14px;padding:14px;border-radius:12px;background:#f5f3ff;border:1px solid #ddd6fe}
+.algo-challenge h3{margin:0 0 8px;font-size:14px;color:#5b21b6}
+.algo-challenge p{margin:0 0 10px;font-size:13px;line-height:1.7;color:#4c1d95}
+body.tier-a .scaf-only-a{display:block !important}
+body.tier-a .scaf-hide-a,body.tier-c .scaf-hide-c{display:none !important}
+.field-guide{font-size:11px;color:#64748b;margin:4px 0 0;line-height:1.5}
+.init-chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.init-chips button{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer;font-size:12px;font-family:inherit}
+.init-chips button.on{border-color:var(--s);background:#ecfdf5;color:#0f766e;font-weight:700}
+body.embedded-mode:not(.preview-mode) .scaf-badge{display:none !important}
+body.tier-a:not(.show-verify-choices) #verifyChoices{display:none}
+
+html.embedded-mode,
+html.embedded-mode body,
 body.embedded-mode { background: #fff; }
+html.embedded-mode .studio,
+body.embedded-mode .studio{display:block;height:auto;min-height:0;overflow:visible;background:#fff}
+html.embedded-mode .studio-nav,
+html.embedded-mode .header,
+html.embedded-mode .step-nav,
+body.embedded-mode .studio-nav,
 body.embedded-mode .header,
 body.embedded-mode .step-nav { display: none !important; }
-body.embedded-mode .main { padding: 12px 16px; max-width: none; }
-body.embedded-mode .fc-layout { height: calc(100vh - 32px); min-height: 480px; }
+html.embedded-mode .studio-main,
+html.embedded-mode .studio-main .main,
+body.embedded-mode .studio-main,
+body.embedded-mode .studio-main .main { overflow: auto; height: auto; max-height: none; }
+html.embedded-mode .main,
+body.embedded-mode .main { padding: 8px 10px; max-width: none; }
+html.embedded-mode .fc-info-title,
+body.embedded-mode .fc-info-title { display: none !important; }
+html.embedded-mode .fc-layout,
+html.embedded-mode .ls-split,
+body.embedded-mode .fc-layout,
+body.embedded-mode .ls-split { height: calc(100vh - 20px); min-height: 480px; }
+html.embedded-mode .code-layout,
 body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
+html.embedded-mode .step-panel.active,
+body.embedded-mode .step-panel.active { height: auto; min-height: calc(100vh - 24px); }
+
+/* ===== Lesson cards (act1 / act3) ===== */
+.ls-wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.ls-section{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:20px 22px;border:1px solid var(--bd)}
+.ls-section.locked{opacity:.42;filter:grayscale(.25);pointer-events:none}
+.ls-section.revealed{animation:fadeIn .4s ease}
+.ls-kicker{font-size:12px;font-weight:700;color:var(--s);letter-spacing:.04em}
+.ls-section h2{font-size:20px;color:var(--p);margin:4px 0 6px}
+.ls-lead{font-size:13px;color:var(--tx2);line-height:1.7}
+.ls-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+.ls-mark{width:36px;height:36px;border-radius:10px;background:rgba(42,157,143,.12);color:var(--s);display:flex;align-items:center;justify-content:center;font-weight:800}
+.story-card{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.story-side{border-radius:12px;padding:14px 16px}
+.story-side.manual{background:#fff7ed;border:1px solid #fed7aa}
+.story-side.computer{background:#ecfdf5;border:1px solid #a7f3d0}
+.story-side h3{font-size:15px;margin-bottom:6px}
+.story-side p{font-size:13px;line-height:1.7;color:#444}
+.question-box{margin-top:12px;padding:14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0}
+.question-title{font-size:14px;font-weight:700;color:var(--p);margin-bottom:10px}
+.choice-list,.quiz-options,.rule-grid{display:flex;flex-direction:column;gap:8px}
+.choice,.quiz-option{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;font-size:13px;line-height:1.6}
+.choice:hover,.quiz-option:hover{border-color:var(--s)}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:6px}
+.field input,.ls-section textarea{width:100%;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit}
+.ls-section textarea{min-height:110px;resize:vertical}
+.info-strip{background:#eef6f5;border:1px solid rgba(42,157,143,.25);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;margin-bottom:12px}
+.info-strip.small{font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{border:0;border-radius:10px;padding:8px 16px;cursor:pointer;font-weight:700;font-family:inherit;font-size:13px}
+.btn-primary{background:var(--s);color:#fff}
+.btn-ghost{background:#e2e8f0;color:#334155}
+.btn-small{padding:6px 12px;font-size:12px}
+.feedback{margin-top:10px;font-size:13px;line-height:1.7;white-space:pre-wrap}
+.feedback.success{color:#15803d}
+.feedback.error{color:#b91c1c}
+.feedback.info{color:#334155}
+.unlock-note{margin-top:8px;font-size:12px;color:var(--tx2)}
+.variable-stage{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px}
+.var-def{display:flex;gap:10px;align-items:flex-start;margin:8px 0}
+.var-name{min-width:36px;height:36px;border-radius:8px;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+.variable-boxes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.var-box{border-radius:14px;padding:12px;background:#f3e8ff;text-align:center}
+.var-box.b{background:#ffedd5}
+.var-box-head{display:flex;justify-content:space-between;font-size:12px;color:#64748b}
+.var-number{font-size:40px;font-weight:800;color:var(--p);line-height:1.1}
+.var-number.pulse{animation:toastIn .3s ease}
+.vote-controls{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.vote-btn{border:0;border-radius:999px;padding:8px 14px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer}
+.vote-btn.vote-b{background:#ea580c}
+.vote-log{font-size:13px;color:#475569;min-height:22px}
+.input-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.py-code{background:#1E1E2E;color:#CDD6F4;border-radius:10px;padding:14px 16px;font-family:"SF Mono","Consolas",monospace;font-size:13px;line-height:1.7;overflow:auto}
+.py-code .cm{color:#6C7086}
+.py-code .kw{color:#CBA6F7}
+.py-code .st{color:#A6E3A1}
+.py-code .n{color:#89B4FA}
+.terminal{background:#111827;color:#bef264;min-height:140px;max-height:220px;overflow:auto;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.7;white-space:pre-wrap;margin-top:10px}
+.terminal .prompt{color:#93c5fd}
+.bug-callout{margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;font-size:13px;line-height:1.6}
+.quiz-grid{display:flex;flex-direction:column;gap:12px}
+.quiz-item{border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#fbfdff}
+.quiz-item.correct{border-color:#9ed8bd;background:#f0fbf5}
+.quiz-item.wrong{border-color:#efb5b5;background:#fff7f7}
+.quiz-feedback{margin-top:8px;font-size:12px}
+@media(max-width:900px){
+  .story-card,.grid-3,.grid-2,.variable-stage{grid-template-columns:1fr}
+  .algo-read{flex-direction:column}
+  .algo-read .algo-flow{width:100%;max-width:none;min-width:0;max-height:420px}
+}
+body.embedded-mode .ls-wrap{padding-bottom:20px}
+
 </style>
 </head>
 <body>
+<script type="application/json" id="ls-activity-briefs">
+{
+  "1": {
+    "title": "问题分析与建模",
+    "task": "校徽海选：1000名学生给A、B两个作品各投一票，最后统计得票数。先比较人工统计和计算机统计，再从案例里提取人数、对象、目标，最后用变量盒子观察 tp、a、b 的变化。",
+    "studentDoes": "选择为什么用计算机；填写人数/作品/目标；模拟投票并判断 a、b 初值。",
+    "notThis": "本环节不画流程图、不写程序、不运行代码。"
+  },
+  "2": {
+    "title": "算法设计",
+    "task": "对照课本流程图，把统计校徽投票的五个步骤补完整：初始化、输入、分支判断、循环、输出。",
+    "studentDoes": "看左侧流程图，在右侧挖空处填写变量、结构和数量。",
+    "notThis": "本环节不再自己画流程图；不要改成鸡兔同笼或其他课题。"
+  },
+  "3": {
+    "title": "算法验证与优化",
+    "task": "按课本程序网页模拟运行。先写下猜想，再输入 c，观察 else 会把不是 a 的输入算给 B；然后思考若有 3 个作品，变量、输入、分支和输出要怎么改。",
+    "studentDoes": "在运行区亲手输入 c；提交验证与优化结论；写出三个作品的调整思路。",
+    "notThis": "不要另出一套编程题；趣味投票模拟器只是附带体验，不是本环节主任务。"
+  }
+}
+</script>
+<div class="studio">
+<aside class="studio-nav" id="studioNav">
+  <div class="studio-title">第1课 算法与问题解决</div>
+  <div class="studio-menu">
+    <button type="button" class="studio-item muted">课程介绍</button>
+    <button type="button" class="studio-item active" data-step="1">探究一：问题分析与建模 <span class="done-tag" hidden>✓</span></button>
+    <button type="button" class="studio-item" data-step="2">探究二：算法设计 <span class="done-tag" hidden>✓</span></button>
+    <button type="button" class="studio-item" data-step="3">探究三：算法验证与优化 <span class="done-tag" hidden>✓</span></button>
+    <button type="button" class="studio-item muted">学习评价</button>
+    <button type="button" class="studio-item muted">课堂小测</button>
+  </div>
+</aside>
+<div class="studio-main">
 
 <!-- Header -->
 <div class="header">
@@ -248,12 +519,6 @@ body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
       <div class="header-sub">探究活动 · 同桌协作</div>
     </div>
   </div>
-  <div class="level-switch" id="levelSwitch" style="display:none">
-    <span style="font-size:12px;opacity:.85">预览支架</span>
-    <button type="button" data-lv="C" onclick="setScaffoldLevel('C')">C</button>
-    <button type="button" data-lv="B" onclick="setScaffoldLevel('B')">B</button>
-    <button type="button" data-lv="A" onclick="setScaffoldLevel('A')">A</button>
-  </div>
   <button class="btn-reset" onclick="resetAll()">🔄 全部重置</button>
 </div>
 
@@ -261,195 +526,355 @@ body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
 <div class="step-nav" id="stepNav">
   <button class="step-tab active" data-step="1">
     <span class="step-num"><span class="num-txt">1</span><span class="done-icon">✓</span></span>
-    探究一：绘制流程图
+    探究一：问题分析与建模
   </button>
   <button class="step-tab" data-step="2">
     <span class="step-num"><span class="num-txt">2</span><span class="done-icon">✓</span></span>
-    探究二：验证算法
+    探究二：算法设计
   </button>
   <button class="step-tab" data-step="3">
     <span class="step-num"><span class="num-txt">3</span><span class="done-icon">✓</span></span>
-    探究三：拓展任务
+    探究三：算法验证与优化
   </button>
 </div>
 
 <!-- Main Content -->
 <div class="main">
+<div class="preview-tier" id="levelSwitch">
+  <span>预览支架</span>
+  <button type="button" data-lv="C" onclick="setScaffoldLevel('C')">C</button>
+  <button type="button" data-lv="B" onclick="setScaffoldLevel('B')">B</button>
+  <button type="button" data-lv="A" onclick="setScaffoldLevel('A')">A</button>
+</div>
 
-<!-- ==================== STEP 1: Flowchart Builder ==================== -->
+
+<!-- ==================== STEP 1: 情景导入 + 问题分析 + 抽象建模 ==================== -->
 <div class="step-panel active" id="panel1">
-<div class="fc-layout">
-  <!-- 左侧：题目 + Logo展示 -->
-  <div class="fc-info-panel">
-    <div class="fc-info-title">📋 探究活动一：绘制流程图 <span id="scafBadge" class="scaf-badge scaf-B">提示支架</span></div>
-
-    <!-- 任务说明 -->
+<div class="ls-split">
+  <aside class="ls-left">
+    <div class="fc-info-title">本环节任务</div>
     <div class="fc-task-card">
-      <div class="fc-task-desc" id="scafTaskDesc">
-        学校信息中心要从以下两个候选 logo 中选出一个最合适的方案，邀请了<b>1000名师生</b>参与投票（投 A 或 B）。请拖动右侧图块到画布上，用流程图表示计算机统计投票结果的完整过程。
+      <div class="fc-task-desc" id="act1Desc">某校校徽海选：1000 名学生给 <b>A</b>、<b>B</b> 两个作品各投一票，最后统计得票数。</div>
+    </div>
+    <div class="fc-task-steps" id="act1Steps">
+      <div class="fc-step"><span class="fc-step-num">0</span><span class="fc-step-text">比较人工统计和计算机统计</span></div>
+      <div class="fc-step"><span class="fc-step-num">1</span><span class="fc-step-text">从案例里提取人数、对象、目标</span></div>
+      <div class="fc-step"><span class="fc-step-num">2</span><span class="fc-step-text">用变量盒子表示票数变化</span></div>
+    </div>
+    <div class="fc-task-tip" id="act1Tip">先说清楚问题，再把关键数据装进变量。</div>
+  </aside>
+  <div class="ls-right">
+  <section class="ls-section" id="stage0">
+    <div class="ls-head">
+      <div>
+        <div class="ls-kicker">0 · 情景导入</div>
+        <h2>为什么要用算法？</h2>
+        <p class="ls-lead">同样是统计投票，人工统计和计算机统计有什么不同？</p>
+      </div>
+      <div class="ls-mark">0</div>
+    </div>
+    <div class="story-card scaf-hide-a scaf-hide-c">
+      <div class="story-side manual">
+        <h3>人工统计</h3>
+        <p>同学们逐张查看选票，记下每一票，再反复核对总数。人数少时可以完成，人数多时容易慢，也容易漏记或重复。</p>
+      </div>
+      <div class="story-side computer">
+        <h3>计算机统计</h3>
+        <p>把投票规则写成算法，再用程序重复处理每一票。只要规则清楚，计算机就能快速、连续地完成统计。</p>
       </div>
     </div>
-
-    <div id="scafExtra"></div>
-
-    <!-- 操作步骤 -->
-    <div class="fc-task-steps" id="scafSteps">
-      <div class="fc-step"><span class="fc-step-num">1</span><span class="fc-step-text">拖动流程图图块到画布</span></div>
-      <div class="fc-step"><span class="fc-step-num">2</span><span class="fc-step-text">移动模式-双击图块修改文字</span></div>
-      <div class="fc-step"><span class="fc-step-num">3</span><span class="fc-step-text">连线模式-放好图块再连线</span></div>
-      <div class="fc-step"><span class="fc-step-num">4</span><span class="fc-step-text">点击检测流程图提交</span></div>
+    <div class="story-card scaf-only-c">
+      <div class="story-side manual"><h3>人工</h3><p>一张一张数，人多时又慢又容易出错。</p></div>
+      <div class="story-side computer"><h3>计算机</h3><p>把步骤写清楚，让程序重复做每一票。</p></div>
     </div>
+    <div class="question-box">
+      <div class="question-title">在1000名学生投票时，为什么更适合用计算机程序统计？</div>
+      <div class="choice-list">
+        <label class="choice"><input type="radio" name="introChoice" value="right"><span>因为算法能把“输入、判断、计数、输出”这些步骤交给程序重复执行，提高效率。</span></label>
+        <label class="choice"><input type="radio" name="introChoice" value="wrong"><span>因为计算机不需要先分析问题，随便输入什么都能自动得到正确结果。</span></label>
+        <label class="choice"><input type="radio" name="introChoice" value="wrong"><span>因为只要使用计算机，就不需要检查算法是否有漏洞。</span></label>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" type="button" id="introCheck">检查选择</button></div>
+      <div class="feedback" id="introFeedback"></div>
+    </div>
+  </section>
 
-    <!-- Logo候选展示（题目与要求下方，缩略图） -->
-    <div class="fc-logos-wrap">
-      <div class="fc-logos-label">候选 Logo 方案</div>
-      <div class="fc-logos">
-        <div class="fc-logo-item">
-          <img src="logo_a.jpg" alt="Logo方案A" onerror="this.style.display='none';this.nextSibling.style.display='block'">
-          <span style="display:none;color:var(--coral);font-size:11px">图片加载中...</span>
-          <div class="fc-logo-label">方案 A</div>
-          <div class="logo-sub">科技感 · 六边形</div>
+  <section class="ls-section locked" id="stage1">
+    <div class="ls-head">
+      <div>
+        <div class="ls-kicker">1 · 问题分析</div>
+        <h2>先把问题说清楚</h2>
+        <p class="ls-lead">解决问题之前，要找出已知条件、研究对象和求解目标。</p>
+      </div>
+      <div class="ls-mark">1</div>
+    </div>
+    <div class="info-strip"><strong>案例：</strong>某校进行校徽设计方案评选，确定A作品和B作品为候选方案，全校1000名学生各投一票，最后公布两个作品的得票数。</div>
+    <p style="font-weight:700;margin-bottom:10px">请从案例中提取三个关键信息：</p>
+    <div class="grid-3">
+      <div class="field"><label for="analysisPeople">投票总人数</label><input id="analysisPeople" type="text" placeholder="例如：1000"><p class="field-guide scaf-only-c">到案例里找“有多少人”。</p></div>
+      <div class="field"><label for="analysisWorks">候选作品</label><input id="analysisWorks" type="text" placeholder="例如：A、B"><p class="field-guide scaf-only-c">到案例里找“有哪些对象”。</p></div>
+      <div class="field"><label for="analysisGoal">求解目标</label><input id="analysisGoal" type="text" placeholder="例如：统计得票数"><p class="field-guide scaf-only-c">到案例里找“最后要得到什么”。</p></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" type="button" id="analysisCheck">提交关键信息</button></div>
+    <div class="feedback" id="analysisFeedback"></div>
+    <p class="unlock-note scaf-hide-a">提示：先找“有多少人”“有哪些对象”“最后要得到什么”。</p>
+  </section>
+
+  <section class="ls-section locked" id="stage2">
+    <div class="ls-head">
+      <div>
+        <div class="ls-kicker">2 · 抽象与建模</div>
+        <h2>把现实问题装进变量盒子</h2>
+        <p class="ls-lead">变量像一个有名字的盒子，可以暂时存放会变化的数据。</p>
+      </div>
+      <div class="ls-mark">2</div>
+    </div>
+    <div class="variable-stage">
+      <div>
+        <h3 style="font-size:15px;margin-bottom:8px">认识三个变量</h3>
+        <div class="var-def"><div class="var-name">tp</div><p>表示<strong>这一次输入的投票内容</strong>。它的值可以是“a”或“b”。</p></div>
+        <div class="var-def"><div class="var-name">a</div><p>表示<strong>A作品当前的得票数</strong>。每投一次A，a就增加1。</p></div>
+        <div class="var-def"><div class="var-name">b</div><p>表示<strong>B作品当前的得票数</strong>。每投一次B，b就增加1。</p></div>
+        <div class="info-strip small"><strong>建模思想：</strong>忽略与统计无关的细节，只留下投票内容和两个得票数。</div>
+      </div>
+      <div>
+        <h3 style="font-size:15px;margin-bottom:8px">变量盒子：模拟几次投票</h3>
+        <p class="ls-lead">点击“投给A”或“投给B”，观察两个盒子里的数字如何变化。</p>
+        <div class="variable-boxes">
+          <div class="var-box"><div class="var-box-head"><span>A作品</span><code>a</code></div><div class="var-number" id="aValue">0</div></div>
+          <div class="var-box b"><div class="var-box-head"><span>B作品</span><code>b</code></div><div class="var-number" id="bValue">0</div></div>
         </div>
-        <div class="fc-logo-item">
-          <img src="logo_b.jpg" alt="Logo方案B" onerror="this.style.display='none';this.nextSibling.style.display='block'">
-          <span style="display:none;color:var(--coral);font-size:11px">图片加载中...</span>
-          <div class="fc-logo-label">方案 B</div>
-          <div class="logo-sub">书香风 · 知识之窗</div>
+        <div class="vote-controls">
+          <button class="vote-btn" type="button" id="voteA">投给A（tp="a"）</button>
+          <button class="vote-btn vote-b" type="button" id="voteB">投给B（tp="b"）</button>
         </div>
+        <div class="vote-log" id="voteLog">还没有模拟投票。</div>
+        <p class="field-guide scaf-only-c" id="demoVoteNote" hidden>示范：刚投给 A，盒子 a 变成 1。你再点一次「投给B」看看。</p>
+        <button class="btn btn-ghost btn-small" type="button" id="resetVotes">重置变量盒子</button>
       </div>
     </div>
-
-    <div class="fc-task-tip" id="scafTip">💡 请按五个阶段画完整流程：初始化 → 输入 → 分支判断 → 循环 → 输出。</div>
-  </div>
-
-  <!-- 右侧：素材面板 + 工具栏 + 画布 -->
-  <div class="fc-workspace">
-    <!-- 素材面板（横向） -->
-    <div class="fc-palette-bar">
-      <span class="pal-label">📦 拖动到画布：</span>
-      <div class="pal-item" draggable="true" data-type="start">
-        <div class="pal-shape pal-preview-term"></div>
-        <span>开始/结束</span>
+    <div class="question-box">
+      <div class="question-title">投票统计开始前，变量 a 和 b 的初始值应该是多少？</div>
+      <div class="init-chips scaf-only-c" id="initChips">
+        <button type="button" data-init="0">从 0 开始</button>
+        <button type="button" data-init="1000">从 1000 开始</button>
       </div>
-      <div class="pal-item" draggable="true" data-type="io">
-        <div class="pal-shape pal-preview-io"></div>
-        <span>输入/输出</span>
+      <div class="input-row" style="margin-bottom:10px">
+        <div class="field"><label for="initialA">a的初值</label><input id="initialA" type="text" placeholder="填写数字"></div>
+        <div class="field"><label for="initialB">b的初值</label><input id="initialB" type="text" placeholder="填写数字"></div>
       </div>
-      <div class="pal-item" draggable="true" data-type="process">
-        <div class="pal-shape pal-preview-proc"></div>
-        <span>处理</span>
+      <div class="rule-grid">
+        <label class="choice"><input type="radio" name="ruleChoice" value="right"><span>当tp是“a”时，执行 a = a + 1；当tp是“b”时，执行 b = b + 1。</span></label>
+        <label class="choice"><input type="radio" name="ruleChoice" value="wrong"><span>不管tp是什么，都同时让a和b各增加1。</span></label>
       </div>
-      <div class="pal-item" draggable="true" data-type="decision">
-        <div class="pal-shape pal-preview-dec"></div>
-        <span>判断</span>
+      <div class="btn-row"><button class="btn btn-primary" type="button" id="modelCheck">检查建模</button></div>
+      <div class="feedback" id="modelFeedback"></div>
+      <div class="model-summary" id="modelSummary" hidden>
+        <b>同学们，这就是用算法解决问题的前两步：问题分析、抽象建模。</b><br>
+        先把问题说清楚，再找出文中的关键变量，寻找变量中的规则和关系。
       </div>
     </div>
-
-    <!-- 工具栏 -->
-    <div class="fc-toolbar">
-      <button id="btnMove" class="active-mode" onclick="setMode('move')">✋ 移动模式</button>
-      <button id="btnConnect" onclick="setMode('connect')">🔗 连线模式</button>
-      <button id="btnTemplate" onclick="loadTemplate()">📋 加载模板</button>
-      <button class="btn-danger" onclick="clearCanvas()">🗑️ 清空画布</button>
-      <button onclick="checkFlowchart()">✅ 检查流程图</button>
-      <span class="mode-hint" id="modeHint">当前：<span class="mh-move">移动模式</span> — 拖动图块调整位置</span>
-    </div>
-    <div class="fc-canvas-wrap" id="canvasWrap">
-      <div class="fc-canvas" id="canvas">
-        <div class="fc-canvas-inner" id="canvasInner">
-          <svg class="fc-conn-svg" id="connSvg"></svg>
-        </div>
-      </div>
-    </div>
+  </section>
   </div>
 </div>
 </div>
 
-<!-- ==================== STEP 2: Algorithm Verification ==================== -->
+<!-- ==================== STEP 2: 对照课本流程图填空 ==================== -->
 <div class="step-panel" id="panel2">
-<div class="code-layout">
-  <div class="code-panel">
-    <h3>📝 补全代码 <span class="cp-badge">两候选人</span></h3>
-    <div class="code-editor" id="codeBox2">
-<!-- 代码行 -->
-<div class="code-line"><span class="cm"># 初始化票数</span></div>
-<div class="code-line"><span class="n">a</span> <span class="op"> = </span><input class="code-input" id="b2_1" placeholder="?"></div>
-<div class="code-line"><span class="n">b</span> <span class="op"> = </span><input class="code-input" id="b2_2" placeholder="?"></div>
-<div class="code-line"></div>
-<div class="code-line"><span class="cm"># 模拟投票数据</span></div>
-<div class="code-line"><span class="n">votes</span> <span class="op"> = </span>[<span class="st">"a"</span><span class="op">, </span><span class="st">"b"</span><span class="op">, </span><span class="st">"a"</span><span class="op">, </span><span class="st">"a"</span><span class="op">, </span><span class="st">"b"</span><span class="op">, </span><span class="st">"b"</span><span class="op">, </span><span class="st">"a"</span>]</div>
-<div class="code-line"></div>
-<div class="code-line"><span class="kw">for</span> <span class="n">tp</span> <span class="kw">in</span> <span class="n">votes</span><span class="op">:</span></div>
-<div class="code-line indent-1"><span class="kw">if</span> <span class="n">tp</span> <span class="op"> == </span><input class="code-input" id="b2_3" placeholder="?"><span class="op">:</span></div>
-<div class="code-line indent-2"><span class="n">a</span> <span class="op"> = </span><span class="n">a</span> <span class="op"> + </span><span class="nu">1</span></div>
-<div class="code-line indent-1"><span class="kw">if</span> <span class="n">tp</span> <span class="op"> == </span><span class="st">"b"</span><span class="op">:</span></div>
-<div class="code-line indent-2"><span class="n">b</span> <span class="op"> = </span><input class="code-input" id="b2_4" placeholder="?"></div>
-<div class="code-line"></div>
-<div class="code-line"><span class="fn">print</span><span class="op">(</span><span class="st">"A得票:"</span><span class="op">, </span><span class="n">a</span><span class="op">)</span></div>
-<div class="code-line"><span class="fn">print</span><span class="op">(</span><span class="st">"B得票:"</span><span class="op">, </span><span class="n">b</span><span class="op">)</span></div>
-    </div>
-    <div class="code-acts">
-      <button class="btn-run" onclick="runCode(2)">▶ 运行验证</button>
-      <button class="btn-hint" onclick="showHint(2)">💡 给点提示</button>
-    </div>
-  </div>
-  <div class="result-panel" id="resultPanel2">
-    <h3>📊 运行结果</h3>
-    <div class="result-empty" id="resultEmpty2">
-      <div class="re-icon">🔍</div>
-      <div>填写代码中的空白，点击「运行验证」</div>
-      <div style="font-size:12px;color:var(--tx2)">提示：补全4个空白处</div>
-    </div>
-    <div class="result-content" id="resultContent2"></div>
+<div class="ls-split algo-read">
+  <aside class="algo-flow">
+    <p class="algo-flow-cap" id="scafTaskDesc">对照课本流程图，把右侧五个步骤补完整。</p>
+    <img class="algo-flow-img" src="flowchart.png" alt="校徽投票算法流程图：开始，初始化 a、b、i，循环判断 i&lt;1001，输入 tp，判断是否为 a，计数后 i 加 1，最后输出 a、b">
+  </aside>
+  <div class="ls-right">
+    <section class="ls-section">
+      <div class="ls-head">
+        <div>
+          <div class="ls-kicker">探究二 · 算法设计 <span id="scafBadge" class="scaf-badge scaf-B">提示</span></div>
+          <h2>读懂流程图，补全课本步骤</h2>
+          <p class="ls-lead">左边是课本上的流程图。请结合图中的变量和判断，把右边挖空的步骤填写完整。</p>
+        </div>
+        <div class="ls-mark">2</div>
+      </div>
+      <div id="scafExtra"></div>
+      <div class="step-fill" id="stepFill1">
+        <span class="n">步骤1</span>
+        <span class="demo-tag">已示范</span>
+        A、B作品得票数清零，即将变量
+        <input class="blank-in" id="blankA" maxlength="4" aria-label="变量a"> 与
+        <input class="blank-in" id="blankB" maxlength="4" aria-label="变量b"> 的值初始化赋为
+        <input class="blank-in" id="blankInit" maxlength="4" aria-label="初值">；
+        <p class="field-guide scaf-only-c">这一步已经填好：看图里第一个矩形，a、b 一开始都是 0。下面几步请你对照图来选。</p>
+      </div>
+      <div class="step-fill">
+        <span class="n">步骤2</span>
+        投票者输入投票内容 “a” 或 “b”，并将其赋值给变量
+        <input class="blank-in" id="blankTp" maxlength="4" aria-label="变量tp">；
+        <div class="init-chips scaf-only-c" data-fill="blankTp">
+          <button type="button" data-val="tp">tp</button>
+          <button type="button" data-val="i">i</button>
+          <button type="button" data-val="a">a</button>
+        </div>
+        <p class="field-guide scaf-only-c">看图里平行四边形：输入后，这一票放进哪个变量？</p>
+      </div>
+      <div class="step-fill">
+        <span class="n">步骤3</span>
+        使用
+        <input class="blank-in wide" id="blankBranch" maxlength="6" aria-label="分支结构">
+        结构对投票内容进行判断<span class="scaf-hide-a">，当 tp 为 “a” 时，变量 a 的数值加 1，当 tp 内容为 “b” 时，变量 b 的数值加 1</span>；
+        <div class="init-chips scaf-only-c" data-fill="blankBranch">
+          <button type="button" data-val="分支">分支</button>
+          <button type="button" data-val="循环">循环</button>
+          <button type="button" data-val="顺序">顺序</button>
+        </div>
+        <p class="field-guide scaf-only-c">图中菱形“tp = a？”把路分成两条，这叫什么结构？</p>
+      </div>
+      <div class="step-fill">
+        <span class="n">步骤4</span>
+        使用
+        <input class="blank-in wide" id="blankLoop" maxlength="6" aria-label="循环结构">
+        结构重复步骤2、3，直到
+        <input class="blank-in wide" id="blankN" maxlength="6" aria-label="人数">
+        名学生都完成投票；
+        <div class="init-chips scaf-only-c" data-fill="blankLoop">
+          <button type="button" data-val="循环">循环</button>
+          <button type="button" data-val="分支">分支</button>
+          <button type="button" data-val="顺序">顺序</button>
+        </div>
+        <div class="init-chips scaf-only-c" data-fill="blankN">
+          <button type="button" data-val="1000">1000</button>
+          <button type="button" data-val="1001">1001</button>
+          <button type="button" data-val="1">1</button>
+        </div>
+        <p class="field-guide scaf-only-c">箭头画回去是循环。判断是 i&lt;1001，从 i=1 开始，一共几人？</p>
+      </div>
+      <div class="step-fill">
+        <span class="n">步骤5</span>
+        <input class="blank-in wide" id="blankOut" maxlength="6" aria-label="输出">
+        A、B作品得票数。
+        <div class="init-chips scaf-only-c" data-fill="blankOut">
+          <button type="button" data-val="输出">输出</button>
+          <button type="button" data-val="输入">输入</button>
+          <button type="button" data-val="结束">结束</button>
+        </div>
+        <p class="field-guide scaf-only-c">流程图最后的平行四边形在做什么？</p>
+      </div>
+      <p class="fc-task-tip" id="scafTip">先看左边的图，再把变量名、结构和人数填进去。</p>
+      <div class="btn-row"><button class="btn btn-primary" type="button" id="algoBlankCheck" onclick="checkAlgoBlanks()">检查步骤</button></div>
+      <div class="feedback" id="algoBlankFeedback"></div>
+      <div class="algo-challenge scaf-only-a" id="algoChallenge" hidden>
+        <h3>挑战</h3>
+        <p>图中循环条件是 <code>i &lt; 1001</code>，且 i 从 1 开始每次加 1。这段循环一共会执行几次？</p>
+        <div class="input-row">
+          <div class="field" style="max-width:160px"><label for="blankTimes">执行次数</label><input id="blankTimes" type="text" maxlength="6"></div>
+          <button class="btn btn-primary" type="button" onclick="checkAlgoChallenge()">检查挑战</button>
+        </div>
+        <div class="feedback" id="algoChallengeFeedback"></div>
+      </div>
+    </section>
   </div>
 </div>
 </div>
 
-<!-- ==================== STEP 3: Extended Task ==================== -->
+
+
+
+<!-- ==================== STEP 3: 验证优化 + 课堂检测 + 拓展 ==================== -->
 <div class="step-panel" id="panel3">
-<div class="code-layout">
-  <div class="code-panel">
-    <h3>🚀 修改算法 <span class="cp-badge" style="background:var(--l);color:var(--p)">三候选人</span></h3>
-    <div class="code-editor" id="codeBox3">
-<!-- 代码行 -->
-<div class="code-line"><span class="cm"># 初始化票数 — 请补全</span></div>
-<div class="code-line"><span class="n">a</span> <span class="op"> = </span><input class="code-input" id="b3_1" placeholder="?"></div>
-<div class="code-line"><span class="n">b</span> <span class="op"> = </span><input class="code-input" id="b3_2" placeholder="?"></div>
-<div class="code-line"><span class="n">c</span> <span class="op"> = </span><input class="code-input" id="b3_3" placeholder="?"></div>
-<div class="code-line"></div>
-<div class="code-line"><span class="cm"># 模拟投票数据（有三个候选人了！）</span></div>
-<div class="code-line"><span class="n">votes</span> <span class="op"> = </span>[<span class="st">"a"</span><span class="op">, </span><span class="st">"c"</span><span class="op">, </span><span class="st">"b"</span><span class="op">, </span><span class="st">"a"</span><span class="op">, </span><span class="st">"c"</span><span class="op">, </span><span class="st">"a"</span><span class="op">, </span><span class="st">"c"</span>]</div>
-<div class="code-line"></div>
-<div class="code-line"><span class="kw">for</span> <span class="n">tp</span> <span class="kw">in</span> <span class="n">votes</span><span class="op">:</span></div>
-<div class="code-line indent-1"><span class="kw">if</span> <span class="n">tp</span> <span class="op"> == </span><span class="st">"a"</span><span class="op">:</span></div>
-<div class="code-line indent-2"><span class="n">a</span> <span class="op"> = </span><span class="n">a</span> <span class="op"> + </span><span class="nu">1</span></div>
-<div class="code-line indent-1"><span class="kw">if</span> <span class="n">tp</span> <span class="op"> == </span><span class="st">"b"</span><span class="op">:</span></div>
-<div class="code-line indent-2"><span class="n">b</span> <span class="op"> = </span><span class="n">b</span> <span class="op"> + </span><span class="nu">1</span></div>
-<div class="code-line indent-1"><span class="kw">if</span> <span class="n">tp</span> <span class="op"> == </span><input class="code-input" id="b3_4" placeholder="?"><span class="op">:</span></div>
-<div class="code-line indent-2"><span class="n">c</span> <span class="op"> = </span><input class="code-input" id="b3_5" placeholder="?"></div>
-<div class="code-line"></div>
-<div class="code-line"><span class="fn">print</span><span class="op">(</span><span class="st">"A得票:"</span><span class="op">, </span><span class="n">a</span><span class="op">)</span></div>
-<div class="code-line"><span class="fn">print</span><span class="op">(</span><span class="st">"B得票:"</span><span class="op">, </span><span class="n">b</span><span class="op">)</span></div>
-<div class="code-line"><span class="fn">print</span><span class="op">(</span><span class="st">"C得票:"</span><span class="op">, </span><span class="n">c</span><span class="op">)</span></div>
+<div class="ls-split">
+  <aside class="ls-left">
+    <div class="fc-info-title">本环节任务</div>
+    <div class="fc-task-card">
+      <div class="fc-task-desc" id="act3Desc">先按课本程序运行找漏洞，再思考 3 个作品怎么改算法。</div>
     </div>
-    <div class="code-acts">
-      <button class="btn-run" onclick="runCode(3)">▶ 运行验证</button>
-      <button class="btn-hint" onclick="showHint(3)">💡 给点提示</button>
+    <div class="fc-task-steps" id="act3Steps">
+      <div class="fc-step"><span class="fc-step-num">4</span><span class="fc-step-text">输入 c，验证 else 漏洞</span></div>
+      <div class="fc-step"><span class="fc-step-num">5</span><span class="fc-step-text">写出三个作品的调整思路</span></div>
     </div>
-  </div>
-  <div class="result-panel" id="resultPanel3">
-    <h3>📊 运行结果</h3>
-    <div class="result-empty" id="resultEmpty3">
-      <div class="re-icon">🚀</div>
-      <div>从两候选人到三候选人，算法怎么改？</div>
-      <div style="font-size:12px;color:var(--tx2)">想想：需要增加什么变量？判断条件怎么变？</div>
+    <pre class="py-code" style="font-size:11px;padding:10px 12px;line-height:1.55"><span class="cm">#用a、b表示A、B作品的得票数，程序初始票数归零</span>
+<span class="n">a</span> = 0
+<span class="n">b</span> = 0
+<span class="cm"># 用变量i控制投票的次数</span>
+<span class="n">i</span> = 1
+<span class="cm"># 有多少个人参与投票就循环多少次</span>
+<span class="kw">while</span> i &lt; 1001:
+    <span class="cm">#提示用户投票的方式，并用tp存储用户输入的投票内容</span>
+    tp = input(<span class="st">"输入a投票给A作品，输入b投票给B作品。"</span>)
+    <span class="cm">#对tp中的内容进行判断，并不断统计A、B作品票数</span>
+    <span class="kw">if</span> tp == <span class="st">"a"</span>:
+        a = a + 1
+    <span class="kw">else</span>:
+        b = b + 1
+    i = i + 1
+<span class="cm"># 输出将A、B作品的票数</span>
+print(<span class="st">"A作品获得票数为："</span>, a, <span class="st">"，"</span>, <span class="st">"B作品获得票数为："</span>, b)</pre>
+    <div class="fc-task-tip" id="act3Tip">想一想：如果输入既不是 a 也不是 b，会走到 else。</div>
+  </aside>
+  <div class="ls-right">
+  <section class="ls-section" id="stage4">
+    <div class="ls-head">
+      <div>
+        <div class="ls-kicker">4 · 算法验证与优化</div>
+        <h2>运行程序，找出算法的小漏洞</h2>
+        <p class="ls-lead">算法写好后不能马上放心使用，要用不同数据测试它。</p>
+      </div>
+      <div class="ls-mark">4</div>
     </div>
-    <div class="result-content" id="resultContent3"></div>
+    <div>
+      <h3 style="font-size:15px;margin-bottom:8px">网页模拟运行</h3>
+      <p class="ls-lead">课堂演示时，把 1000 次循环缩小成你输入的几次。请按课本程序输入 a 或 b，也可以故意输入 c 观察 else 的漏洞。</p>
+      <div class="input-row">
+        <div class="field" style="flex:1"><label for="runInput">输入投票内容</label><input id="runInput" type="text" maxlength="1" placeholder="a / b / c"></div>
+        <button class="btn btn-primary" type="button" id="runProgram">运行一次</button>
+        <button class="btn btn-ghost btn-small" type="button" id="clearTerminal">清空</button>
+      </div>
+      <div class="terminal" id="terminal"><span class="prompt">投票程序已启动</span>
+请输入 a 或 b，开始测试。</div>
+      <div class="bug-callout" id="bugCallout">先做出猜想，再输入 c 验证：如果用户输入的数据不是 a 也不是 b，结果会怎样？</div>
+    </div>
+    <div class="question-box">
+      <div class="question-title">先填写你的猜想：输入 c 后，程序最可能出现什么情况？</div>
+      <textarea id="bugGuess" placeholder="例如：我猜……因为……"></textarea>
+      <div id="verifyChoices">
+      <div class="choice-list" style="margin-top:12px">
+        <label class="choice"><input type="radio" name="bugChoice" value="right"><span>会走到 else，B 作品的票数加 1，统计结果出错。</span></label>
+        <label class="choice"><input type="radio" name="bugChoice" value="wrong"><span>程序会自动忽略这次输入，a、b 都不增加。</span></label>
+        <label class="choice"><input type="radio" name="bugChoice" value="wrong"><span>程序一定会立刻关机，无法继续运行。</span></label>
+      </div>
+      <div class="question-title" style="margin-top:18px">你认为可以怎样优化？</div>
+      <div class="choice-list">
+        <label class="choice"><input type="radio" name="optChoice" value="right"><span>分别判断 a 和 b；如果输入错误，提示重新输入，不要用 else 直接给 B 加票。</span></label>
+        <label class="choice"><input type="radio" name="optChoice" value="wrong"><span>删除所有判断，让每次输入都同时给 a 和 b 加 1。</span></label>
+        <label class="choice"><input type="radio" name="optChoice" value="wrong"><span>不需要优化，只要程序能运行一次就说明算法正确。</span></label>
+      </div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" type="button" id="verifyCheck">提交验证与优化结论</button></div>
+      <div class="feedback" id="verifyFeedback"></div>
+    </div>
+  </section>
+
+  <section class="ls-section locked" id="stage6">
+    <div class="ls-head">
+      <div>
+        <div class="ls-kicker">5 · 拓展任务</div>
+        <h2>如果有 3 个作品，算法要怎么改？</h2>
+        <p class="ls-lead">把今天学到的变量、分支和循环迁移到新的问题中。</p>
+      </div>
+      <div class="ls-mark">5</div>
+    </div>
+    <div class="info-strip"><strong>课本练习：</strong>如果有 3 个作品参与投票，算法须怎样调整？请从变量、输入选项、分支判断和输出结果等方面思考。</div>
+    <textarea id="extensionText" placeholder="我的思考：可以增加……；输入可以是……；分支需要判断……；最后输出……"></textarea>
+    <div class="btn-row"><button class="btn btn-primary" type="button" id="extensionCheck">提交拓展思考</button></div>
+    <div class="feedback" id="extensionFeedback"></div>
+    <p class="unlock-note">提示：想一想 a、b 分别记录两个作品的票数，那么第三个作品需要什么？判断分支又要增加哪一条？</p>
+  </section>
   </div>
 </div>
 </div>
 
 </div><!-- /main -->
+</div><!-- /studio-main -->
+</div><!-- /studio -->
 
 <script>
 // ==================== GLOBAL STATE ====================
@@ -464,6 +889,7 @@ let dragOffset = {x:0, y:0};
 let ghostEl = null;
 /** 加载模板时的画布指纹，用于防止未修改直接提交 */
 let loadedTemplateFingerprint = null;
+let flowchartSubmitCount = 0;
 
 function canvasFingerprint() {
   const idToKey = {};
@@ -508,50 +934,141 @@ function variableCardHtml() {
   return '<div class="scaf-card"><b>变量提示卡</b><div style="margin-top:4px">a、b 初值 = 0（分别统计 A、B 的票）<br>tp 接收当前这一票<br>可用循环判断「还有票要统计吗」</div></div>';
 }
 
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+function setPlaceholder(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.placeholder = value;
+}
+function resetTerminalForTier() {
+  const terminal = document.getElementById('terminal');
+  if (!terminal) return;
+  if (scaffoldLevel === 'C') {
+    terminal.innerHTML = '<span class="prompt">投票程序已启动</span>\n有人先输入了 c：走到 else，B 的票数加了 1。\n请你自己再输入一次 c，亲眼看结果。';
+    const callout = document.getElementById('bugCallout');
+    if (callout) callout.textContent = '先写下猜想，再亲手输入 c。示范只是提醒你：不是 a 的输入会被 else 算给 B。';
+  } else {
+    terminal.innerHTML = '<span class="prompt">投票程序已启动</span>\n请输入 a 或 b，开始测试。';
+    const callout = document.getElementById('bugCallout');
+    if (callout) callout.textContent = '先做出猜想，再输入 c 验证：如果用户输入的数据不是 a 也不是 b，结果会怎样？';
+  }
+}
+
+function applyAlgoBlankTier() {
+  const demoIds = ['blankA', 'blankB', 'blankInit'];
+  demoIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (scaffoldLevel === 'C') {
+      el.value = id === 'blankInit' ? '0' : (id === 'blankA' ? 'a' : 'b');
+      el.readOnly = true;
+      el.classList.add('ok');
+      el.classList.remove('bad');
+    } else {
+      el.readOnly = false;
+      if (el.value === 'a' || el.value === 'b' || el.value === '0') {
+        /* 预览切档时清掉示范值，避免 A/B 直接拿到答案 */
+        if (!el.dataset.userTyped) el.value = '';
+      }
+      el.classList.remove('ok', 'bad');
+    }
+  });
+  const chal = document.getElementById('algoChallenge');
+  if (chal && scaffoldLevel !== 'A') chal.hidden = true;
+  setPlaceholder('blankTp', scaffoldLevel === 'B' ? '例如 tp' : '');
+  setPlaceholder('blankBranch', scaffoldLevel === 'B' ? '分支 / 循环' : '');
+  setPlaceholder('blankLoop', scaffoldLevel === 'B' ? '分支 / 循环' : '');
+  setPlaceholder('blankN', scaffoldLevel === 'B' ? '人数' : '');
+  setPlaceholder('blankOut', scaffoldLevel === 'B' ? '输出 / 输入' : '');
+}
+
+document.querySelectorAll('.init-chips[data-fill] button').forEach((btn) => {
+  btn.addEventListener('click', function () {
+    const id = btn.parentElement && btn.parentElement.getAttribute('data-fill');
+    const input = id && document.getElementById(id);
+    if (!input || input.readOnly) return;
+    input.value = btn.dataset.val || '';
+    input.dataset.userTyped = '1';
+    btn.parentElement.querySelectorAll('button').forEach((other) => other.classList.toggle('on', other === btn));
+  });
+});
+['blankTp','blankBranch','blankLoop','blankN','blankOut','blankA','blankB','blankInit'].forEach((id) => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => { el.dataset.userTyped = '1'; });
+});
+
 function applyScaffoldUI() {
+  document.body.classList.remove('tier-a', 'tier-b', 'tier-c', 'preview-mode', 'show-verify-choices');
+  document.body.classList.add('tier-' + scaffoldLevel.toLowerCase());
+  if (IS_PREVIEW) document.body.classList.add('preview-mode');
+
   const badge = document.getElementById('scafBadge');
   const desc = document.getElementById('scafTaskDesc');
   const extra = document.getElementById('scafExtra');
   const tip = document.getElementById('scafTip');
-  const steps = document.getElementById('scafSteps');
-  const btnTpl = document.getElementById('btnTemplate');
-  const common = '学校信息中心要从以下两个候选 logo 中选出一个最合适的方案，邀请了<b>1000名师生</b>参与投票（投 A 或 B）。';
   if (badge) {
     badge.className = 'scaf-badge scaf-' + scaffoldLevel;
-    badge.textContent = scaffoldLevel === 'C' ? '填空支架' : (scaffoldLevel === 'A' ? '挑战支架' : '提示支架');
+    badge.textContent = scaffoldLevel === 'C' ? '填空' : (scaffoldLevel === 'A' ? '挑战' : '提示');
   }
-  if (scaffoldLevel === 'C') {
-    if (desc) desc.innerHTML = common + '请在半成品流程图里补全空缺的判断框、处理框和文字，再补上缺少的箭头。';
-    if (extra) extra.innerHTML = variableCardHtml() + symbolSheetHtml();
-    if (steps) steps.innerHTML =
-      '<div class="fc-step"><span class="fc-step-num">1</span><span class="fc-step-text">双击带「填空」的图块，补全文字</span></div>'
-      + '<div class="fc-step"><span class="fc-step-num">2</span><span class="fc-step-text">补上循环回连和「否→输出→结束」</span></div>'
-      + '<div class="fc-step"><span class="fc-step-num">3</span><span class="fc-step-text">对照符号速查，确认菱形是判断</span></div>'
-      + '<div class="fc-step"><span class="fc-step-num">4</span><span class="fc-step-text">点击检查流程图</span></div>';
-    if (tip) tip.textContent = '💡 不必从零画完整图。把空缺补全，并能指出哪里是循环、哪里是分支即可。';
-    if (btnTpl) { btnTpl.style.display = ''; btnTpl.textContent = '📋 重置半成品'; }
-  } else if (scaffoldLevel === 'A') {
-    if (desc) desc.innerHTML = common + '请独立画出完整流程图，并<b>自主增加一条分支</b>：当输入既不是 A 也不是 B 时，算法该怎么处理？';
-    if (extra) extra.innerHTML = '<div class="scaf-card"><b>思考提示</b><div style="margin-top:4px">如果某一票既不是「a」也不是「b」，流程图里应该加一个怎样的判断？无效票是忽略、提示，还是单独计数？</div></div>';
-    if (steps) steps.innerHTML =
-      '<div class="fc-step"><span class="fc-step-num">1</span><span class="fc-step-text">独立画出初始化、输入、循环、输出</span></div>'
-      + '<div class="fc-step"><span class="fc-step-num">2</span><span class="fc-step-text">补上「是否投 A」的分支</span></div>'
-      + '<div class="fc-step"><span class="fc-step-num">3</span><span class="fc-step-text">再增加无效票（非 A 非 B）分支</span></div>'
-      + '<div class="fc-step"><span class="fc-step-num">4</span><span class="fc-step-text">点击检查流程图</span></div>';
-    if (tip) tip.textContent = '💡 只给问题情境。请先完成教材中的基本算法，再处理异常输入。';
-    if (btnTpl) btnTpl.style.display = 'none';
+  if (desc) {
+    desc.textContent = scaffoldLevel === 'C'
+      ? '左边是课本流程图。步骤1已经示范，请对照图把后面几步选出来。'
+      : (scaffoldLevel === 'A'
+        ? '对照左图，自己找出变量名和结构名称。'
+        : '对照课本流程图，把右侧五个步骤补完整。');
+  }
+  if (extra) {
+    if (scaffoldLevel === 'C') extra.innerHTML = '<div class="scaf-card"><b>怎么看图</b><div style="margin-top:4px">矩形：处理（a、b 初值）<br>平行四边形：输入 / 输出<br>菱形：判断，把路分成两条<br>画回去的箭头：循环</div></div>';
+    else if (scaffoldLevel === 'B') extra.innerHTML = '<div class="scaf-card"><b>对照提示</b><div style="margin-top:4px">菱形表示判断（分支），画回去的箭头表示循环。变量还是探究一的 a、b、tp。</div></div>';
+    else extra.innerHTML = '';
+  }
+  if (tip) {
+    tip.textContent = scaffoldLevel === 'A'
+      ? '少看文字提示，尽量从图里的形状和变量读出步骤。'
+      : (scaffoldLevel === 'C'
+        ? '步骤1已示范。其余空可以点下面的选项，对完图再选。'
+        : '先看左边的图，再把变量名、结构和人数填进去。');
+  }
+  applyAlgoBlankTier();
+
+  if (scaffoldLevel === 'A') {
+    setText('act1Desc', '校徽海选：1000 人给 A、B 投票，最后要得到两个作品的得票数。');
+    setText('act1Tip', '先把问题说清楚，再决定用哪些变量。');
+    setText('act3Desc', '自己测试程序，找出问题，再思考三个作品怎么改。');
+    setText('act3Tip', '先猜想，再输入，再决定怎么改。');
+    setPlaceholder('analysisPeople', '');
+    setPlaceholder('analysisWorks', '');
+    setPlaceholder('analysisGoal', '');
+    setPlaceholder('bugGuess', '用自己的话写下猜想');
+    setPlaceholder('extensionText', '把你的调整想法写下来');
+  } else if (scaffoldLevel === 'C') {
+    setText('act1Desc', '1000 人给 A、B 投票。先找人数、对象、目标，再用盒子记下票数。');
+    setText('act1Tip', '不会填时，先看每个空旁边的小提示。');
+    setText('act3Desc', '先看一条示范，再亲手输入 c，然后完成拓展。');
+    setText('act3Tip', '课本用 else 给 b 加一，不是 a 的输入都会算给 B。');
+    setPlaceholder('analysisPeople', '从案例里找人数');
+    setPlaceholder('analysisWorks', '从案例里找对象');
+    setPlaceholder('analysisGoal', '从案例里找最后要求');
+    setPlaceholder('bugGuess', '我猜输入 c 以后……');
+    setPlaceholder('extensionText', '');
+    const ext = document.getElementById('extensionText');
+    if (ext && !String(ext.value || '').trim()) {
+      ext.value = '1. 第三个作品还要记下什么？\n2. 每次输入还可能是什么？\n3. 判断时要多走哪一条？\n4. 最后要告诉大家什么？';
+    }
   } else {
-    if (desc) desc.innerHTML = common + '请对照教材例题，独立画出「两个作品投票」的完整流程图。';
-    if (extra) extra.innerHTML = variableCardHtml() + symbolSheetHtml()
-      + '<div class="scaf-card"><b>任务提示</b>必须包含 5 个阶段：初始化、输入、分支判断、循环、输出。本次不提供半成品模板。</div>';
-    if (steps) steps.innerHTML =
-      '<div class="fc-step"><span class="fc-step-num">1</span><span class="fc-step-text">拖动流程图图块到画布</span></div>'
-      + '<div class="fc-step"><span class="fc-step-num">2</span><span class="fc-step-text">移动模式-双击图块修改文字</span></div>'
-      + '<div class="fc-step"><span class="fc-step-num">3</span><span class="fc-step-text">连线模式-放好图块再连线</span></div>'
-      + '<div class="fc-step"><span class="fc-step-num">4</span><span class="fc-step-text">点击检查流程图提交</span></div>';
-    if (tip) tip.textContent = '💡 使用规范符号，分支和循环逻辑正确，输入输出完整，并与教材算法一致。';
-    if (btnTpl) btnTpl.style.display = 'none';
+    setText('act1Desc', '某校校徽海选：1000 名学生给 A、B 两个作品各投一票，最后统计得票数。');
+    setText('act1Tip', '先说清楚问题，再把关键数据装进变量。');
+    setText('act3Desc', '先按课本程序运行找漏洞，再思考 3 个作品怎么改算法。');
+    setText('act3Tip', '想一想：如果输入既不是 a 也不是 b，会走到 else。');
+    setPlaceholder('analysisPeople', '例如：1000');
+    setPlaceholder('analysisWorks', '例如：A、B');
+    setPlaceholder('analysisGoal', '例如：统计得票数');
+    setPlaceholder('bugGuess', '例如：我猜……因为……');
+    setPlaceholder('extensionText', '我的思考：可以增加……；输入可以是……；分支需要判断……；最后输出……');
   }
+  resetTerminalForTier();
   document.querySelectorAll('#levelSwitch button').forEach((b) => {
     b.classList.toggle('on', b.dataset.lv === scaffoldLevel);
   });
@@ -593,12 +1110,13 @@ function loadFillTemplateC() {
 function setScaffoldLevel(lv) {
   scaffoldLevel = normalizeScaffold(lv);
   applyScaffoldUI();
-  if (scaffoldLevel === 'C') loadFillTemplateC();
-  else clearCanvas();
 }
 
 if (!IS_EMBEDDED) {
   document.querySelectorAll('.step-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchStep(parseInt(tab.dataset.step, 10)));
+  });
+  document.querySelectorAll('.studio-item[data-step]').forEach(tab => {
     tab.addEventListener('click', () => switchStep(parseInt(tab.dataset.step, 10)));
   });
 }
@@ -609,35 +1127,44 @@ function switchStep(step) {
     document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('active'));
     const tab = document.querySelector(`.step-tab[data-step="${step}"]`);
     if (tab) tab.classList.add('active');
+    document.querySelectorAll('.studio-item[data-step]').forEach(t => t.classList.toggle('active', Number(t.dataset.step) === step));
   }
   document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
   const panel = document.getElementById(`panel${step}`);
   if (panel) panel.classList.add('active');
-  if (step === 1) setTimeout(redrawConnections, 100);
 }
+
+(function applyEmbedStepEarly() {
+  if (!IS_EMBEDDED) return;
+  document.documentElement.classList.add('embedded-mode');
+  document.body.classList.add('embedded-mode');
+  const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+  switchStep(Number.isFinite(step) && step >= 1 && step <= 3 ? step : 1);
+})();
 
 function markStepDone(step) {
   const tab = document.querySelector(`.step-tab[data-step="${step}"]`);
   if (tab) tab.classList.add('done');
-  notifyLearnSpaceComplete(step);
+  const nav = document.querySelector(`.studio-item[data-step="${step}"]`);
+  if (nav) {
+    nav.classList.add('done');
+    const mark = nav.querySelector('.done-tag');
+    if (mark) mark.hidden = false;
+  }
 }
 
-/** 通知学习空间父页面：本探究已完成，触发 +2 积分（后端去重） */
-const learnSpaceNotifiedSteps = new Set();
-function notifyLearnSpaceComplete(step) {
+function notifyLearnSpaceComplete(step, extra) {
   if (!window.parent || window.parent === window) return;
-  if (learnSpaceNotifiedSteps.has(step)) return;
-  learnSpaceNotifiedSteps.add(step);
   const params = new URLSearchParams(location.search);
   const idx = parseInt(params.get('activityIndex') || params.get('step') || String(step), 10);
   window.parent.postMessage({
     type: 'LEARN_SPACE_SUBMIT',
-    payload: {
+    payload: Object.assign({
       activityIndex: Number.isFinite(idx) ? idx : step,
       step,
       stepCompleted: true,
       source: 'g6-up-lesson1'
-    }
+    }, extra || {})
   }, '*');
 }
 
@@ -651,11 +1178,17 @@ function showToast(msg) {
 
 // ==================== STEP 1: FLOWCHART ENGINE ====================
 function setMode(mode) {
+  if (!document.getElementById('btnMove')) return;
   fcMode = mode;
   document.getElementById('btnMove').classList.toggle('active-mode', mode === 'move');
   document.getElementById('btnConnect').classList.toggle('active-mode', mode === 'connect');
+  const delBtn = document.getElementById('btnDeleteLine');
+  if (delBtn) delBtn.classList.toggle('active-mode', mode === 'delete');
   const hint = document.getElementById('modeHint');
+  const svg = document.getElementById('connSvg');
+  if (svg) svg.classList.toggle('mode-delete', mode === 'delete');
   if (mode === 'move') hint.innerHTML = '当前：<span class="mh-move">移动模式</span> — 拖动图块调整位置';
+  else if (mode === 'delete') hint.innerHTML = '当前：<span class="mh-connect">删线模式</span> — 点击连线即可删除';
   else hint.innerHTML = '当前：<span class="mh-connect">连线模式</span> — 点击起点连接点，再点击终点连接点（菱形左=是，右=否）';
   connectSource = null;
   document.querySelectorAll('.port-active').forEach(p => p.classList.remove('port-active'));
@@ -718,28 +1251,108 @@ function getConnLabel(fromNodeId, fromPort) {
   return '';
 }
 
+function polylineD(pts) {
+  if (!pts.length) return '';
+  return pts.map((p, i) => (i === 0 ? 'M' : 'L') + ' ' + Math.round(p.x) + ' ' + Math.round(p.y)).join(' ');
+}
+
+function orthoPoints(from, fp, to, tp) {
+  const GAP = 18;
+  const fpN = normPort(fp);
+  const tpN = normPort(tp);
+  const a = portOffsetPoint(from, fpN, GAP);
+  const b = portOffsetPoint(to, tpN, GAP);
+  const pts = [from, a];
+  const loopBack = (to.y + 24 < from.y) && (fpN === 'bottom' || tpN === 'top' || tpN === 'left');
+  if (loopBack) {
+    const sideX = Math.min(from.x, to.x) - 78;
+    pts.push({ x: sideX, y: a.y });
+    pts.push({ x: sideX, y: b.y });
+    pts.push(b);
+    pts.push(to);
+    return pts;
+  }
+  const vFrom = fpN === 'top' || fpN === 'bottom';
+  const vTo = tpN === 'top' || tpN === 'bottom';
+  if (vFrom && vTo) {
+    if (Math.abs(a.x - b.x) < 2) {
+      pts.push(b);
+    } else {
+      const midY = Math.round((a.y + b.y) / 2);
+      pts.push({ x: a.x, y: midY });
+      pts.push({ x: b.x, y: midY });
+      pts.push(b);
+    }
+  } else if (!vFrom && !vTo) {
+    if (Math.abs(a.y - b.y) < 2) {
+      pts.push(b);
+    } else {
+      const midX = Math.round((a.x + b.x) / 2);
+      pts.push({ x: midX, y: a.y });
+      pts.push({ x: midX, y: b.y });
+      pts.push(b);
+    }
+  } else if (vFrom) {
+    pts.push({ x: a.x, y: b.y });
+    pts.push(b);
+  } else {
+    pts.push({ x: b.x, y: a.y });
+    pts.push(b);
+  }
+  pts.push(to);
+  return pts;
+}
+
+function labelPoint(pts) {
+  if (!pts.length) return { x: 0, y: 0 };
+  const i = Math.floor(pts.length / 2);
+  return { x: pts[i].x, y: pts[i].y - 8 };
+}
+
+function ensureCanvasSize() {
+  const inner = document.getElementById('canvasInner');
+  if (!inner) return;
+  let maxX = 1100;
+  let maxY = 920;
+  nodes.forEach((n) => {
+    const { w, h } = getNodeSize(n);
+    maxX = Math.max(maxX, n.x + w + 100);
+    maxY = Math.max(maxY, n.y + h + 100);
+  });
+  inner.style.width = maxX + 'px';
+  inner.style.height = maxY + 'px';
+}
+
 function redrawConnections() {
   const svg = document.getElementById('connSvg');
   if (!svg) return;
+  ensureCanvasSize();
   let html = '<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#264653"/></marker></defs>';
-  connections.forEach((conn) => {
+  connections.forEach((conn, idx) => {
     const fromPort = normPort(conn.fromPort);
     const toPort = normPort(conn.toPort || 'top');
     const from = getPortPos(conn.fromId, fromPort);
     const to = getPortPos(conn.toId, toPort);
-    const bend = Math.max(Math.abs(to.x - from.x), Math.abs(to.y - from.y)) * 0.45 + 24;
-    const c1 = portOffsetPoint(from, fromPort, bend);
-    const c2 = portOffsetPoint(to, toPort, bend);
-    const d = `M ${from.x} ${from.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${to.x} ${to.y}`;
-    html += `<path d="${d}" fill="none" stroke="#264653" stroke-width="2.5" marker-end="url(#arrowhead)"/>`;
+    const pts = orthoPoints(from, fromPort, to, toPort);
+    const d = polylineD(pts);
+    html += `<path class="conn-hit" data-conn="${idx}" d="${d}"/>`;
+    html += `<path class="conn-line" data-conn="${idx}" d="${d}"/>`;
     const label = conn.label || getConnLabel(conn.fromId, conn.fromPort);
     if (label) {
-      const lx = (from.x + to.x) / 2;
-      const ly = (from.y + to.y) / 2 - 8;
-      html += `<text x="${lx}" y="${ly}" text-anchor="middle" font-size="11" fill="#2A9D8F" font-weight="700">${label}</text>`;
+      const lp = labelPoint(pts);
+      html += `<text x="${lp.x}" y="${lp.y}" text-anchor="middle" font-size="11" fill="#2A9D8F" font-weight="700">${label}</text>`;
     }
   });
   svg.innerHTML = html;
+  svg.classList.toggle('mode-delete', fcMode === 'delete');
+}
+
+function deleteConnectionAt(index) {
+  if (index < 0 || index >= connections.length) return;
+  connections.splice(index, 1);
+  redrawConnections();
+  markCanvasEdited();
+  showToast('已删除这条连线');
 }
 
 function createNode(type, x, y, text) {
@@ -779,6 +1392,7 @@ function renderNodePorts(node) {
 
 function renderNode(node) {
   const inner = document.getElementById('canvasInner');
+  if (!inner) return;
   const old = document.getElementById('node-' + node.id);
   if (old) old.remove();
 
@@ -795,6 +1409,7 @@ function renderNode(node) {
 
   el.innerHTML = `<div class="n-body"><span class="n-text">${escHtml(node.text)}</span></div>${renderNodePorts(node)}`;
   inner.appendChild(el);
+  ensureCanvasSize();
 
   el.addEventListener('mousedown', (e) => onNodeMouseDown(e, node));
   el.addEventListener('dblclick', (e) => { e.stopPropagation(); editNodeText(node); });
@@ -885,7 +1500,8 @@ function clearCanvas() {
   connections = [];
   nextId = 1;
   loadedTemplateFingerprint = null;
-  document.getElementById('canvasInner').innerHTML = '<svg class="fc-conn-svg" id="connSvg"></svg>';
+  const inner = document.getElementById('canvasInner');
+  if (inner) inner.innerHTML = '<svg class="fc-conn-svg" id="connSvg"></svg>';
 }
 
 function loadTemplate() {
@@ -923,111 +1539,198 @@ function hasLoopBack() {
   });
 }
 
-function checkFlowchart() {
-  const issues = [];
+function nodeText(n) {
+  return String((n && n.text) || '');
+}
+function hasNode(type, re) {
+  return nodes.some((n) => (!type || n.type === type) && re.test(nodeText(n)));
+}
+function hasAny(re) {
+  return nodes.some((n) => re.test(nodeText(n)) || re.test(normText(n.text)));
+}
 
-  if (scaffoldLevel === 'C') {
-    const blanks = nodes.filter((n) => /填空|______/.test(n.text || ''));
-    if (blanks.length) issues.push('还有 ' + blanks.length + ' 处填空未补全，请双击图块改文字');
-    const loopOk = nodes.some((n) => n.type === 'decision' && /还有票|循环|统计/.test(n.text));
-    const branchOk = nodes.some((n) => n.type === 'decision' && /投|选择|是否.*a/i.test(n.text));
-    if (!loopOk) issues.push('请在循环判断的菱形里写出「还有票要统计吗」一类的话，标出循环结构');
-    if (!branchOk) issues.push('请在分支判断的菱形里写出「这票是投 A 吗」一类的话，标出分支结构');
-    if (!nodes.some((n) => /b\s*=\s*b\s*\+\s*1|b\+1/i.test(normText(n.text)))) {
-      issues.push('请补全 B 加一票的处理框');
-    }
-    if (!nodes.some((n) => /输出|结果/.test(n.text))) issues.push('请补全输出结果');
-    if (issues.length === 0) {
-      showToast('✅ 半成品已补全！你找出了循环和分支，本环节达成。');
-      markStepDone(1);
-    } else {
-      alert('⚠️ 检查发现问题：\n\n' + issues.map((s, i) => (i + 1) + '. ' + s).join('\n'));
-    }
+function checkFlowchart() {
+  if (!nodes.length) {
+    showToast('请先拖一些图块再提交');
     return;
   }
-
-  if (loadedTemplateFingerprint && canvasFingerprint() === loadedTemplateFingerprint) {
-    issues.push('加载模板后请补全连线（含循环回到「还有票要统计吗」和「否→输出→结束」），不能直接提交模板');
+  const items = [
+    { label: '开始', pts: 10, ok: nodes.some((n) => n.type === 'start') || hasAny(/^开始$|开始统计|开始计票/) },
+    { label: '初始化 a、b', pts: 12, ok: hasNode('process', /a\s*=\s*0|b\s*=\s*0|初始化|计票|票数|变量/) || hasAny(/a=0|b=0/) },
+    { label: '循环判断', pts: 14, ok: hasNode('decision', /还有|循环|统计|继续|重复|1000|下一张/) || hasAny(/还有票|再读/) },
+    { label: '读入投票', pts: 12, ok: hasNode('io', /读|输入|投票|接收|拿票|选票/) || hasAny(/读入|输入票/) },
+    { label: '是否投 A', pts: 14, ok: hasNode('decision', /投|选择|是否|a还是|是不是a|给谁/i) || hasAny(/投.*a|a还是b/i) },
+    { label: 'A 加一票', pts: 10, ok: hasAny(/a\s*=\s*a\s*\+\s*1|a\+1|a\+\+|a加|给a|a票\+/) },
+    { label: 'B 加一票', pts: 10, ok: hasAny(/b\s*=\s*b\s*\+\s*1|b\+1|b\+\+|b加|给b|b票\+/) },
+    { label: '输出结果', pts: 10, ok: hasAny(/输出|结果|打印|公布|print/) },
+    { label: '结束', pts: 8, ok: nodes.some((n) => n.type === 'end') || hasAny(/^结束$|结束统计/) }
+  ];
+  if (scaffoldLevel === 'C') {
+    const blanks = nodes.filter((n) => /填空|______/.test(n.text || ''));
+    items.push({ label: '填空已补全', pts: 0, ok: blanks.length === 0 });
   }
+  const score = items.reduce((sum, it) => sum + (it.ok ? it.pts : 0), 0);
+  const passed = score >= 70;
+  const snapshot = {
+    nodes: nodes.map((n) => ({ id: n.id, type: n.type, x: n.x, y: n.y, text: n.text })),
+    connections: connections.map((c) => ({ fromId: c.fromId, fromPort: c.fromPort, toId: c.toId, toPort: c.toPort, label: c.label || '' }))
+  };
+  flowchartSubmitCount += 1;
+  const revision = flowchartSubmitCount > 1;
+  renderScoreBoard(items, score, passed, revision);
+  notifyLearnSpaceComplete(2, {
+    deferNext: true,
+    flowchartScore: score,
+    flowchartPassed: passed,
+    flowchartVersion: flowchartSubmitCount,
+    flowchart: snapshot,
+    flowchartChecks: items,
+    flowchartRevision: revision
+  });
+  markStepDone(2);
+  const btn = document.getElementById('btnSubmitFc');
+  if (btn) btn.textContent = revision ? '再次提交' : '二次提交';
+  showToast(passed ? ('本次 ' + score + ' 分，可以体验模拟投票了') : ('本次 ' + score + ' 分，已记录。听完讲解后可再改一次'));
+  if (passed) openVoteSim();
+}
 
-  if (nodes.length < 7) issues.push('图块偏少，请包含：开始、初始化、两次判断、计票、输出、结束');
+function renderScoreBoard(items, score, passed, revision) {
+  const box = document.getElementById('scoreBoard');
+  if (!box) return;
+  box.hidden = false;
+  const misses = items.filter((it) => it.pts > 0 && !it.ok);
+  box.innerHTML = '<b>本次得分 ' + score + ' / 100</b>'
+    + (misses.length
+      ? '<div class="miss" style="margin-top:6px">还可以补：' + misses.map((m) => m.label).join('、') + '</div>'
+      : '<div class="ok" style="margin-top:6px">要点都找到了</div>')
+    + '<div style="margin-top:6px;color:#64748b">' + (revision ? '这是修改后的提交。' : '已记录。老师讲完后可以再改一次。') + '</div>'
+    + (passed ? '<button type="button" class="vs-open" onclick="openVoteSim()">打开模拟投票器</button>' : '');
+}
 
-  const hasStart = nodes.some((n) => n.type === 'start');
-  const hasEnd = nodes.some((n) => n.type === 'end');
-  const decisions = nodes.filter((n) => n.type === 'decision');
-  if (!hasStart) issues.push('缺少「开始」图块');
-  if (!hasEnd) issues.push('缺少「结束」图块');
-  if (decisions.length < 2) issues.push('需要两个「条件判断」：①是否还有票 ②是否投给 A');
+function loadFlowchartSnapshot(data) {
+  if (!data || !Array.isArray(data.nodes)) return;
+  clearCanvas();
+  data.nodes.forEach((n) => {
+    const node = {
+      id: n.id != null ? n.id : nextId++,
+      type: n.type,
+      x: Number(n.x) || 40,
+      y: Number(n.y) || 40,
+      text: n.text || ''
+    };
+    nodes.push(node);
+    renderNode(node);
+  });
+  nextId = nodes.reduce((m, n) => Math.max(m, parseInt(String(n.id).replace(/\D/g, ''), 10) || 0), 0) + 1;
+  connections = (data.connections || []).map((c) => ({
+    fromId: c.fromId, fromPort: c.fromPort, toId: c.toId, toPort: c.toPort, label: c.label || ''
+  }));
+  ensureCanvasSize();
+  redrawConnections();
+}
 
-  if (!nodes.some((n) => n.type === 'process' && /a\s*=\s*0|初始化|计票/.test(n.text))) {
-    issues.push('缺少初始化步骤（如 a=0，b=0）');
+window.addEventListener('message', (ev) => {
+  const msg = ev && ev.data;
+  if (!msg || msg.type !== 'LEARN_SPACE_RESTORE_FLOWCHART') return;
+  const payload = msg.payload || {};
+  const answers = payload.answers || {};
+  const map = { a: 'blankA', b: 'blankB', init: 'blankInit', tp: 'blankTp', branch: 'blankBranch', loop: 'blankLoop', n: 'blankN', out: 'blankOut' };
+  Object.keys(map).forEach((k) => {
+    if (answers[k] != null && $(map[k])) $(map[k]).value = answers[k];
+  });
+  if (payload.flowchartVersion) flowchartSubmitCount = Number(payload.flowchartVersion) || 0;
+});
+
+const VOTE_LIMIT = 1000;
+let voteState = { a: 0, b: 0, x: 0, ended: false };
+
+function openVoteSim() {
+  const el = document.getElementById('voteSim');
+  if (el) el.hidden = false;
+  renderVoteSim();
+}
+function closeVoteSim() {
+  const el = document.getElementById('voteSim');
+  if (el) el.hidden = true;
+}
+function voteTotal() { return voteState.a + voteState.b + voteState.x; }
+function appendVoteLog(line) {
+  const log = document.getElementById('vsLog');
+  if (!log) return;
+  const lines = (log.textContent || '').trim().split('\n').slice(-6);
+  lines.push('> ' + line);
+  log.textContent = lines.join('\n');
+  log.scrollTop = log.scrollHeight;
+}
+function renderVoteSim() {
+  const t = voteTotal();
+  const max = Math.max(1, t);
+  const setBar = (id, n) => { const el = document.getElementById(id); if (el) el.style.width = Math.round(n * 100 / max) + '%'; };
+  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setTxt('vsA', voteState.a); setTxt('vsB', voteState.b); setTxt('vsX', voteState.x);
+  setBar('vsABar', voteState.a); setBar('vsBBar', voteState.b); setBar('vsXBar', voteState.x);
+  const totalBar = document.getElementById('vsTotalBar');
+  if (totalBar) totalBar.style.width = Math.round(t * 100 / VOTE_LIMIT) + '%';
+  setTxt('vsTotal', t + ' / ' + VOTE_LIMIT);
+  const st = document.getElementById('vsStatus');
+  if (st) {
+    st.textContent = voteState.ended
+      ? ('投票结束：A ' + voteState.a + ' 票，B ' + voteState.b + ' 票，废票 ' + voteState.x)
+      : ('⏳ 已投 ' + t + ' 票，继续投票中... (A:' + voteState.a + ' B:' + voteState.b + ')');
   }
-  const loopDecision = decisions.find((n) => /还有票|1000|统计/.test(n.text));
-  if (!loopDecision) issues.push('缺少循环判断（如「还有票要统计吗？」）');
-
-  const voteDecision = decisions.find((n) => /投.*a|a\s*吗|tp.*a/i.test(n.text));
-  if (!voteDecision) issues.push('缺少投票判断（如「这票是投 A 吗？」）');
-
-  if (!nodes.some((n) => /a\s*=\s*a\s*\+\s*1|a\+1/i.test(normText(n.text)))) {
-    issues.push('缺少「a = a + 1」的处理步骤');
-  }
-  if (!nodes.some((n) => /b\s*=\s*b\s*\+\s*1|b\+1/i.test(normText(n.text)))) {
-    issues.push('缺少「b = b + 1」的处理步骤');
-  }
-  const outputNode = nodes.find((n) => /输出/.test(n.text));
-  if (!outputNode) issues.push('缺少「输出 a、b」步骤（请用平行四边形表示）');
-
-  if (!nodes.some((n) => n.type === 'io' && /读|输入|投票/.test(n.text))) {
-    issues.push('请用平行四边形图块表示「读入投票」');
-  }
-
-  if (!hasLoopBack()) {
-    issues.push('缺少循环回连线：「a+1」和「b+1」之后应连回「还有票要统计吗」');
-  }
-
-  if (voteDecision) {
-    const yesConn = connections.some((c) => c.fromId === voteDecision.id && normPort(c.fromPort) === 'left');
-    const noConn = connections.some((c) => c.fromId === voteDecision.id && normPort(c.fromPort) === 'right');
-    if (!yesConn || !noConn) issues.push('「是否投 A」请从菱形左侧连「是」、右侧连「否」');
-  }
-
-  if (loopDecision) {
-    const noConn = connections.some((c) => c.fromId === loopDecision.id && normPort(c.fromPort) === 'right');
-    if (!noConn) issues.push('「还有票吗」的「否」请从菱形右侧连到「输出」');
-    else if (outputNode) {
-      const reachesOutput = connections.some(
-        (c) => c.fromId === loopDecision.id && normPort(c.fromPort) === 'right' && c.toId === outputNode.id
-      );
-      if (!reachesOutput) issues.push('「还有票吗→否」建议从右侧直接连到「输出 a 和 b」');
-    }
-  }
-
-  if (outputNode && hasEnd) {
-    const endNode = nodes.find((n) => n.type === 'end');
-    const outToEnd = connections.some((c) => c.fromId === outputNode.id && c.toId === endNode.id);
-    if (!outToEnd) issues.push('「输出」之后应连接到「结束」');
-  }
-
-  if (connections.length < 8) issues.push('连线不完整，请检查循环、分支与输出路径');
-
-  const connectedIds = new Set();
-  connections.forEach((c) => { connectedIds.add(c.fromId); connectedIds.add(c.toId); });
-  const orphans = nodes.filter((n) => !connectedIds.has(n.id) && nodes.length > 1);
-  if (orphans.length > 0) issues.push(`有 ${orphans.length} 个图块还没有连线`);
-
-  if (scaffoldLevel === 'A') {
-    const invalid = nodes.some((n) => /无效|既不是|都不是|异常|其他|不是\s*a/i.test(n.text || ''));
-    if (!invalid) issues.push('挑战：请增加处理无效票的分支（输入既不是 A 也不是 B 时）');
-  }
-
-  if (issues.length === 0) {
-    showToast(scaffoldLevel === 'A'
-      ? '✅ 基本流程与无效票分支都完成了，挑战达成！'
-      : '✅ 流程图检查通过！你已画出完整的投票统计流程！');
-    markStepDone(1);
+}
+function castVote(ch) {
+  if (voteState.ended) return;
+  if (voteTotal() >= VOTE_LIMIT) { endVoteSim(); return; }
+  if (ch === 'a') {
+    voteState.a += 1;
+    appendVoteLog('执行分支：输入 a → A作品+1（当前A:' + voteState.a + ' B:' + voteState.b + ')');
+  } else if (ch === 'b') {
+    voteState.b += 1;
+    appendVoteLog('执行分支：输入 b → B作品+1（当前A:' + voteState.a + ' B:' + voteState.b + ')');
   } else {
-    alert('⚠️ 检查发现问题：\n\n' + issues.map((s, i) => (i + 1) + '. ' + s).join('\n'));
+    voteState.x += 1;
+    appendVoteLog('执行分支：其他输入 → 记为废票（废票:' + voteState.x + ')');
   }
+  renderVoteSim();
+  if (voteTotal() >= VOTE_LIMIT) endVoteSim();
+}
+function castManual() {
+  const input = document.getElementById('vsInput');
+  const raw = String((input && input.value) || '').trim().toLowerCase();
+  if (!raw) return;
+  if (input) input.value = '';
+  castVote(raw === 'a' || raw === 'b' ? raw : 'x');
+}
+function simVotes(n, fill) {
+  if (voteState.ended) return;
+  const remain = VOTE_LIMIT - voteTotal();
+  const count = fill ? remain : Math.min(n, remain);
+  if (count <= 0) { endVoteSim(); return; }
+  let da = 0, db = 0, dx = 0;
+  for (let i = 0; i < count; i++) {
+    const r = Math.random();
+    if (r < 0.47) da += 1;
+    else if (r < 0.9) db += 1;
+    else dx += 1;
+  }
+  voteState.a += da;
+  voteState.b += db;
+  voteState.x += dx;
+  appendVoteLog('模拟循环执行 ' + count + ' 次：A+' + da + '  B+' + db + '  废票+' + dx);
+  if (voteTotal() >= VOTE_LIMIT) endVoteSim();
+  else renderVoteSim();
+}
+function endVoteSim() {
+  voteState.ended = true;
+  appendVoteLog('循环结束，输出统计结果');
+  renderVoteSim();
+}
+function resetVoteSim() {
+  voteState = { a: 0, b: 0, x: 0, ended: false };
+  const log = document.getElementById('vsLog');
+  if (log) log.textContent = '> 算法就绪，等待输入...（输入 a 或 b 投票，其他字符记为废票）';
+  renderVoteSim();
 }
 
 function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -1036,6 +1739,7 @@ function escHtml(s) { const d = document.createElement('div'); d.textContent = s
 document.addEventListener('mousemove', (e) => {
   if (!dragTarget) return;
   const inner = document.getElementById('canvasInner');
+  if (!inner) return;
   const ir = inner.getBoundingClientRect();
   dragTarget.x = e.clientX - ir.left - dragOffset.x;
   dragTarget.y = e.clientY - ir.top - dragOffset.y;
@@ -1049,6 +1753,8 @@ document.addEventListener('mouseup', () => {
     const el = getNodeEl(dragTarget.id);
     if (el) el.classList.remove('dragging');
     dragTarget = null;
+    ensureCanvasSize();
+    redrawConnections();
   }
 });
 
@@ -1061,145 +1767,363 @@ document.querySelectorAll('.pal-item').forEach(item => {
 });
 
 const canvasWrap = document.getElementById('canvasWrap');
-canvasWrap.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
-canvasWrap.addEventListener('drop', (e) => {
-  e.preventDefault();
-  const type = e.dataTransfer.getData('text/plain');
-  if (!type) return;
-  const canvas = document.getElementById('canvas');
-  const cr = canvas.getBoundingClientRect();
-  const scrollLeft = canvas.scrollLeft;
-  const scrollTop = canvas.scrollTop;
-  const x = e.clientX - cr.left + scrollLeft;
-  const y = e.clientY - cr.top + scrollTop;
-  createNode(type, x, y);
-  redrawConnections();
+if (canvasWrap) {
+  canvasWrap.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+  canvasWrap.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const type = e.dataTransfer.getData('text/plain');
+    if (!type) return;
+    const canvas = document.getElementById('canvas');
+    if (!canvas) return;
+    const cr = canvas.getBoundingClientRect();
+    const scrollLeft = canvas.scrollLeft;
+    const scrollTop = canvas.scrollTop;
+    const x = e.clientX - cr.left + scrollLeft;
+    const y = e.clientY - cr.top + scrollTop;
+    createNode(type, x, y);
+    redrawConnections();
+  });
+}
+
+// ==================== ACT1 / ACT3 INTERACTION ====================
+const lessonState = { a: 0, b: 0, voteCount: 0, run: { a: 0, b: 0, count: 0 }, ranInvalid: false };
+
+function $(id) { return document.getElementById(id); }
+function trimVal(value) { return String(value || '').trim().toLowerCase(); }
+function hasAnyWord(value, words) { return words.some((word) => trimVal(value).includes(word)); }
+function selectedValue(name) {
+  const checked = document.querySelector('input[name="' + name + '"]:checked');
+  return checked ? checked.value : '';
+}
+function setFeedback(id, type, text) {
+  const el = $(id);
+  if (!el) return;
+  el.className = 'feedback ' + type;
+  el.textContent = text;
+}
+function revealStage(id) {
+  const section = $(id);
+  if (!section) return;
+  section.classList.remove('locked');
+  section.classList.add('revealed');
+  if (id === 'stage2' && scaffoldLevel === 'C' && lessonState.voteCount === 0) {
+    addModelVote('a');
+    const note = $('demoVoteNote');
+    if (note) note.hidden = false;
+  }
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateVariableBoxes() {
+  if ($('aValue')) $('aValue').textContent = lessonState.a;
+  if ($('bValue')) $('bValue').textContent = lessonState.b;
+  if ($('voteLog')) {
+    $('voteLog').textContent = lessonState.voteCount
+      ? ('已经模拟 ' + lessonState.voteCount + ' 次：A作品 ' + lessonState.a + ' 票，B作品 ' + lessonState.b + ' 票。')
+      : '还没有模拟投票。';
+  }
+}
+function addModelVote(vote) {
+  if (vote === 'a') lessonState.a += 1;
+  if (vote === 'b') lessonState.b += 1;
+  lessonState.voteCount += 1;
+  updateVariableBoxes();
+}
+
+function bindIf(id, event, handler) {
+  const el = $(id);
+  if (el) el.addEventListener(event, handler);
+}
+
+bindIf('introCheck', 'click', function () {
+  if (selectedValue('introChoice') === 'right') {
+    setFeedback('introFeedback', 'success', '✅ 正确！算法把解决问题的步骤说清楚，程序才能按规则重复执行。下一步：分析投票问题。');
+    revealStage('stage1');
+  } else if (scaffoldLevel === 'C') {
+    setFeedback('introFeedback', 'error', '❌ 再想一想：计算机能不能把“输入、判断、计数”这些步骤重复做？');
+  } else if (scaffoldLevel === 'A') {
+    setFeedback('introFeedback', 'error', '❌ 再看题目，选更合适的说法。');
+  } else {
+    setFeedback('introFeedback', 'error', '❌ 再想一想：计算机并不是“什么都能猜对”，它需要人先分析问题、设计规则，再用程序执行。');
+  }
 });
 
-// ==================== STEP 2 & 3: CODE VERIFICATION ====================
-const activityConfig = {
-  2: {
-    blanks: ['b2_1','b2_2','b2_3','b2_4'],
-    answers: ['0','0','"a"','b + 1'],
-    altAnswers: [['0'],['0'],['"a"','\'a\''],['b+1','b + 1']],
-    testVotes: ['a','b','a','a','b','b','a'],
-    candidates: ['a','b'],
-    expected: {a:4, b:3},
-    hint: '1. 票数从0开始计数\n2. 判断投票给谁用 "a" 比较\n3. b = b + 1 表示给B加一票',
-    desc: '两候选人投票统计'
-  },
-  3: {
-    blanks: ['b3_1','b3_2','b3_3','b3_4','b3_5'],
-    answers: ['0','0','0','"c"','c + 1'],
-    altAnswers: [['0'],['0'],['0'],['"c"','\'c\''],['c+1','c + 1']],
-    testVotes: ['a','c','b','a','c','a','c'],
-    candidates: ['a','b','c'],
-    expected: {a:3, b:1, c:3},
-    hint: '1. 三个候选人都从0开始\n2. 新增判断 tp == "c"\n3. c = c + 1 来累加C的票数',
-    desc: '三候选人投票统计'
-  }
-};
-
-function runCode(step) {
-  const cfg = activityConfig[step];
-  let allCorrect = true;
-  const results = [];
-
-  cfg.blanks.forEach((bid, i) => {
-    const el = document.getElementById(bid);
-    const val = el.value.trim();
-    const expected = cfg.answers[i];
-    const alts = cfg.altAnswers[i] || [];
-    const isCorrect = alts.some(a => val === a);
-
-    el.classList.remove('ok', 'err');
-    if (isCorrect) {
-      el.classList.add('ok');
-      results.push({blank: i, correct: true, got: val, expected});
-    } else {
-      el.classList.add('err');
-      results.push({blank: i, correct: false, got: val || '(空)', expected});
-      allCorrect = false;
-    }
-  });
-
-  // Build result display
-  const panel = document.getElementById('resultContent' + step);
-  const empty = document.getElementById('resultEmpty' + step);
-  empty.style.display = 'none';
-  panel.classList.add('show');
-
-  let html = '';
-
-  if (!allCorrect) {
-    const wrongOnes = results.filter(r => !r.correct);
-    html += `<div class="result-msg fail">❌ 有 ${wrongOnes.length} 处需要修改哦！再检查一下红色标出的位置。</div>`;
-    html += '<div style="font-size:13px;color:var(--tx2);margin-top:8px">';
-    wrongOnes.forEach(r => {
-      html += `<div style="margin:4px 0">🔸 第${r.blank+1}个空：你填了 <b>"${escHtml(r.got)}"</b>，应该填 <b>"${escHtml(r.expected)}"</b></div>`;
-    });
-    html += '</div>';
+bindIf('analysisCheck', 'click', function () {
+  const peopleOk = trimVal($('analysisPeople').value).includes('1000');
+  const works = trimVal($('analysisWorks').value);
+  const worksOk = (works.includes('a') && works.includes('b')) || (works.includes('甲') && works.includes('乙'));
+  const goalOk = hasAnyWord($('analysisGoal').value, ['得票', '票数', '统计', '结果']);
+  if (peopleOk && worksOk && goalOk) {
+    setFeedback('analysisFeedback', 'success', '✅ 正确！你提取出了 1000 名学生、A 和 B 两个候选作品、最终统计得票数。下一步：把这些要素变成变量。');
+    revealStage('stage2');
+  } else if (scaffoldLevel === 'C') {
+    const miss = [];
+    if (!peopleOk) miss.push('人数');
+    if (!worksOk) miss.push('候选作品');
+    if (!goalOk) miss.push('求解目标');
+    setFeedback('analysisFeedback', 'error', '❌ 再看案例，这几项还要补：' + miss.join('、') + '。');
+  } else if (scaffoldLevel === 'A') {
+    setFeedback('analysisFeedback', 'error', '❌ 再读一遍案例，把三个空都填完整。');
   } else {
-    // Simulate execution
-    const votes = cfg.testVotes;
-    const counts = {};
-    cfg.candidates.forEach(c => counts[c] = 0);
-    votes.forEach(v => { if (counts[v] !== undefined) counts[v]++; });
-
-    // Show votes
-    html += '<div class="vote-bar">📥 测试数据：';
-    votes.forEach((v,i) => {
-      html += `<span class="v-chip ${v}">${i+1}. ${v.toUpperCase()}</span>`;
-    });
-    html += '</div>';
-
-    // Trace table
-    html += '<table class="trace-table"><thead><tr><th>步骤</th><th>当前投票</th>';
-    cfg.candidates.forEach(c => html += `<th>${c.toUpperCase()}</th>`);
-    html += '</tr></thead><tbody>';
-    const running = {};
-    cfg.candidates.forEach(c => running[c] = 0);
-    votes.forEach((v, i) => {
-      running[v]++;
-      html += `<tr><td>${i+1}</td><td><span class="v-chip ${v}">${v.toUpperCase()}</span></td>`;
-      cfg.candidates.forEach(c => html += `<td>${running[c]}</td>`);
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
-
-    // Final result
-    html += '<div class="result-msg success">✅ 验证成功！算法正确！</div>';
-    html += '<div style="font-size:15px;font-weight:700;color:var(--p);text-align:center;margin-top:8px">';
-    html += '最终结果：';
-    cfg.candidates.forEach(c => {
-      html += ` ${c.toUpperCase()}=${counts[c]}`;
-    });
-    html += '</div>';
-    html += `<div style="font-size:12px;color:var(--tx2);text-align:center;margin-top:8px">共 ${votes.length} 张投票全部统计完毕 ✓</div>`;
-
-    markStepDone(step);
+    setFeedback('analysisFeedback', 'error', '❌ 信息还不完整：请分别检查“有多少人”“有哪些候选作品”“最后要得到什么”。');
   }
+});
 
-  panel.innerHTML = html;
+bindIf('voteA', 'click', function () { addModelVote('a'); });
+bindIf('voteB', 'click', function () { addModelVote('b'); });
+bindIf('resetVotes', 'click', function () {
+  lessonState.a = 0; lessonState.b = 0; lessonState.voteCount = 0;
+  updateVariableBoxes();
+  const note = $('demoVoteNote');
+  if (note) note.hidden = true;
+  setFeedback('modelFeedback', 'info', '已重置变量盒子。你可以继续观察每次输入如何改变 a 或 b。');
+});
+document.querySelectorAll('#initChips button').forEach((btn) => {
+  btn.addEventListener('click', function () {
+    const v = btn.dataset.init || '0';
+    document.querySelectorAll('#initChips button').forEach((other) => other.classList.toggle('on', other === btn));
+    if ($('initialA')) $('initialA').value = v;
+    if ($('initialB')) $('initialB').value = v;
+  });
+});
+
+bindIf('modelCheck', 'click', function () {
+  const initA = trimVal($('initialA').value);
+  const initB = trimVal($('initialB').value);
+  const rule = selectedValue('ruleChoice');
+  const summary = $('modelSummary');
+  if (initA === '0' && initB === '0' && rule === 'right') {
+    setFeedback('modelFeedback', 'success', '✅ 正确！开始统计前要把 a、b 清零；tp 决定增加哪一个变量。');
+    if (summary) summary.hidden = false;
+    markStepDone(1);
+    notifyLearnSpaceComplete(1, {
+      userScore: 100,
+      answers: {
+        people: $('analysisPeople').value,
+        works: $('analysisWorks').value,
+        goal: $('analysisGoal').value,
+        initialA: initA,
+        initialB: initB
+      }
+    });
+    showToast('环节1完成：问题分析与建模已提交');
+  } else {
+    if (summary) summary.hidden = true;
+    if (scaffoldLevel === 'C' && (initA === '1000' || initB === '1000')) {
+      setFeedback('modelFeedback', 'error', '❌ 开始统计前还没有人投票，盒子里不应该先放 1000 票。');
+    } else {
+      setFeedback('modelFeedback', 'error', '❌ 提示：统计开始前还没有投票，所以两个得票数应从同一个“没有票”的状态开始；再检查 tp 与 a、b 的对应关系。');
+    }
+  }
+});
+
+function blankVal(id) {
+  return String(($(id) && $(id).value) || '')
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/[“”"'‘’]/g, '')
+    .toLowerCase();
+}
+function markBlank(id, ok) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.toggle('ok', ok);
+  el.classList.toggle('bad', !ok);
+}
+function blankMatch(id, testers) {
+  const v = blankVal(id);
+  const ok = testers.some((t) => (typeof t === 'string' ? v === t : t.test(v)));
+  markBlank(id, ok);
+  return ok;
 }
 
-function showHint(step) {
-  const cfg = activityConfig[step];
-  alert('💡 提示：\n\n' + cfg.hint);
+function checkAlgoBlanks() {
+  const items = [
+    { id: 'blankA', label: '变量 a', ok: blankMatch('blankA', ['a']) },
+    { id: 'blankB', label: '变量 b', ok: blankMatch('blankB', ['b']) },
+    { id: 'blankInit', label: '初值 0', ok: blankMatch('blankInit', ['0', '零']) },
+    { id: 'blankTp', label: '变量 tp', ok: blankMatch('blankTp', ['tp']) },
+    { id: 'blankBranch', label: '分支结构', ok: blankMatch('blankBranch', ['分支', '选择', '判断', /分支结构/, /选择结构/, /判断结构/]) },
+    { id: 'blankLoop', label: '循环结构', ok: blankMatch('blankLoop', ['循环', /循环结构/, /重复/]) },
+    { id: 'blankN', label: '1000人', ok: blankMatch('blankN', ['1000', '一千']) },
+    { id: 'blankOut', label: '输出', ok: blankMatch('blankOut', ['输出', '打印', '公布']) }
+  ];
+  const okCount = items.filter((it) => it.ok).length;
+  const score = Math.round(okCount * 100 / items.length);
+  const passed = okCount === items.length;
+  const answers = {
+    a: $('blankA') && $('blankA').value,
+    b: $('blankB') && $('blankB').value,
+    init: $('blankInit') && $('blankInit').value,
+    tp: $('blankTp') && $('blankTp').value,
+    branch: $('blankBranch') && $('blankBranch').value,
+    loop: $('blankLoop') && $('blankLoop').value,
+    n: $('blankN') && $('blankN').value,
+    out: $('blankOut') && $('blankOut').value
+  };
+  flowchartSubmitCount += 1;
+  notifyLearnSpaceComplete(2, {
+    userScore: score,
+    flowchartScore: score,
+    flowchartPassed: passed,
+    flowchartVersion: flowchartSubmitCount,
+    answers
+  });
+  if (passed) {
+    markStepDone(2);
+    if (scaffoldLevel === 'C') {
+      setFeedback('algoBlankFeedback', 'success', '✅ 选对了！步骤1示范的是初始化；你选的输入、分支、循环、输出，合起来就是课本流程图。');
+    } else if (scaffoldLevel === 'A') {
+      setFeedback('algoBlankFeedback', 'success', '✅ 五步都对。下面还有一个小挑战：循环到底执行几次？');
+      const chal = $('algoChallenge');
+      if (chal) chal.hidden = false;
+    } else {
+      setFeedback('algoBlankFeedback', 'success', '✅ 全部正确！这五步就是课本流程图的自然语言：先清零，再输入，用分支判断给谁加票，用循环统计 1000 人，最后输出结果。');
+    }
+    showToast('环节2完成：算法步骤已提交');
+  } else if (scaffoldLevel === 'C') {
+    const miss = items.filter((it) => !it.ok).map((it) => it.label).join('、');
+    setFeedback('algoBlankFeedback', 'error', '❌ 这几项再对照左图选一次：' + miss + '。菱形是分支，画回去的箭头是循环。');
+  } else if (scaffoldLevel === 'A') {
+    setFeedback('algoBlankFeedback', 'error', '❌ 还有空不对。再看左图里的变量名、菱形和画回去的箭头。');
+  } else {
+    const miss = items.filter((it) => !it.ok).map((it) => it.label).join('、');
+    setFeedback('algoBlankFeedback', 'error', '❌ 还有空没填对：' + miss + '。菱形表示分支，回箭头表示循环。');
+  }
 }
+
+function checkAlgoChallenge() {
+  const ok = blankMatch('blankTimes', ['1000', '一千']);
+  if (ok) {
+    setFeedback('algoChallengeFeedback', 'success', '✅ 对。i 从 1 到 1000，条件是 i<1001，一共执行 1000 次，正好对应 1000 名学生。');
+  } else {
+    setFeedback('algoChallengeFeedback', 'error', '❌ 再数一数：i=1 时进入循环，一直到 i=1000 仍小于 1001。');
+  }
+}
+
+function appendTerminal(text, cls) {
+  const terminal = $('terminal');
+  if (!terminal) return;
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = text;
+  terminal.appendChild(line);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+bindIf('runProgram', 'click', function () {
+  const input = trimVal($('runInput').value);
+  if (!input) {
+    appendTerminal('请输入一个字符后再运行。', 'prompt');
+    return;
+  }
+  lessonState.run.count += 1;
+  appendTerminal('输入a投票给A作品，输入b投票给B作品。' + input, 'prompt');
+  if (input === 'a') {
+    lessonState.run.a += 1;
+    appendTerminal('判断结果：tp 是 a，执行 a = a + 1。');
+  } else {
+    lessonState.run.b += 1;
+    appendTerminal('判断结果：走到 else，执行 b = b + 1。');
+    if (input === 'c') lessonState.ranInvalid = true;
+  }
+  appendTerminal('当前结果：A作品获得票数为： ' + lessonState.run.a + ' ， B作品获得票数为： ' + lessonState.run.b + ' ；已处理 ' + lessonState.run.count + ' 次。');
+  if ($('bugCallout')) {
+    $('bugCallout').textContent = input === 'c'
+      ? '已经复现：输入 c 不是 a，程序走到 else，B 的票数错误加 1。'
+      : '继续试试输入 c，看看既不是 a 也不是 b 时会走到哪一条。';
+  }
+  $('runInput').value = '';
+  if (scaffoldLevel === 'A' && lessonState.ranInvalid && trimVal($('bugGuess').value).length >= 4) {
+    document.body.classList.add('show-verify-choices');
+  }
+});
+bindIf('runInput', 'keydown', function (event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    const btn = $('runProgram');
+    if (btn) btn.click();
+  }
+});
+bindIf('bugGuess', 'input', function () {
+  if (scaffoldLevel === 'A' && lessonState.ranInvalid && trimVal($('bugGuess').value).length >= 4) {
+    document.body.classList.add('show-verify-choices');
+  }
+});
+bindIf('clearTerminal', 'click', function () {
+  lessonState.run = { a: 0, b: 0, count: 0 };
+  lessonState.ranInvalid = false;
+  document.body.classList.remove('show-verify-choices');
+  resetTerminalForTier();
+});
+
+bindIf('verifyCheck', 'click', function () {
+  const guessOk = trimVal($('bugGuess').value).length >= 4;
+  const bug = selectedValue('bugChoice');
+  const opt = selectedValue('optChoice');
+  if (scaffoldLevel === 'A' && (!guessOk || !lessonState.ranInvalid)) {
+    setFeedback('verifyFeedback', 'error', '❌ 请先写下猜想，并在运行区实际输入一次 c。');
+    return;
+  }
+  if (scaffoldLevel === 'A' && !document.body.classList.contains('show-verify-choices')) {
+    document.body.classList.add('show-verify-choices');
+    setFeedback('verifyFeedback', 'info', '根据你的测试，再选择下面的判断和优化方案。');
+    return;
+  }
+  if (guessOk && bug === 'right' && opt === 'right' && lessonState.ranInvalid) {
+    setFeedback('verifyFeedback', 'success', '✅ 验证成功！你发现 else 会把不是 a 的输入错误地算给 B。下一步：思考三个作品怎么改。');
+    revealStage('stage6');
+  } else {
+    setFeedback('verifyFeedback', 'error', '❌ 请完成完整探究：先写下猜想，选择关于“输入 c 会走到 else”的判断，选择合理的优化方案，并在运行区实际输入一次 c。');
+  }
+});
+
+bindIf('extensionCheck', 'click', function () {
+  const textVal = trimVal($('extensionText').value);
+  const hasThird = hasAnyWord(textVal, ['第三', '3个', '三号', 'c']);
+  const hasVariable = hasAnyWord(textVal, ['变量', 'c', '第三个作品']);
+  const hasBranch = hasAnyWord(textVal, ['分支', '判断', '条件']);
+  const hasOutput = hasAnyWord(textVal, ['输出', '票数', '统计']);
+  if (textVal.length >= 18 && hasThird && hasVariable && hasBranch && hasOutput) {
+    setFeedback('extensionFeedback', 'success', '✅ 思考很完整！面对更多候选对象，要增加对应变量和输入选项，扩充分支判断，并输出每个作品的得票数。');
+    markStepDone(3);
+    notifyLearnSpaceComplete(3, {
+      userScore: 100,
+      extensionText: $('extensionText').value
+    });
+    showToast('环节3完成：算法验证与优化已提交');
+  } else {
+    setFeedback('extensionFeedback', 'error', '❌ 提示：至少写到四点——第三个作品的变量、输入选项、分支判断，以及最后要输出的统计结果。');
+  }
+});
 
 // ==================== RESET ALL ====================
 function resetAll() {
   clearCanvas();
-  ['b2_1','b2_2','b2_3','b2_4','b3_1','b3_2','b3_3','b3_4','b3_5'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.value = ''; el.classList.remove('ok','err'); }
+  lessonState.a = 0; lessonState.b = 0; lessonState.voteCount = 0;
+  lessonState.run = { a: 0, b: 0, count: 0 };
+  lessonState.ranInvalid = false;
+  updateVariableBoxes();
+  ['analysisPeople','analysisWorks','analysisGoal','initialA','initialB','bugGuess','runInput','extensionText','blankA','blankB','blankInit','blankTp','blankBranch','blankLoop','blankN','blankOut','blankTimes'].forEach((id) => {
+    const el = $(id);
+    if (el) { el.value = ''; el.readOnly = false; el.classList.remove('ok', 'bad'); delete el.dataset.userTyped; }
   });
-  document.querySelectorAll('.result-content').forEach(c => { c.classList.remove('show'); c.innerHTML = ''; });
-  document.querySelectorAll('.result-empty').forEach(e => e.style.display = '');
-  document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('done'));
+  document.querySelectorAll('#panel1 input[type="radio"], #panel3 input[type="radio"]').forEach((el) => { el.checked = false; });
+  document.querySelectorAll('#panel1 .feedback, #panel2 .feedback, #panel3 .feedback').forEach((el) => { el.textContent = ''; el.className = 'feedback'; });
+  document.querySelectorAll('.quiz-item').forEach((el) => el.classList.remove('correct', 'wrong'));
+  document.querySelectorAll('.quiz-feedback').forEach((el) => { el.textContent = ''; });
+  ['stage1','stage2','stage6'].forEach((id) => { const el = $(id); if (el) el.classList.add('locked'); });
+  const note = $('demoVoteNote');
+  if (note) note.hidden = true;
+  const summary = $('modelSummary');
+  if (summary) summary.hidden = true;
+  const chal = $('algoChallenge');
+  if (chal) chal.hidden = true;
+  const chalFb = $('algoChallengeFeedback');
+  if (chalFb) { chalFb.textContent = ''; chalFb.className = 'feedback'; }
+  document.querySelectorAll('.step-tab').forEach((t) => t.classList.remove('done'));
+  applyScaffoldUI();
   switchStep(1);
-  if (scaffoldLevel === 'C') loadFillTemplateC();
   showToast('已全部重置，可以重新开始！');
 }
 
@@ -1215,18 +2139,65 @@ function resetAll() {
     if (sw) sw.style.display = 'flex';
   }
   applyScaffoldUI();
-  if (scaffoldLevel === 'C') loadFillTemplateC();
+  if (IS_EMBEDDED && currentStep === 2 && window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'LEARN_SPACE_REQUEST_RESTORE', payload: { source: 'g6-up-lesson1' } }, '*');
+  }
 })();
 
-// Handle canvas scroll + connection redraw
-document.getElementById('canvas').addEventListener('scroll', () => {
-  requestAnimationFrame(redrawConnections);
-});
+const canvasInnerEl = document.getElementById('canvasInner');
+if (canvasInnerEl) {
+  canvasInnerEl.addEventListener('click', (e) => {
+    if (fcMode !== 'delete') return;
+    const hit = e.target.closest('[data-conn]');
+    if (!hit) return;
+    e.preventDefault();
+    e.stopPropagation();
+    deleteConnectionAt(Number(hit.getAttribute('data-conn')));
+  });
+}
+const canvasEl = document.getElementById('canvas');
+if (canvasEl) {
+  canvasEl.addEventListener('scroll', () => {
+    requestAnimationFrame(redrawConnections);
+  });
+}
 
 console.log('✅ 算法与问题解决 — 探究活动互动网页已就绪');
-console.log('  探究一：拖拽绘制流程图（移动模式+连线模式）');
-console.log('  探究二：半成品代码验证算法（两候选人）');
-console.log('  探究三：拓展任务算法修改（三候选人）');
+console.log('  探究一：情景导入 + 问题分析 + 抽象建模');
+console.log('  探究二：对照课本流程图填空');
+console.log('  探究三：算法验证与优化 + 拓展任务');
 </script>
+<div id="voteSim" class="vote-sim" hidden>
+  <div class="vs-card">
+    <header class="vs-head">
+      <div>
+        <h3>🗳️ 趣味投票 · 体验算法三大结构</h3>
+        <p>点击按钮投票，或手动输入 a / b 体验分支判断。试试模拟千人投票，观察循环与有穷性！</p>
+      </div>
+      <button type="button" class="vs-close" onclick="closeVoteSim()">关闭</button>
+    </header>
+    <div class="vs-bars">
+      <div class="vs-item a"><span>作品 A</span><b id="vsA">0</b><small>票</small><span class="vs-mini"><i id="vsABar"></i></span></div>
+      <div class="vs-item b"><span>作品 B</span><b id="vsB">0</b><small>票</small><span class="vs-mini"><i id="vsBBar"></i></span></div>
+      <div class="vs-item x"><span>🚫 废票</span><b id="vsX">0</b><small>张</small><span class="vs-mini"><i id="vsXBar"></i></span></div>
+    </div>
+    <div class="vs-total">
+      <span>总进度</span>
+      <div class="vs-track"><i id="vsTotalBar"></i></div>
+      <em id="vsTotal">0 / 1000</em>
+      <button type="button" class="vs-end" onclick="endVoteSim()">结束投票</button>
+    </div>
+    <div class="vs-actions">
+      <button type="button" class="vs-btn a" onclick="castVote('a')">👍 投 A</button>
+      <button type="button" class="vs-btn b" onclick="castVote('b')">👍 投 B</button>
+      <label class="vs-manual">手动输入 <input id="vsInput" maxlength="4" placeholder="a/b" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();castManual()}"> <button type="button" onclick="castManual()">投票</button></label>
+      <button type="button" class="vs-btn sim" onclick="simVotes(100)">模拟100票</button>
+      <button type="button" class="vs-btn fill" onclick="simVotes(1000, true)">一键投满</button>
+      <button type="button" class="vs-btn reset" onclick="resetVoteSim()">重置</button>
+    </div>
+    <pre class="vs-log" id="vsLog"> &gt; 算法就绪，等待输入...（输入 a 或 b 投票，其他字符记为废票）</pre>
+    <div class="vs-status" id="vsStatus">⏳ 已投 0 票，继续投票中... (A:0 B:0)</div>
+  </div>
+</div>
 </body>
 </html>

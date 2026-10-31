@@ -16,6 +16,9 @@
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="username" label="账号" min-width="120" />
           <el-table-column prop="realName" label="姓名" min-width="100" />
+          <el-table-column label="任课班级" min-width="220">
+            <template #default="{ row }">{{ classBrief(row) }}</template>
+          </el-table-column>
           <el-table-column label="状态" width="90" align="center">
             <template #default="{ row }">
               <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">
@@ -23,8 +26,9 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="280" fixed="right">
+          <el-table-column label="操作" width="360" fixed="right">
             <template #default="{ row }">
+              <el-button v-if="canMatchClasses" link type="primary" size="small" @click="openMatch(row)">匹配班级</el-button>
               <el-button link type="primary" size="small" @click="openTeacherDialog(row)">编辑</el-button>
               <el-button link type="warning" size="small" @click="resetTeacherPwd(row)">重置密码</el-button>
               <el-button
@@ -96,6 +100,7 @@
           共 <strong>{{ students.length }}</strong> 人
           <span v-if="missingNos.length"> · 缺少学号 {{ missingNos.join('、') }}</span>
         </p>
+        <p v-if="showChangedPassword" class="roster-hint">本班学生第一次用账号密码登录时要修改密码。改完后，新密码和修改时间会记在下面。</p>
         <el-alert
           v-if="missingNos.length"
           type="warning"
@@ -104,7 +109,7 @@
           style="margin-bottom: 10px"
           :title="`本班还没有学号 ${missingNos.join('、')}。点「新增学生」补录，学号填 ${missingNos[0]}，再填姓名即可。`"
         />
-        <p v-else class="roster-hint">请先选择班级，再查看该班全部学生名单。</p>
+        <p v-else-if="!selectedClass" class="roster-hint">请先选择班级，再查看该班全部学生名单。</p>
         <el-table
           :data="students"
           stripe
@@ -118,6 +123,17 @@
           <el-table-column prop="studentNo" label="学号" width="80" />
           <el-table-column prop="realName" label="姓名" min-width="100" />
           <el-table-column prop="className" label="班级" min-width="140" />
+          <el-table-column v-if="showChangedPassword" label="修改后的密码" min-width="130">
+            <template #default="{ row }">
+              <span v-if="row.passwordNote">{{ row.passwordNote }}</span>
+              <span v-else style="color:#94a3b8">尚未修改</span>
+            </template>
+          </el-table-column>
+          <el-table-column v-if="showChangedPassword" label="修改时间" min-width="150">
+            <template #default="{ row }">
+              {{ row.passwordChangedAt || '—' }}
+            </template>
+          </el-table-column>
           <el-table-column label="状态" width="90" align="center">
             <template #default="{ row }">
               <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">
@@ -180,6 +196,26 @@
       <template #footer>
         <el-button @click="teacherVisible = false">取消</el-button>
         <el-button type="primary" :loading="saving" @click="saveTeacher">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="matchVisible" :title="`匹配班级：${matchTeacher?.realName || ''}`" width="680px">
+      <p class="match-note">勾选后，这位老师在班级学情、前测和积分里只能看到这些班。一个班都不勾并保存，会恢复为可查看全部班级。</p>
+      <div v-for="group in classGroups" :key="group.grade" class="grade-block">
+        <div class="grade-head">
+          <strong>{{ group.grade }}</strong>
+          <el-button link type="primary" @click="toggleGrade(group, true)">全选</el-button>
+          <el-button link @click="toggleGrade(group, false)">清空</el-button>
+        </div>
+        <el-checkbox-group v-model="matchIds">
+          <el-checkbox v-for="c in group.list" :key="c.id" :label="c.id">{{ classOptionLabel(c) }}</el-checkbox>
+        </el-checkbox-group>
+      </div>
+      <p v-if="!classGroups.length" class="match-note">还没有班级。请先在「班级管理」里添加。</p>
+      <template #footer>
+        <span class="match-count">已选 {{ matchIds.length }} 个班</span>
+        <el-button @click="matchVisible = false">取消</el-button>
+        <el-button type="primary" :loading="savingMatch" @click="saveMatch">保存</el-button>
       </template>
     </el-dialog>
 
@@ -292,6 +328,7 @@ import {
   manageUpdateTeacher,
   manageDeleteTeacher,
   manageResetTeacherPassword,
+  manageSaveTeacherClasses,
   manageListClasses,
   manageCreateClass,
   manageUpdateClass,
@@ -303,6 +340,7 @@ import {
   manageDeleteStudent,
   manageResetStudentPassword
 } from '../../api'
+import { accountScope, SCOPE_ALL } from '../../utils/schoolCourseAccess'
 
 const activeTab = ref('teachers')
 const booting = ref(false)
@@ -317,6 +355,7 @@ const loadingStudents = ref(false)
 const filterClassId = ref(null)
 const studentKeyword = ref('')
 const selectedClass = computed(() => classes.value.find((c) => Number(c.id) === Number(filterClassId.value)) || null)
+const showChangedPassword = computed(() => selectedClass.value?.name === '2021级6班')
 const missingNos = computed(() => {
   const have = new Set(
     students.value.map((s) => Number(s.studentNo)).filter((n) => Number.isFinite(n) && n > 0)
@@ -336,6 +375,11 @@ const batchVisible = ref(false)
 const batchText = ref('')
 const batchResult = ref(null)
 
+const canMatchClasses = computed(() => accountScope() === SCOPE_ALL)
+const matchVisible = ref(false)
+const matchTeacher = ref(null)
+const matchIds = ref([])
+const savingMatch = ref(false)
 const teacherForm = ref({ id: null, username: '', realName: '', password: '', status: 1 })
 const classForm = ref({ id: null, name: '', gradeName: '', teacherId: null })
 const studentForm = ref({ id: null, username: '', realName: '', password: '', classId: null, status: 1, studentNo: '' })
@@ -364,6 +408,58 @@ const showPwd = (res, fallback) => {
     })
   } else {
     ElMessage.success(fallback)
+  }
+}
+
+const classOptionLabel = (row) => {
+  const grade = row?.gradeName || ''
+  const name = row?.name || ''
+  if (!grade || name.includes(grade)) return name
+  return `${grade} ${name}`
+}
+const classBrief = (row) => {
+  const labels = row?.classLabels || []
+  if (!labels.length) return '未匹配，可看全部'
+  if (labels.length <= 4) return labels.join('、')
+  return `${labels.slice(0, 4).join('、')} 等 ${labels.length} 个班`
+}
+const classGroups = computed(() => {
+  const map = new Map()
+  classes.value.forEach((row) => {
+    const grade = row.gradeName || '其他'
+    if (!map.has(grade)) map.set(grade, [])
+    map.get(grade).push(row)
+  })
+  return [...map.entries()].map(([grade, list]) => ({
+    grade,
+    list: [...list].sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh'))
+  }))
+})
+const openMatch = (row) => {
+  matchTeacher.value = row
+  matchIds.value = [...(row.classIds || [])]
+  matchVisible.value = true
+}
+const toggleGrade = (group, on) => {
+  const ids = new Set(matchIds.value)
+  group.list.forEach((row) => {
+    if (on) ids.add(row.id)
+    else ids.delete(row.id)
+  })
+  matchIds.value = [...ids]
+}
+const saveMatch = async () => {
+  if (!matchTeacher.value) return
+  savingMatch.value = true
+  try {
+    await manageSaveTeacherClasses(matchTeacher.value.id, matchIds.value)
+    ElMessage.success(matchIds.value.length ? '任课班级已保存' : '已恢复为可查看全部班级')
+    matchVisible.value = false
+    await loadTeachers()
+  } catch (e) {
+    ElMessage.error(e?.message || '保存失败')
+  } finally {
+    savingMatch.value = false
   }
 }
 
@@ -689,12 +785,22 @@ const downloadStudentRoster = () => {
     ElMessage.warning('当前没有可下载的学生，请先选择班级或刷新名单')
     return
   }
-  const lines = students.value.map((r) => [r.className || '', rosterStudentNo(r), r.realName || ''].join(','))
+  const withPassword = showChangedPassword.value
+  const cell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`
+  const lines = students.value.map((r) => {
+    const base = [r.className || '', r.username || '', rosterStudentNo(r), r.realName || ''].map(cell)
+    if (withPassword) base.push(cell(r.passwordNote || '尚未修改'), cell(r.passwordChangedAt || ''))
+    return base.join(',')
+  })
   const name = filterClassId.value
     ? (classes.value.find((c) => c.id === filterClassId.value)?.name || '班级')
     : '全部班级'
-  downloadCsv(`学生名单_${name}.csv`, '班级,学号,姓名', lines)
-  ElMessage.success('已下载学生名单')
+  downloadCsv(
+    `学生名单_${name}.csv`,
+    withPassword ? '班级,账号,学号,姓名,修改后的密码,修改时间' : '班级,账号,学号,姓名',
+    lines
+  )
+  ElMessage.success('已下载学生名单，其中包含账号')
 }
 
 const downloadStudentTemplate = () => {
@@ -772,6 +878,10 @@ onMounted(async () => {
 
 <style scoped>
 .settings-page { max-width: 1100px; margin: 0 auto; }
+.match-note { margin: 0 0 12px; color: #64748b; font-size: 13px; line-height: 1.6; }
+.grade-block { margin-bottom: 12px; }
+.grade-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.match-count { float: left; color: #64748b; font-size: 13px; line-height: 32px; }
 .page-head { margin-bottom: 16px; }
 .page-head h2 { margin: 0 0 4px; font-size: 22px; }
 .page-head p { margin: 0; color: #64748b; font-size: 13px; }

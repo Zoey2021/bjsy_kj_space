@@ -33,11 +33,13 @@ public class TeacherController {
     private final AuthService authService;
     private final PointsMallService pointsMallService;
     private final ScaffoldService scaffoldService;
+    private final com.itech.learnspace.service.AccountAccessService accountAccessService;
 
     public TeacherController(NotificationService notificationService, ParkService parkService,
                              PretestG4Service pretestG4Service, PretestG6Service pretestG6Service,
                              AuthService authService, PointsMallService pointsMallService,
-                             ScaffoldService scaffoldService) {
+                             ScaffoldService scaffoldService,
+                             com.itech.learnspace.service.AccountAccessService accountAccessService) {
         this.notificationService = notificationService;
         this.parkService = parkService;
         this.pretestG4Service = pretestG4Service;
@@ -45,6 +47,7 @@ public class TeacherController {
         this.authService = authService;
         this.pointsMallService = pointsMallService;
         this.scaffoldService = scaffoldService;
+        this.accountAccessService = accountAccessService;
     }
 
     private SysUser checkTeacher() {
@@ -52,6 +55,7 @@ public class TeacherController {
         if (!"TEACHER".equals(user.getRole()) && !"ADMIN".equals(user.getRole())) {
             throw new BusinessException(403, "仅教师可操作");
         }
+        accountAccessService.assertClassData(user);
         return user;
     }
 
@@ -73,9 +77,10 @@ public class TeacherController {
 
     /** 游学乐园申请列表 */
     @GetMapping("/park/applications")
-    public ApiResponse<List<Map<String, Object>>> parkApplications(@RequestParam Long classId) {
+    public ApiResponse<List<Map<String, Object>>> parkApplications(@RequestParam Long classId,
+                                                                    @RequestParam(required = false) Long lessonId) {
         SysUser teacher = checkTeacher();
-        return ApiResponse.ok(parkService.listApplications(classId, teacher.getId()));
+        return ApiResponse.ok(parkService.listApplications(classId, lessonId, teacher.getId()));
     }
 
     /** 审批游学乐园申请：approve / reject / revoke */
@@ -83,6 +88,43 @@ public class TeacherController {
     public ApiResponse<Map<String, Object>> parkReview(@RequestBody ParkReviewRequest request) {
         SysUser teacher = checkTeacher();
         return ApiResponse.ok("操作成功", parkService.review(request, teacher.getId()));
+    }
+
+    /** 一键授权或一键关闭本班游学乐园 */
+    @PostMapping("/park/review-class")
+    public ApiResponse<Map<String, Object>> parkReviewClass(@RequestBody Map<String, Object> body) {
+        SysUser teacher = checkTeacher();
+        Object classId = body.get("classId");
+        Object lessonId = body.get("lessonId");
+        if (classId == null || lessonId == null) {
+            throw new BusinessException("请选择班级和课时");
+        }
+        return ApiResponse.ok("操作成功", parkService.reviewClass(
+                Long.valueOf(String.valueOf(classId)),
+                Long.valueOf(String.valueOf(lessonId)),
+                body.get("action") == null ? "" : String.valueOf(body.get("action")),
+                teacher.getId()));
+    }
+
+    /** 游学乐园游戏开关与参数 */
+    @GetMapping("/park/settings")
+    public ApiResponse<Map<String, Object>> parkSettings() {
+        checkTeacher();
+        return ApiResponse.ok(parkService.getSettings());
+    }
+
+    @PutMapping("/park/settings")
+    public ApiResponse<Map<String, Object>> saveParkSettings(@RequestBody Map<String, Object> body) {
+        checkTeacher();
+        return ApiResponse.ok("已保存", parkService.saveSettings(body));
+    }
+
+    /** 游学乐园游玩人数与时长 */
+    @GetMapping("/park/plays")
+    public ApiResponse<Map<String, Object>> parkPlays(@RequestParam Long classId,
+                                                       @RequestParam(required = false) Long lessonId) {
+        SysUser teacher = checkTeacher();
+        return ApiResponse.ok(parkService.playStats(classId, lessonId, teacher.getId()));
     }
 
     @GetMapping("/pretest/g4")
@@ -140,5 +182,12 @@ public class TeacherController {
         Map<String, Object> result = pointsMallService.setApplyOpen(teacher.getId(), teacher.getRole(), request);
         boolean open = Boolean.TRUE.equals(result.get("applyOpen"));
         return ApiResponse.ok(open ? "已开放兑换申请" : "已关闭兑换申请", result);
+    }
+
+    @PostMapping("/points/reset")
+    public ApiResponse<Map<String, Object>> resetClassPoints(@RequestParam Long classId) {
+        SysUser teacher = checkTeacher();
+        Map<String, Object> result = pointsMallService.resetClassPoints(teacher.getId(), teacher.getRole(), classId);
+        return ApiResponse.ok("已重置本班积分", result);
     }
 }

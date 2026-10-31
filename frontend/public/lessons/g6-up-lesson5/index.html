@@ -138,9 +138,24 @@ body.embedded-mode .top-bar{padding:12px 16px}
 body.embedded-mode .top-bar .subtitle{display:none}
 body.embedded-mode .tab-nav{display:none!important}
 body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
+.note-mid,.note-c{display:none}
+body.tier-b .note-mid,body.tier-c .note-c{display:block}
+.chips{display:none;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+body.tier-c .chips{display:flex}
+.chips button{border:1px solid var(--s);background:#fff;color:var(--p);border-radius:999px;padding:4px 12px;font-weight:700;cursor:pointer}
+.preview-tier{display:none;gap:6px;align-items:center;margin:0;padding:10px 24px 0;font-size:13px;font-weight:700;color:var(--tx2)}
+.preview-tier button{border:1px solid var(--bd);background:#fff;color:var(--tx);border-radius:999px;padding:4px 12px;font-weight:800;cursor:pointer}
+.preview-tier button.on{background:var(--s);border-color:var(--s);color:#fff}
 </style>
 </head>
 <body>
+
+<div class="preview-tier" id="levelSwitch">
+  <span>预览支架</span>
+  <button type="button" data-lv="C">C</button>
+  <button type="button" data-lv="B">B</button>
+  <button type="button" data-lv="A">A</button>
+</div>
 
 <!-- Header -->
 <div class="top-bar">
@@ -175,13 +190,14 @@ body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
     <div class="bug-title">🐛 Bug 程序 #1 — 大小写错误</div>
     <div class="bug-status" id="bug1-status">待修复</div>
   </div>
-  <div class="code-box">
+  <div class="code-box" id="bug1-code">
     <div class="code-line"><span class="line-num">1</span><span class="kw">Tu</span> = <span class="num">0</span></div>
     <div class="code-line"><span class="line-num">2</span><span class="kw">while</span> tu <= <span class="num">35</span>:</div>
     <div class="code-line"><span class="line-num">3</span>    tu = <span class="num">35</span> - ji</div>
     <div class="code-line"><span class="line-num">4</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span>:</div>
     <div class="code-line"><span class="line-num">5</span>        <span class="kw">print</span>(<span class="str">"鸡:"</span>, ji, <span class="str">"只"</span>)</div>
-    <div class="code-line"><span class="line-num">6</span>    ji = ji + <span class="num">1</span></div>
+    <div class="code-line"><span class="line-num">6</span>        <span class="kw">print</span>(<span class="str">"兔:"</span>, tu, <span class="str">"只"</span>)</div>
+    <div class="code-line"><span class="line-num">7</span>    ji = ji + <span class="num">1</span></div>
   </div>
   <div style="margin-top:12px">
     <button class="btn btn-primary" onclick="runBug(1)" id="bug1-run">▶ 运行程序</button>
@@ -216,13 +232,14 @@ body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
     <div class="bug-title">🐛 Bug 程序 #2 — 中文标点错误</div>
     <div class="bug-status" id="bug2-status">待修复</div>
   </div>
-  <div class="code-box">
+  <div class="code-box" id="bug2-code">
     <div class="code-line"><span class="line-num">1</span>ji = <span class="num">0</span></div>
     <div class="code-line"><span class="line-num">2</span><span class="kw">while</span> ji <= <span class="num">35</span><span class="err">：</span></div>
     <div class="code-line"><span class="line-num">3</span>    tu = <span class="num">35</span> - ji</div>
     <div class="code-line"><span class="line-num">4</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span><span class="err">：</span></div>
-    <div class="code-line"><span class="line-num">5</span>        <span class="kw">print</span><span class="err">（</span><span class="str">"鸡:"</span>, ji<span class="err">）</span></div>
-    <div class="code-line"><span class="line-num">6</span>    ji = ji + <span class="num">1</span></div>
+    <div class="code-line"><span class="line-num">5</span>        <span class="kw">print</span><span class="err">（</span><span class="str">"鸡:"</span>, ji, <span class="str">"只"</span><span class="err">）</span></div>
+    <div class="code-line"><span class="line-num">6</span>        <span class="kw">print</span><span class="err">（</span><span class="str">"兔:"</span>, tu, <span class="str">"只"</span><span class="err">）</span></div>
+    <div class="code-line"><span class="line-num">7</span>    ji = ji + <span class="num">1</span></div>
   </div>
   <div style="margin-top:12px">
     <button class="btn btn-primary" onclick="runBug(2)" id="bug2-run">▶ 运行程序</button>
@@ -257,13 +274,14 @@ body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
     <div class="bug-title">🐛 Bug 程序 #3 — 缩进错误</div>
     <div class="bug-status" id="bug3-status">待修复</div>
   </div>
-  <div class="code-box">
+  <div class="code-box" id="bug3-code">
     <div class="code-line"><span class="line-num">1</span>ji = <span class="num">0</span></div>
     <div class="code-line"><span class="line-num">2</span><span class="kw">while</span> ji <= <span class="num">35</span>:</div>
     <div class="code-line"><span class="line-num">3</span>tu = <span class="num">35</span> - ji</div>
     <div class="code-line"><span class="line-num">4</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span>:</div>
     <div class="code-line"><span class="line-num">5</span>        <span class="kw">print</span>(<span class="str">"鸡:"</span>, ji, <span class="str">"只"</span>)</div>
-    <div class="code-line"><span class="line-num">6</span>    ji = ji + <span class="num">1</span></div>
+    <div class="code-line"><span class="line-num">6</span>        <span class="kw">print</span>(<span class="str">"兔:"</span>, tu, <span class="str">"只"</span>)</div>
+    <div class="code-line"><span class="line-num">7</span>    ji = ji + <span class="num">1</span></div>
   </div>
   <div style="margin-top:12px">
     <button class="btn btn-primary" onclick="runBug(3)" id="bug3-run">▶ 运行程序</button>
@@ -317,7 +335,7 @@ body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
 <div class="card">
   <div class="card-title">🎯 任务说明</div>
   <div class="tip-box">
-    <strong>问题：</strong>把代码里的35改成30，94改成80，运行后<strong>没有任何结果</strong>！<br>
+    <strong>问题：</strong>把代码里的35改成60，94改成66，运行后<strong>没有任何结果</strong>！<br>
     不是程序坏了，是这道题<strong>无解</strong>。但程序什么都不说，用户会以为坏了。<br>
     <strong>任务：</strong>添加一个 <span class="blank">jie</span> 变量，让程序能判断"有解"还是"无解"！
   </div>
@@ -338,10 +356,17 @@ body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
 
 <div class="card">
   <div class="card-title">✏️ 请完善代码（填空）</div>
-  <div class="hint-box">
-    <strong>思路：</strong>① 新增变量 <span class="blank">jie</span> 初始值为 <span class="blank">0</span>（表示"还没找到解"）<br>
-    ② 找到解时，把 <span class="blank">jie</span> 改为 <span class="blank">1</span>（表示"找到了"）<br>
-    ③ 循环结束后，如果 <span class="blank">jie</span> 还是 <span class="blank">0</span>，输出"此题无解"
+  <div class="hint-box note-mid">
+    三个空填同一个名字 <strong>jie</strong>。开头写成 0，找到鸡和兔之后改成 1。无解请测试 60 头、66 脚。
+  </div>
+  <div class="hint-box note-c">
+    第 1 空写 <strong>jie = 0</strong>，第 2 空在打印鸡和兔之后写 <strong>jie = 1</strong>，第 3 空判断 <strong>jie == 0</strong> 时输出「此题无解」。<br>
+    60 只就算全是鸡，也有 120 只脚。66 只脚比 120 还少，所以没有答案。
+  </div>
+  <div class="chips">
+    <button type="button" onclick="fillNextBlank('jie')">jie</button>
+    <button type="button" onclick="fillNextBlank('ji')">ji</button>
+    <button type="button" onclick="fillNextBlank('tu')">tu</button>
   </div>
   <div class="code-box" id="code2-improved">
     <div class="code-line"><span class="line-num">1</span><input type="text" class="input-field blank" id="f2-1" style="width:60px;height:24px;font-size:13px;padding:2px 6px"> = <span class="num">0</span>      <span class="cm"># 新增：记录是否有解</span></div>
@@ -361,9 +386,7 @@ body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
     <button class="btn btn-primary" onclick="checkFill2()">✅ 检查填空</button>
     <button class="btn btn-secondary" onclick="showHint2()">💡 提示</button>
   </div>
-  <div class="hint-box" id="hint2" style="display:none">
-    三个空都填 <strong>jie</strong>（变量名要保持一致）
-  </div>
+  <div class="hint-box" id="hint2" style="display:none"></div>
 </div>
 
 <div class="two-col">
@@ -376,8 +399,8 @@ body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
     </div>
   </div>
   <div class="card">
-    <div class="card-title">🧪 测试：无解的情况（30头80脚）</div>
-    <button class="btn btn-danger" onclick="testSolve(30,80)" style="width:100%;margin-bottom:12px">▶ 运行测试</button>
+    <div class="card-title">🧪 测试：无解的情况（60头66脚）</div>
+    <button class="btn btn-danger" onclick="testSolve(60,66)" style="width:100%;margin-bottom:12px">▶ 运行测试</button>
     <div class="result-area" id="result-solve-no">
       <div class="result-title">运行结果：</div>
       <div id="output-no" style="font-family:monospace"></div>
@@ -466,13 +489,13 @@ body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
   <div class="card-title">🏆 挑战测试</div>
   <div class="hint-box">
     试着输入不同的头数和脚数，看看你的通用程序能不能正确求解！<br>
-    <strong>推荐测试：</strong>① 20头56脚（有解） &nbsp; ② 30头80脚（无解） &nbsp; ③ 100头250脚（有解）
+    <strong>推荐测试：</strong>① 20头56脚（有解） &nbsp; ② 60头66脚（无解） &nbsp; ③ 100头250脚（有解）
   </div>
   <div style="margin-top:12px">
     <div style="font-weight:700;color:var(--p);margin-bottom:8px">快速测试：</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-secondary" onclick="setTest(20,56)">20头56脚</button>
-      <button class="btn btn-secondary" onclick="setTest(30,80)">30头80脚</button>
+      <button class="btn btn-secondary" onclick="setTest(60,66)">60头66脚</button>
       <button class="btn btn-secondary" onclick="setTest(100,250)">100头250脚</button>
       <button class="btn btn-secondary" onclick="setTest(5,12)">5头12脚</button>
     </div>
@@ -510,6 +533,32 @@ function switchTab(n){
 
 const urlParams = new URLSearchParams(location.search);
 const IS_EMBEDDED = urlParams.get('embedded') === '1';
+const IS_PREVIEW = urlParams.get('preview') === '1';
+let tier = (function (raw) {
+  const lv = String(raw || '').toUpperCase();
+  return (lv === 'A' || lv === 'B' || lv === 'C') ? lv : 'B';
+})(urlParams.get('scaffold'));
+let fill2Passed = false;
+let think2Passed = false;
+
+function applyTier() {
+  document.body.classList.remove('tier-a', 'tier-b', 'tier-c');
+  document.body.classList.add('tier-' + tier.toLowerCase());
+  const sw = document.getElementById('levelSwitch');
+  if (sw && IS_PREVIEW) sw.style.display = 'flex';
+  document.querySelectorAll('#levelSwitch button').forEach((b) => {
+    b.classList.toggle('on', b.dataset.lv === tier);
+  });
+}
+
+function fillNextBlank(val) {
+  ['f2-1', 'f2-2', 'f2-3'].some((id) => {
+    const el = document.getElementById(id);
+    if (!el || el.value.trim()) return false;
+    el.value = val;
+    return true;
+  });
+}
 const learnSpaceNotifiedSteps = new Set();
 
 function notifyLearnSpaceComplete(step) {
@@ -553,6 +602,15 @@ function selectBugOption(bugNum, choice){
   }
 }
 
+const FIXED_BUG_CODE = ''
+  + '<div class="code-line"><span class="line-num">1</span>ji = <span class="num">0</span></div>'
+  + '<div class="code-line"><span class="line-num">2</span><span class="kw">while</span> ji &lt;= <span class="num">35</span>:</div>'
+  + '<div class="code-line"><span class="line-num">3</span>    tu = <span class="num">35</span> - ji</div>'
+  + '<div class="code-line"><span class="line-num">4</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span>:</div>'
+  + '<div class="code-line"><span class="line-num">5</span>        <span class="kw">print</span>(<span class="str">"鸡:"</span>, ji, <span class="str">"只"</span>)</div>'
+  + '<div class="code-line"><span class="line-num">6</span>        <span class="kw">print</span>(<span class="str">"兔:"</span>, tu, <span class="str">"只"</span>)</div>'
+  + '<div class="code-line"><span class="line-num">7</span>    ji = ji + <span class="num">1</span></div>';
+
 function fixBug(n){
   bugStates[n] = true;
   document.getElementById('bug'+n).classList.add('fixed');
@@ -560,6 +618,8 @@ function fixBug(n){
   document.getElementById('bug'+n+'-error').classList.remove('show');
   document.getElementById('bug'+n+'-success').classList.add('show');
   document.getElementById('bug'+n+'-quiz').style.display='none';
+  const codeBox = document.getElementById('bug'+n+'-code');
+  if (codeBox) codeBox.innerHTML = FIXED_BUG_CODE;
 
   document.getElementById('check-b'+n).classList.add('checked');
 
@@ -590,6 +650,11 @@ function checkFill2(){
   });
 
   if(correct){
+    fill2Passed = true;
+    if(tier === 'A' && !think2Passed){
+      alert('填空对了。请先完成下面的「想一想」，再算这一关完成。');
+      return;
+    }
     alert('🎉 全部正确！现在测试有解和无解两种情况吧！');
     notifyLearnSpaceComplete(2);
   } else {
@@ -598,7 +663,15 @@ function checkFill2(){
 }
 
 function showHint2(){
-  document.getElementById('hint2').style.display='block';
+  const box = document.getElementById('hint2');
+  box.style.display = 'block';
+  if(tier === 'C'){
+    box.innerHTML = '点 <strong>jie</strong>，按顺序填进三个空。不要填 ji 或 tu。';
+  } else if(tier === 'B'){
+    box.innerHTML = '三个空都填 <strong>jie</strong>。名字要一样。';
+  } else {
+    box.innerHTML = '用一个变量记住「找到过没有」。三个空填同一个名字，开头是 0，找到后改成 1。';
+  }
 }
 
 function testSolve(head, feet){
@@ -632,7 +705,9 @@ function selectThink(el, isCorrect){
   result.style.display='block';
   if(isCorrect){
     el.classList.add('correct');
+    think2Passed = true;
     result.innerHTML = '<div style="color:var(--s);font-weight:700">✅ 正确！jie 变量让程序能判断"有解/无解"，对用户更友好！</div>';
+    if(fill2Passed) notifyLearnSpaceComplete(2);
   } else {
     el.classList.add('wrong');
     result.innerHTML = '<div style="color:var(--c)">❌ 不对，再想想 jie 变量的作用是什么？</div>';
@@ -710,7 +785,15 @@ function runGeneral(){
   output.innerHTML = html;
 }
 
+document.querySelectorAll('#levelSwitch button').forEach((b) => {
+  b.addEventListener('click', () => {
+    tier = b.dataset.lv;
+    applyTier();
+  });
+});
+
 (function initFromQuery() {
+  applyTier();
   if (!IS_EMBEDDED) return;
   document.body.classList.add('embedded-mode');
   const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);

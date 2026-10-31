@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 对话记录 - Python+AI小游戏设计课程</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI','Helvetica','Arial',sans-serif;}
+        body { background:#f4f7fb; padding:20px; color:#333; min-height:100vh; }
+        .layout { display:grid; grid-template-columns: 2fr 1fr; gap:20px; height:calc(100vh - 140px); }
+        .card { background:#fff; border-radius:14px; box-shadow:0 6px 16px rgba(0,0,0,0.08); padding:20px; display:flex; flex-direction:column; overflow:hidden; }
+        h2 { margin-bottom:10px; color:#2c5aa0; }
+        label { display:block; margin:10px 0 4px; font-weight:600; color:#2c5aa0; }
+        input, textarea { width:100%; padding:10px 12px; border:1px solid #d6e4ff; border-radius:10px; font-size:1rem; }
+        textarea { min-height:120px; resize:vertical; }
+        .card label { margin-top:12px; margin-bottom:6px; }
+        .card label:first-of-type { margin-top:0; }
+        button { padding:10px 16px; border:none; border-radius:10px; cursor:pointer; font-weight:600; }
+        .primary { background:#4d8eff; color:#fff; }
+        .secondary { background:#f0f0f0; color:#333; }
+        .row { display:flex; gap:8px; margin-top:10px; }
+        .muted { color:#666; font-size:0.9rem; }
+        .status { margin-top:8px; font-weight:bold; color:#2c5aa0; }
+        #app iframe { width:100% !important; height:100% !important; border:none; }
+        @media (max-width: 960px) {
+            .layout { grid-template-columns: 1fr; height:auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="row" style="justify-content:space-between; align-items:center;">
+        <h2><i class="fas fa-robot"></i> AI 对话 & 记录</h2>
+        <div class="row">
+            <button class="secondary" onclick="window.location.href='/'"><i class="fas fa-home"></i> 返回首页</button>
+        </div>
+    </div>
+
+    <div class="muted" style="margin:8px 0 16px;">
+        团队：{{ team.team_name }} ｜ 班级：{{ team.class_name }} ｜ 组长：{% for m in team.members %}{% if m.is_leader %}{{ m.name }}{% endif %}{% endfor %}
+        <span id="session-info" style="margin-left:15px; padding:4px 8px; background:#e8f4ff; border-radius:6px; font-size:0.85rem; color:#2c5aa0;"></span>
+    </div>
+
+    <div class="layout">
+        <div class="card" style="flex:1; min-height:0;">
+            <h3 style="margin-bottom:12px;"><i class="fas fa-comments"></i> Coze 对话</h3>
+            <div id="app" data-team-id="{{ team.id }}" style="border:1px solid #e0e0e0; border-radius:10px; flex:1; min-height:500px; position:relative; overflow:hidden; background:#fff;">
+                <!-- Coze容器将动态创建在这里，使用唯一的ID -->
+                <div id="coze-loading" style="display:none; padding:40px; text-align:center; color:#666;">
+                    <div style="margin-bottom:20px;">
+                        <i class="fas fa-spinner fa-spin" style="font-size:48px; color:#4d8eff;"></i>
+                    </div>
+                    <p style="font-size:1.1rem; margin-bottom:10px;">正在加载对话界面...</p>
+                    <p style="font-size:0.9rem; color:#999;">请稍候，这可能需要几秒钟</p>
+                </div>
+                <div id="coze-fallback" style="display:none; padding:20px; text-align:center; color:#666;">
+                    <p style="margin-bottom:10px;">⚠️ 无法加载 Coze SDK（可能是网络限制）</p>
+                    <p style="margin-bottom:15px;">您可以：</p>
+                    <ol style="text-align:left; display:inline-block; margin-bottom:15px;">
+                        <li>检查网络连接或使用 VPN/代理</li>
+                        <li>刷新页面重试</li>
+                        <li>或直接访问 <a href="https://www.coze.cn" target="_blank">Coze 平台</a> 进行对话，然后回来填写下方表单</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="flex:1; min-height:0; overflow-y:auto;">
+            <h3 style="margin-bottom:12px;"><i class="fas fa-clipboard-check"></i> 记录游戏信息</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:12px;">
+                <i class="fas fa-info-circle"></i> 保存后会自动同步到团队的游戏名称和游戏介绍
+            </p>
+            <label>游戏名称</label>
+            <input id="ai_game_name" placeholder="填写与 AI 讨论后确定的游戏名称" value="{{ team.get('ai_game_name') or team.get('game_name','') }}">
+
+            <label>游戏介绍</label>
+            <textarea id="ai_game_desc" placeholder="填写与 AI 讨论后的游戏简介">{{ team.get('ai_game_desc') or team.get('game_desc','') }}</textarea>
+
+            <div class="row" style="justify-content:flex-end; margin-top:16px; gap:10px;">
+                <button class="primary" id="save-conversation-btn" style="background:#667eea;">
+                    <i class="fas fa-comments"></i> 保存对话
+                </button>
+                <button class="primary" id="save-btn"><i class="fas fa-save"></i> 保存游戏信息</button>
+            </div>
+            <div class="status" id="status"></div>
+            <div class="status" id="conversation-status" style="margin-top:8px;"></div>
+        </div>
+    </div>
+
+    <script>
+        const teamId = {{ team.id }};
+        const cozeToken = "{{ coze_token }}";
+        const cozeAppId = "{{ coze_app_id }}";
+        const studentId = "{{ student.student_id }}";
+        const className = "{{ student.class_name }}";
+        const nickname = "{{ student.name }}";
+        const teamName = "{{ team.team_name }}";
+        const accessCode = "{{ team.access_code }}";
+        const useJwt = {{ 'true' if use_jwt else 'false' }};
+        // 安全地传递JWT token（使用JSON编码，避免特殊字符问题）
+        {% if jwt_token %}
+        const jwtToken = {{ jwt_token|tojson }};
+        {% else %}
+        const jwtToken = null;
+        {% endif %}
+        
+        // 核心：session_name直接使用访问码（与后端JWT生成逻辑一致）
+        // 同一团队的所有成员使用相同的访问码，共享对话历史
+        // 不同团队使用不同的访问码，会话完全隔离
+        // 注意：如果使用JWT，session_name已经在JWT中设置为访问码
+        // 如果不使用JWT，则使用访问码作为userInfo.id
+        const teamSessionId = accessCode || `team_${teamId}`;
+        
+        // 为每个团队创建唯一的容器ID，使用访问码确保完全隔离
+        const uniqueContainerId = accessCode ? `coze-app-${teamId}-${accessCode}` : `coze-app-${teamId}`;
+        
+        console.log('=== 团队会话配置（核心：团队ID + 访问码绑定会话）===');
+        console.log('团队ID:', teamId);
+        console.log('团队名称:', teamName);
+        console.log('班级:', className);
+        console.log('访问码:', accessCode);
+        console.log('会话标识（团队级别）:', teamSessionId);
+        console.log('唯一容器ID:', uniqueContainerId);
+        console.log('⚠️ 重要：同一团队的所有成员使用相同的会话标识，共享对话历史');
+        console.log('⚠️ 重要：不同团队使用不同的访问码，会话完全隔离');
+        console.log('⚠️ 关键：访问码已包含在会话标识和容器ID中，确保不同团队完全隔离');
+        
+        // 在页面上显示会话信息
+        const sessionInfoEl = document.getElementById('session-info');
+        if (sessionInfoEl) {
+            sessionInfoEl.textContent = `团队会话: ${teamSessionId}`;
+            sessionInfoEl.title = `当前团队使用团队级别的会话标识，所有成员共享对话历史`;
+        }
+        
+        // 页面加载时立即清理所有Coze相关存储，确保会话隔离
+        (function clearAllCozeStorage() {
+            try {
+                console.log('🧹 开始清理Coze相关存储，确保会话隔离...');
+                
+                // 清理localStorage中所有可能包含Coze数据的键
+                const localStorageKeys = Object.keys(localStorage);
+                let clearedCount = 0;
+                localStorageKeys.forEach(key => {
+                    // 匹配所有可能包含coze、chat、conversation等关键词的键
+                    if (key.toLowerCase().includes('coze') || 
+                        key.toLowerCase().includes('chat') ||
+                        key.toLowerCase().includes('conversation') ||
+                        key.toLowerCase().includes('session') ||
+                        key.startsWith('coze_') ||
+                        key.startsWith('chat_') ||
+                        key.includes('coze') ||
+                        key.includes('Coze')) {
+                        try {
+                            localStorage.removeItem(key);
+                            clearedCount++;
+                            console.log(`已清除localStorage: ${key}`);
+                        } catch (e) {
+                            console.warn(`清除localStorage ${key} 失败:`, e);
+                        }
+                    }
+                });
+                
+                // 清理sessionStorage
+                const sessionStorageKeys = Object.keys(sessionStorage);
+                sessionStorageKeys.forEach(key => {
+                    if (key.toLowerCase().includes('coze') || 
+                        key.toLowerCase().includes('chat') ||
+                        key.toLowerCase().includes('conversation') ||
+                        key.toLowerCase().includes('session')) {
+                        try {
+                            sessionStorage.removeItem(key);
+                            clearedCount++;
+                            console.log(`已清除sessionStorage: ${key}`);
+                        } catch (e) {
+                            console.warn(`清除sessionStorage ${key} 失败:`, e);
+                        }
+                    }
+                });
+                
+                console.log(`✅ 清理完成，共清除 ${clearedCount} 个存储项`);
+            } catch (e) {
+                console.warn('清理存储数据时出错:', e);
+            }
+        })();
+        
+        // 页面加载时的处理
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== AI对话页面加载 ===');
+            console.log('当前学生:', nickname);
+            console.log('所属团队:', teamName);
+            console.log('团队会话标识:', teamSessionId);
+            console.log('⚠️ 已清理所有Coze相关存储，确保使用新的会话');
+        });
+        
+        // 加载 Coze Web SDK
+        (function loadCoze() {
+            const statusEl = document.getElementById('status');
+            
+            // 检查 token
+            if (!cozeToken || cozeToken === 'None' || cozeToken.trim() === '') {
+                statusEl.textContent = '❌ 缺少 COZE_WEB_TOKEN，请在终端执行: export COZE_WEB_TOKEN="pat_..." 后重启后端';
+                statusEl.style.color = '#e74c3c';
+                console.error('❌ Token未设置或为空');
+                return;
+            }
+            
+            // 验证Token格式（支持 pat_ 和 cztei_ 两种格式，以及JWT OAuth的access_token）
+            if (!cozeToken.startsWith('pat_') && !cozeToken.startsWith('cztei_')) {
+                if (useJwt) {
+                    console.log('ℹ️ 使用JWT OAuth，access_token格式可能不同');
+                } else {
+                    console.warn('⚠️ Token格式可能不正确，应该以 pat_ 或 cztei_ 开头');
+                    console.warn('当前Token前20字符:', cozeToken.substring(0, 20));
+                }
+            } else {
+                console.log('✅ Token格式正确');
+            }
+            
+            console.log('✅ Token检查通过');
+            console.log('Token前30字符:', cozeToken.substring(0, 30) + '...');
+            console.log('Token后30字符:', '...' + cozeToken.substring(cozeToken.length - 30));
+            console.log('Token长度:', cozeToken.length);
+            console.log('Token格式:', cozeToken.startsWith('cztei_') ? '✅ cztei_格式' : (cozeToken.startsWith('pat_') ? '✅ pat_格式' : '❌ 未知格式'));
+
+            // 检查是否已加载
+            if (typeof CozeWebSDK !== 'undefined' && CozeWebSDK.AppWebSDK) {
+                initCoze();
+                return;
+            }
+
+            // 加载 SDK 脚本 - 使用正确的版本号地址
+            const cdnUrls = [
+                'https://lf-cdn.coze.cn/obj/unpkg/flow-platform/builder-web-sdk/0.1.1-beta.1/dist/umd/index.js', // 正确版本
+                'https://lf-cdn.coze.cn/obj/unpkg/flow-platform/builder-web-sdk/dist/umd/index.js', // 备用：无版本号
+            ];
+            
+            let currentIndex = 0;
+            
+            function tryLoadSDK() {
+                if (currentIndex >= cdnUrls.length) {
+                    statusEl.textContent = '❌ 所有 CDN 地址均无法访问，请检查网络或使用代理/VPN';
+                    statusEl.style.color = '#e74c3c';
+                    console.error('所有 Coze SDK CDN 地址均失败');
+                    // 显示备用提示
+                    const fallback = document.getElementById('coze-fallback');
+                    if (fallback) fallback.style.display = 'block';
+                    return;
+                }
+                
+                const webSdkScript = document.createElement('script');
+                webSdkScript.src = cdnUrls[currentIndex];
+                
+            webSdkScript.onerror = function() {
+                console.warn(`CDN ${currentIndex + 1} 加载失败，尝试下一个...`);
+                currentIndex++;
+                tryLoadSDK();
+            };
+
+            webSdkScript.onload = function () {
+                console.log(`Coze SDK 从 CDN ${currentIndex + 1} 加载成功`);
+                console.log('Coze SDK 脚本已加载');
+                // 等待SDK完全初始化，支持 createClient 或 AppWebSDK 两种方式
+                let retryCount = 0;
+                const maxRetries = 10;
+                const checkSDK = setInterval(() => {
+                    retryCount++;
+                    // 检查是否支持 createClient 或 AppWebSDK
+                    const hasSDK = typeof CozeWebSDK !== 'undefined' && 
+                                   (CozeWebSDK.createClient || CozeWebSDK.AppWebSDK);
+                    if (hasSDK) {
+                        clearInterval(checkSDK);
+                        const method = CozeWebSDK.createClient ? 'createClient' : 'AppWebSDK';
+                        console.log(`CozeWebSDK 对象已就绪，支持 ${method} 方法，开始初始化`);
+                        setTimeout(() => initCoze(), 200); // 再等待200ms确保完全就绪
+                    } else if (retryCount >= maxRetries) {
+                        clearInterval(checkSDK);
+                        statusEl.textContent = '❌ CozeWebSDK 对象未找到，请检查 SDK 版本或联系 Coze 支持';
+                        statusEl.style.color = '#e74c3c';
+                        console.error('CozeWebSDK 未定义或缺少方法:', typeof CozeWebSDK, '尝试次数:', retryCount);
+                    }
+                }, 200);
+            };
+            
+            document.head.appendChild(webSdkScript);
+            }
+            
+            tryLoadSDK();
+        })();
+
+        function initCoze() {
+            const statusEl = document.getElementById('status');
+            const appContainer = document.getElementById('app');
+            
+            // 参数验证
+            if (!cozeToken || cozeToken === 'None' || cozeToken.trim() === '') {
+                statusEl.textContent = '❌ Token 未设置，请检查环境变量 COZE_WEB_TOKEN';
+                statusEl.style.color = '#e74c3c';
+                return;
+            }
+            
+            if (!cozeAppId || cozeAppId.trim() === '') {
+                statusEl.textContent = '❌ AppId 未设置';
+                statusEl.style.color = '#e74c3c';
+                return;
+            }
+            
+            if (!appContainer) {
+                statusEl.textContent = '❌ 容器元素未找到';
+                statusEl.style.color = '#e74c3c';
+                return;
+            }
+            
+            try {
+                // 清空容器，避免重复初始化
+                appContainer.innerHTML = '';
+                
+                // 再次清理存储，确保在初始化前完全干净
+                try {
+                    const keys = Object.keys(localStorage);
+                    keys.forEach(key => {
+                        if (key.toLowerCase().includes('coze') || 
+                            key.toLowerCase().includes('chat') ||
+                            key.toLowerCase().includes('conversation')) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                } catch (e) {
+                    console.warn('初始化前清理存储失败:', e);
+                }
+                
+                console.log('初始化 Coze SDK，参数:', {
+                    token: cozeToken ? cozeToken.substring(0, 15) + '...' : 'missing',
+                    appId: cozeAppId,
+                    container: `#${uniqueContainerId}`,
+                    teamSessionId: teamSessionId,
+                    uniqueContainerId: uniqueContainerId,
+                    accessCode: accessCode,
+                    nickname: nickname,
+                    teamId: teamId,
+                    teamName: teamName
+                });
+                
+                console.log('🔒 核心配置：团队级别的会话隔离（使用访问码）');
+                console.log(`   团队会话标识（userId）: ${teamSessionId}`);
+                console.log(`   唯一容器ID: ${uniqueContainerId}`);
+                console.log(`   访问码: ${accessCode}`);
+                console.log(`   团队ID: ${teamId}`);
+                console.log(`   团队名称: ${teamName}`);
+                console.log(`   当前学生: ${nickname}`);
+                console.log('   ✅ 同一团队的所有成员使用相同的会话标识，共享对话历史');
+                console.log('   ✅ 不同团队使用不同的访问码和容器ID，会话完全隔离');
+                console.log('   ⚠️ 已清理所有Coze相关存储，确保使用全新的会话');
+
+                // 清空容器，创建唯一的容器元素，使用访问码确保完全隔离
+                appContainer.innerHTML = '';  // 先清空
+                
+                // 显示加载提示
+                const loadingEl = document.getElementById('coze-loading');
+                if (loadingEl) {
+                    loadingEl.style.display = 'block';
+                }
+                
+                const uniqueContainer = document.createElement('div');
+                uniqueContainer.id = uniqueContainerId;
+                uniqueContainer.style.cssText = 'width:100%; height:100%; min-height:500px; position:relative; background:#fff;';
+                appContainer.appendChild(uniqueContainer);
+                
+                console.log('✅ 容器元素已创建:', {
+                    containerId: uniqueContainerId,
+                    element: uniqueContainer,
+                    parent: appContainer,
+                    containerExists: document.getElementById(uniqueContainerId) !== null
+                });
+                
+                // 简化配置：直接使用访问码作为会话标识
+                // 无论是否使用JWT，都通过userInfo.id实现团队级会话隔离
+                console.log('🔒 会话隔离配置：');
+                console.log(`   访问码（会话标识）: ${accessCode}`);
+                console.log(`   团队ID: ${teamId}`);
+                console.log(`   容器ID: #${uniqueContainerId}`);
+                console.log(`   使用JWT生成: ${useJwt}`);
+
+                // ========== 重要：检查JWT Token ==========
+                console.log('='.repeat(60));
+                console.log('🔍 开始检查JWT Token配置');
+                console.log('='.repeat(60));
+                
+                if (useJwt && jwtToken) {
+                    console.log('✅ useJwt = true，应该使用JWT Token');
+                    console.log('📝 JWT Token前50字符:', jwtToken.substring(0, 50) + '...');
+                    
+                    try {
+                        // 解码JWT（不验证签名，仅查看payload）
+                        const parts = jwtToken.split('.');
+                        if (parts.length === 3) {
+                            // Base64解码payload（第二部分）
+                            const payloadBase64 = parts[1];
+                            // 添加padding（Base64可能需要）
+                            const padded = payloadBase64 + '='.repeat((4 - payloadBase64.length % 4) % 4);
+                            const payloadJson = atob(padded);
+                            const payload = JSON.parse(payloadJson);
+                            
+                            console.log('='.repeat(60));
+                            console.log('📋 JWT Token Payload（完整内容）:');
+                            console.log(JSON.stringify(payload, null, 2));
+                            console.log('='.repeat(60));
+                            console.log('🔑 关键字段检查:');
+                            console.log('   iss (OAuth应用ID):', payload.iss);
+                            console.log('   aud:', payload.aud);
+                            console.log('   session_name:', payload.session_name);
+                            console.log('   当前团队应该使用的session_name:', teamSessionId);
+                            console.log('='.repeat(60));
+                            
+                            if (payload.session_name) {
+                                if (payload.session_name === teamSessionId) {
+                                    console.log('✅ JWT中的session_name正确！');
+                                } else {
+                                    console.error('❌ 错误：JWT中的session_name与预期不符！');
+                                    console.error('   预期:', teamSessionId);
+                                    console.error('   实际:', payload.session_name);
+                                }
+                            } else {
+                                console.error('❌ 错误：JWT Token中没有session_name字段！');
+                            }
+                            
+                            if (payload.session_context) {
+                                console.log('📦 session_context:', payload.session_context);
+                            }
+                        } else {
+                            console.error('❌ JWT Token格式错误，应该有3部分，实际:', parts.length);
+                        }
+                    } catch (e) {
+                        console.error('❌ 无法解码JWT Token:', e);
+                        console.error('   错误详情:', e.message);
+                        console.error('   请检查JWT Token格式是否正确');
+                    }
+                } else {
+                    console.warn('⚠️ 未使用JWT Token！');
+                    console.warn('   useJwt:', useJwt);
+                    console.warn('   jwtToken存在:', !!jwtToken);
+                    console.warn('   可能原因：');
+                    console.warn('   1. 环境变量未设置（COZE_OAUTH_APP_ID, COZE_OAUTH_PRIVATE_KEY）');
+                    console.warn('   2. JWT Token生成失败');
+                    console.warn('   3. 查看Flask控制台的错误信息');
+                }
+                
+                console.log('='.repeat(60));
+                
+                // 初始化SDK - 使用最简单可靠的方式
+                let sdk;
+                // 如果后端传递了JWT Token，优先使用JWT；否则使用普通Token
+                // 注意：后端会把JWT Token作为coze_token传递，所以cozeToken可能是JWT
+                const finalToken = cozeToken;  // 后端已经处理好了，直接使用
+                const finalUserId = accessCode || String(teamId);
+                
+                console.log('🚀 开始初始化 Coze SDK');
+                console.log('   后端useJwt:', useJwt);
+                console.log('   jwtToken存在:', !!jwtToken);
+                console.log('   使用Token类型:', useJwt ? 'JWT OAuth (access_token)' : '普通Token (cztei_/pat_)');
+                console.log('   Token前30字符:', finalToken ? finalToken.substring(0, 30) + '...' : 'null');
+                console.log('   Token长度:', finalToken ? finalToken.length : 0);
+                console.log('   AppId:', cozeAppId);
+                console.log('   容器ID:', uniqueContainerId);
+                console.log('   用户ID (会话标识):', finalUserId);
+                
+                // 确保容器元素存在
+                const containerEl = document.getElementById(uniqueContainerId);
+                if (!containerEl) {
+                    throw new Error('❌ 容器元素不存在: ' + uniqueContainerId);
+                }
+                
+                // 使用最基础的 AppWebSDK 方式（最可靠）
+                if (typeof CozeWebSDK === 'undefined' || !CozeWebSDK.AppWebSDK) {
+                    throw new Error('❌ CozeWebSDK.AppWebSDK 未找到，请检查SDK是否加载成功');
+                }
+                
+                console.log('✅ 使用 AppWebSDK 初始化');
+                
+                // 构建初始化配置
+                const sdkConfig = {
+                    token: finalToken,
+                    appId: cozeAppId,
+                    container: '#' + uniqueContainerId,
+                    userInfo: {
+                        id: finalUserId,  // 使用访问码作为会话标识，确保团队隔离
+                        url: '',
+                        nickname: nickname || 'User'
+                    }
+                };
+                
+                console.log('初始化参数:', {
+                    token: finalToken ? finalToken.substring(0, 30) + '...' + finalToken.substring(finalToken.length - 10) : 'null',
+                    tokenLength: finalToken ? finalToken.length : 0,
+                    tokenFormat: finalToken ? (finalToken.startsWith('cztei_') ? 'cztei_' : (finalToken.startsWith('pat_') ? 'pat_' : (useJwt ? 'JWT OAuth (access_token)' : 'unknown'))) : 'null',
+                    appId: cozeAppId,
+                    container: '#' + uniqueContainerId,
+                    userInfo: sdkConfig.userInfo
+                });
+                
+                // 验证Token是否完整
+                if (finalToken && finalToken.length < 50) {
+                    console.warn('⚠️ Token长度异常，可能不完整');
+                }
+                
+                try {
+                    sdk = new CozeWebSDK.AppWebSDK(sdkConfig);
+                    console.log('✅ AppWebSDK 初始化成功');
+                    console.log('SDK对象类型:', sdk ? sdk.constructor.name : 'null');
+                    
+                    // 多次检查容器内容，确保SDK正确渲染
+                    let checkCount = 0;
+                    const maxChecks = 5;
+                    const checkInterval = setInterval(() => {
+                        checkCount++;
+                        const container = document.getElementById(uniqueContainerId);
+                        if (container) {
+                            const iframe = container.querySelector('iframe');
+                            const hasIframe = !!iframe;
+                            const hasContent = container.children.length > 0 || container.innerHTML.trim().length > 100;
+                            
+                            console.log(`初始化后容器检查 ${checkCount}/${maxChecks}:`, {
+                                hasIframe: hasIframe,
+                                iframeSrc: iframe ? iframe.src : 'none',
+                                iframeWidth: iframe ? iframe.offsetWidth : 0,
+                                iframeHeight: iframe ? iframe.offsetHeight : 0,
+                                childrenCount: container.children.length,
+                                innerHTMLLength: container.innerHTML.length,
+                                hasContent: hasContent
+                            });
+                            
+                            if (hasIframe) {
+                                const iframeHasContent = iframe.offsetWidth > 0 && iframe.offsetHeight > 0;
+                                
+                                if (iframeHasContent) {
+                                    clearInterval(checkInterval);
+                                    console.log('✅ iframe已成功渲染，尺寸:', iframe.offsetWidth, 'x', iframe.offsetHeight);
+                                    console.log('iframe URL:', iframe.src);
+                                    
+                                    // 隐藏加载提示
+                                    const loadingEl = document.getElementById('coze-loading');
+                                    if (loadingEl) {
+                                        loadingEl.style.display = 'none';
+                                    }
+                                    
+                                    // 延迟检查是否有401/403错误（iframe加载后，Coze SDK会发起API请求）
+                                    setTimeout(() => {
+                                        const errorText = container.textContent || '';
+                                        const hasError = errorText.includes('页面遇到') || 
+                                                       errorText.includes('小问题') || 
+                                                       errorText.includes('请稍后重试') ||
+                                                       errorText.includes('401') || 
+                                                       errorText.includes('403') ||
+                                                       errorText.includes('Unauthorized') ||
+                                                       errorText.includes('Forbidden');
+                                        
+                                        if (hasError) {
+                                            const is403 = errorText.includes('403') || errorText.includes('Forbidden');
+                                            
+                                            if (is403 && useJwt) {
+                                                console.error('⚠️ 检测到403错误（OAuth权限不足）');
+                                                console.error('   请检查OAuth应用是否已启用并授权');
+                                                console.error('   查看Flask控制台的详细错误信息');
+                                            } else {
+                                                console.error('⚠️ 检测到401错误（Token无效或已过期）');
+                                                console.error('   请检查：');
+                                                console.error('   1. Token是否正确（检查Flask控制台的Token前30字符）');
+                                                console.error('   2. Token是否已过期（需要在Coze平台重新生成）');
+                                                console.error('   3. 是否已重启Flask应用（设置新Token后必须重启）');
+                                            }
+                                        } else {
+                                            console.log('✅ 未检测到认证错误，对话界面应正常工作');
+                                        }
+                                    }, 5000);
+                                    
+                                    statusEl.textContent = '✅ Coze 已加载，可以开始对话了';
+                                    statusEl.style.color = '#2c5aa0';
+                                    return;
+                                } else {
+                                    console.warn(`⚠️ iframe存在但尺寸异常: ${iframe.offsetWidth}x${iframe.offsetHeight}`);
+                                    console.warn('iframe src:', iframe.src);
+                                }
+                            }
+                            
+                            if (checkCount >= maxChecks) {
+                                clearInterval(checkInterval);
+                                console.warn('⚠️ 容器检查超时，可能SDK渲染失败');
+                                console.warn('容器完整HTML:', container.innerHTML.substring(0, 1000));
+                                
+                                // 隐藏加载提示
+                                const loadingEl = document.getElementById('coze-loading');
+                                if (loadingEl) {
+                                    loadingEl.style.display = 'none';
+                                }
+                                
+                                // 检查是否有错误信息
+                                const errorText = container.textContent || '';
+                                const hasIframe = container.querySelector('iframe');
+                                
+                                // 如果有iframe但显示错误，说明是Token认证问题
+                                const hasError = errorText.includes('页面遇到') || 
+                                               errorText.includes('小问题') || 
+                                               errorText.includes('请稍后重试') ||
+                                               errorText.includes('401') || 
+                                               errorText.includes('403') ||
+                                               errorText.includes('Unauthorized') ||
+                                               errorText.includes('Forbidden');
+                                
+                                if (hasIframe && hasError) {
+                                    const is403 = errorText.includes('403') || errorText.includes('Forbidden');
+                                    const is401 = errorText.includes('401') || errorText.includes('Unauthorized');
+                                    
+                                    console.error(`❌ 检测到认证错误（${is403 ? '403' : (is401 ? '401' : '未知')}）`);
+                                    console.error('错误信息:', errorText.substring(0, 200));
+                                    console.error('当前使用的Token:', finalToken ? finalToken.substring(0, 30) + '...' : 'null');
+                                    console.error('使用JWT OAuth:', useJwt);
+                                    
+                                    if (is403 && useJwt) {
+                                        console.error('⚠️ 403错误：OAuth应用权限不足或被禁用');
+                                        console.error('解决方案：');
+                                        console.error('   1. 登录扣子平台 → API管理 → OAuth应用');
+                                        console.error('   2. 检查OAuth应用是否已启用');
+                                        console.error('   3. 检查OAuth应用是否已授权（需要bot:chat、conversation:create等权限）');
+                                        console.error('   4. 检查公钥指纹（kid）是否与配置一致');
+                                        console.error('   5. 查看Flask控制台的详细错误信息');
+                                        
+                                        statusEl.textContent = '❌ OAuth权限不足（403），请检查OAuth应用配置';
+                                        statusEl.style.color = '#e74c3c';
+                                        
+                                        // 显示错误提示
+                                        const errorDiv = document.createElement('div');
+                                        errorDiv.style.cssText = 'padding:15px; background:#fee; border:1px solid #fcc; border-radius:8px; margin-top:10px; color:#c33; font-size:0.9rem; text-align:center;';
+                                        errorDiv.innerHTML = `
+                                            <strong>❌ OAuth权限不足（403错误）</strong><br>
+                                            <p style="font-size:0.85rem; color:#666; margin-top:10px;">OAuth应用可能未启用或权限不足</p>
+                                            <p style="font-size:0.85rem; color:#666; margin-top:5px;">解决步骤：</p>
+                                            <ol style="text-align:left; display:inline-block; font-size:0.85rem; color:#666; margin-top:5px;">
+                                                <li>登录扣子平台 → API管理 → OAuth应用</li>
+                                                <li>检查OAuth应用是否已启用</li>
+                                                <li>检查OAuth应用是否已授权（需要bot:chat、conversation:create等权限）</li>
+                                                <li>检查公钥指纹（kid）是否与配置一致</li>
+                                                <li>查看Flask控制台的详细错误信息</li>
+                                            </ol>
+                                            <button onclick="location.reload()" style="padding:8px 16px; background:#4d8eff; color:#fff; border:none; border-radius:6px; cursor:pointer; margin-top:10px;">
+                                                <i class="fas fa-redo"></i> 刷新重试
+                                            </button>
+                                        `;
+                                        appContainer.appendChild(errorDiv);
+                                    } else {
+                                        console.error('⚠️ Token可能无效或已过期');
+                                        console.error('解决方案：');
+                                        console.error('   1. 在Coze平台重新生成Token');
+                                        console.error('   2. 在Flask终端执行: export COZE_WEB_TOKEN="新Token"');
+                                        console.error('   3. 重启Flask应用');
+                                        
+                                        statusEl.textContent = '❌ Token认证失败（401），请更新Token';
+                                        statusEl.style.color = '#e74c3c';
+                                        
+                                        // 显示错误提示
+                                        const errorDiv = document.createElement('div');
+                                        errorDiv.style.cssText = 'padding:15px; background:#fee; border:1px solid #fcc; border-radius:8px; margin-top:10px; color:#c33; font-size:0.9rem; text-align:center;';
+                                        errorDiv.innerHTML = `
+                                            <strong>❌ Token认证失败（401错误）</strong><br>
+                                            <p style="font-size:0.85rem; color:#666; margin-top:10px;">Token可能已过期或无效</p>
+                                            <p style="font-size:0.85rem; color:#666; margin-top:5px;">解决步骤：</p>
+                                            <ol style="text-align:left; display:inline-block; font-size:0.85rem; color:#666; margin-top:5px;">
+                                                <li>在Coze平台重新生成Token</li>
+                                                <li>在Flask终端执行: <code style="background:#f0f0f0; padding:2px 6px; border-radius:3px;">export COZE_WEB_TOKEN="新Token"</code></li>
+                                                <li>重启Flask应用（Ctrl+C 然后 python app.py）</li>
+                                            </ol>
+                                            <button onclick="location.reload()" style="padding:8px 16px; background:#4d8eff; color:#fff; border:none; border-radius:6px; cursor:pointer; margin-top:10px;">
+                                                <i class="fas fa-redo"></i> 刷新重试
+                                            </button>
+                                        `;
+                                        appContainer.appendChild(errorDiv);
+                                    }
+                                } else {
+                                    statusEl.textContent = '⚠️ 对话界面可能未完全加载，请稍候或刷新';
+                                    statusEl.style.color = '#f39c12';
+                                }
+                            }
+                        } else {
+                            console.error('❌ 容器元素不存在:', uniqueContainerId);
+                            clearInterval(checkInterval);
+                        }
+                    }, 2000);  // 每2秒检查一次
+                    
+                } catch (e) {
+                    console.error('❌ AppWebSDK 初始化失败:', e);
+                    console.error('   错误消息:', e.message);
+                    console.error('   错误堆栈:', e.stack);
+                    console.error('   错误名称:', e.name);
+                    
+                    // 显示详细错误信息
+                    statusEl.textContent = '❌ 初始化失败: ' + (e.message || '未知错误');
+                    statusEl.style.color = '#e74c3c';
+                    
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.cssText = 'padding:15px; background:#fee; border:1px solid #fcc; border-radius:8px; margin-top:10px; color:#c33; font-size:0.9rem;';
+                    errorDiv.innerHTML = `
+                        <strong>❌ SDK初始化失败</strong><br>
+                        <p>错误: ${e.message || '未知错误'}</p>
+                        <p style="font-size:0.85rem; color:#666;">请检查：</p>
+                        <ul style="font-size:0.85rem; color:#666;">
+                            <li>Token是否正确（检查Flask控制台）</li>
+                            <li>AppId是否正确: ${cozeAppId}</li>
+                            <li>网络连接是否正常</li>
+                            <li>浏览器控制台是否有其他错误</li>
+                        </ul>
+                        <button onclick="location.reload()" style="padding:8px 16px; background:#4d8eff; color:#fff; border:none; border-radius:6px; cursor:pointer; margin-top:10px;">
+                            刷新重试
+                        </button>
+                    `;
+                    appContainer.appendChild(errorDiv);
+                    throw e;
+                }
+
+                console.log('✅ Coze SDK 初始化完成');
+                console.log(`✅ 团队会话标识: ${accessCode} (团队: ${teamName})`);
+                console.log(`✅ 同一团队的所有成员将共享此对话历史（通过userInfo.id）`);
+                console.log(`✅ 不同团队使用不同的访问码，会话完全隔离`);
+                
+                // 输出诊断信息
+                console.log('📊 诊断信息：');
+                console.log(`   团队ID: ${teamId}`);
+                console.log(`   访问码: ${accessCode}`);
+                console.log(`   会话标识: ${teamSessionId}`);
+                console.log(`   容器ID: ${uniqueContainerId}`);
+                console.log(`   使用JWT: ${useJwt}`);
+                console.log(`   SDK类型: ${sdk ? sdk.constructor.name : 'unknown'}`);
+                console.log('📊 请将以上信息提供给Coze技术支持，以便排查问题');
+                
+                // 监听SDK错误事件（如果支持）
+                if (sdk) {
+                    // 尝试监听错误事件
+                    if (typeof sdk.on === 'function') {
+                        sdk.on('error', (error) => {
+                            console.error('❌ Coze SDK 错误事件:', error);
+                            statusEl.textContent = '❌ 会话创建失败: ' + (error.message || '未知错误');
+                            statusEl.style.color = '#e74c3c';
+                            
+                            // 显示错误信息和重试按钮
+                            const errorDiv = document.createElement('div');
+                            errorDiv.style.cssText = 'padding:15px; background:#fee; border:1px solid #fcc; border-radius:8px; margin-top:10px; color:#c33; font-size:0.9rem; text-align:center;';
+                            errorDiv.innerHTML = `
+                                <div style="margin-bottom:10px;">
+                                    <i class="fas fa-exclamation-circle" style="font-size:24px; color:#e74c3c;"></i>
+                                </div>
+                                <strong style="display:block; margin-bottom:8px;">会话创建失败</strong>
+                                <p style="margin-bottom:12px; color:#666;">${error.message || '未知错误'}</p>
+                                <button onclick="location.reload()" style="padding:8px 16px; background:#4d8eff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600;">
+                                    <i class="fas fa-redo"></i> 重试
+                                </button>
+                            `;
+                            appContainer.innerHTML = '';
+                            appContainer.appendChild(errorDiv);
+                        });
+                        
+                        sdk.on('ready', () => {
+                            console.log('✅ Coze SDK 就绪');
+                        });
+                    }
+                }
+                
+                // 设置初始状态
+                statusEl.textContent = '⏳ 正在初始化 Coze SDK...';
+                statusEl.style.color = '#f39c12';
+                
+                // 延迟检查容器是否有内容（iframe或div）
+                let checkCount = 0;
+                const maxChecks = 10; // 检查10次，每次1秒，总共10秒
+                const checkInterval = setInterval(() => {
+                    checkCount++;
+                    const container = document.getElementById(uniqueContainerId);
+                    const hasIframe = container && container.querySelector('iframe');
+                    const hasContent = hasIframe || 
+                                      (container && container.children.length > 0 && container.innerHTML.trim().length > 100) ||
+                                      (appContainer.querySelector('iframe') !== null);
+                    
+                    console.log(`检查 ${checkCount}/${maxChecks}:`, {
+                        containerExists: !!container,
+                        hasIframe: !!hasIframe,
+                        childrenCount: container ? container.children.length : 0,
+                        innerHTMLLength: container ? container.innerHTML.length : 0,
+                        hasContent: hasContent
+                    });
+                    
+                    if (hasContent) {
+                        clearInterval(checkInterval);
+                        console.log('✅ Coze SDK 容器已填充内容');
+                        statusEl.textContent = '✅ Coze 已加载，可以开始对话了';
+                        statusEl.style.color = '#2c5aa0';
+                        
+                        // 检查是否有错误信息
+                        const errorText = (container ? container.textContent : appContainer.textContent) || '';
+                        if (errorText.includes('会话创建失败') || errorText.includes('创建失败') || errorText.includes('页面遇到') || errorText.includes('小问题')) {
+                            console.error('❌ 检测到错误信息:', errorText.substring(0, 200));
+                            statusEl.textContent = '❌ 会话创建失败，请查看下方错误信息';
+                            statusEl.style.color = '#e74c3c';
+                            
+                            // 显示错误信息和重试按钮
+                            if (!appContainer.querySelector('.error-retry')) {
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'error-retry';
+                                errorDiv.style.cssText = 'padding:15px; background:#fee; border:1px solid #fcc; border-radius:8px; margin-top:10px; color:#c33; font-size:0.9rem; text-align:center;';
+                                errorDiv.innerHTML = `
+                                    <div style="margin-bottom:10px;">
+                                        <i class="fas fa-exclamation-circle" style="font-size:24px; color:#e74c3c;"></i>
+                                    </div>
+                                    <strong style="display:block; margin-bottom:8px;">会话创建失败</strong>
+                                    <p style="margin-bottom:12px; color:#666;">可能是JWT Token无效、网络问题或Coze服务异常</p>
+                                    <p style="margin-bottom:12px; color:#666; font-size:0.85rem;">请打开浏览器控制台（F12）查看详细错误信息</p>
+                                    <div style="display:flex; gap:10px; justify-content:center;">
+                                        <button onclick="location.reload()" style="padding:8px 16px; background:#4d8eff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600;">
+                                            <i class="fas fa-redo"></i> 重试
+                                        </button>
+                                        <button onclick="window.location.href='/'" style="padding:8px 16px; background:#95a5a6; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600;">
+                                            <i class="fas fa-home"></i> 返回首页
+                                        </button>
+                                    </div>
+                                `;
+                                appContainer.appendChild(errorDiv);
+                            }
+                        }
+                    } else {
+                        // 还在等待中，更新状态
+                        statusEl.textContent = `⏳ 正在加载对话界面... (${checkCount}/${maxChecks})`;
+                        statusEl.style.color = '#f39c12';
+                    }
+                }, 1000);
+                
+                // 如果超时仍未加载
+                setTimeout(() => {
+                    if (checkCount < maxChecks) {
+                        const container = document.getElementById(uniqueContainerId);
+                        const hasContent = container && (container.querySelector('iframe') || container.children.length > 0);
+                        if (!hasContent) {
+                            console.warn('⚠️ Coze SDK 容器为空，可能初始化失败');
+                            console.warn('容器状态:', {
+                                container: container,
+                                innerHTML: container ? container.innerHTML.substring(0, 200) : 'null',
+                                appContainerHTML: appContainer.innerHTML.substring(0, 200)
+                            });
+                            statusEl.textContent = '⚠️ 对话界面未显示，请检查控制台或刷新重试';
+                            statusEl.style.color = '#f39c12';
+                            
+                            // 显示重试提示
+                            const retryDiv = document.createElement('div');
+                            retryDiv.style.cssText = 'padding:15px; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; margin-top:10px; color:#856404; font-size:0.9rem; text-align:center;';
+                            retryDiv.innerHTML = `
+                                <p style="margin-bottom:10px;">⚠️ 对话界面未加载（${maxChecks}秒后仍未显示）</p>
+                                <p style="margin-bottom:10px; font-size:0.85rem;">可能原因：</p>
+                                <ul style="text-align:left; display:inline-block; margin-bottom:10px; font-size:0.85rem;">
+                                    <li>JWT Token格式不正确</li>
+                                    <li>Coze服务端拒绝连接</li>
+                                    <li>网络问题或CDN无法访问</li>
+                                </ul>
+                                <p style="margin-bottom:10px; font-size:0.85rem;">请打开浏览器控制台（F12）查看详细错误</p>
+                                <button onclick="location.reload()" style="padding:8px 16px; background:#4d8eff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600;">
+                                    <i class="fas fa-redo"></i> 刷新重试
+                                </button>
+                            `;
+                            appContainer.appendChild(retryDiv);
+                        }
+                    } else {
+                        // 还在等待中
+                        statusEl.textContent = `⏳ 正在加载对话界面... (${checkCount}/${maxChecks})`;
+                        statusEl.style.color = '#f39c12';
+                    }
+                }, 1000);
+                
+            } catch (e) {
+                const errorMsg = e.message || '未知错误';
+                statusEl.textContent = '❌ 初始化失败: ' + errorMsg;
+                statusEl.style.color = '#e74c3c';
+                console.error('Coze SDK 初始化错误:', e);
+                console.error('错误堆栈:', e.stack);
+                console.error('当前配置:', {
+                    token: cozeToken ? cozeToken.substring(0, 15) + '...' : 'missing',
+                    appId: cozeAppId,
+                    teamSessionId: teamSessionId,
+                    teamId: teamId,
+                    container: '#app'
+                });
+                
+                // 显示详细错误信息和排查步骤
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'padding:15px; background:#fee; border:1px solid #fcc; border-radius:8px; margin-top:10px; color:#c33; font-size:0.9rem;';
+                errorDiv.innerHTML = `
+                    <strong>❌ 初始化失败</strong><br><br>
+                    <strong>错误信息：</strong>${errorMsg}<br><br>
+                    <strong>排查步骤：</strong><br>
+                    1. 检查浏览器控制台（F12）查看详细错误<br>
+                    2. 确认 Token 是否正确：在终端执行 <code>echo $COZE_WEB_TOKEN</code><br>
+                    3. 确认 AppId 是否正确：${cozeAppId}<br>
+                    4. 检查网络连接，确保能访问 Coze CDN<br>
+                    5. 尝试刷新页面或清除浏览器缓存<br>
+                    <br>
+                    <button onclick="location.reload()" style="padding:8px 16px; background:#4d8eff; color:#fff; border:none; border-radius:6px; cursor:pointer;">刷新页面</button>
+                `;
+                appContainer.appendChild(errorDiv);
+            }
+        }
+
+        async function saveNote() {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = '保存中...';
+            const payload = {
+                ai_game_name: document.getElementById('ai_game_name').value.trim(),
+                ai_game_desc: document.getElementById('ai_game_desc').value.trim(),
+            };
+            const res = await fetch(`/api/teams/${teamId}/ai-note`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                statusEl.textContent = data.error || '保存失败';
+                statusEl.style.color = '#e74c3c';
+                return;
+            }
+            statusEl.textContent = '✅ 已保存，已同步到游戏名称和游戏介绍';
+            statusEl.style.color = '#27ae60';
+        }
+
+        document.getElementById('save-btn').addEventListener('click', saveNote);
+
+        // 保存对话功能
+        let autoSaveInterval = null;
+        let lastSaveTime = null;
+
+        async function saveConversation() {
+            const statusEl = document.getElementById('conversation-status');
+            statusEl.textContent = '正在保存对话...';
+            statusEl.style.color = '#667eea';
+            
+            try {
+                const res = await fetch(`/api/teams/${teamId}/conversations/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    statusEl.textContent = data.error || '保存对话失败';
+                    statusEl.style.color = '#e74c3c';
+                    return;
+                }
+                
+                statusEl.textContent = `✅ 对话已保存 (${data.total_conversations || 0}条会话) - ${data.saved_at || '刚刚'}`;
+                statusEl.style.color = '#27ae60';
+                lastSaveTime = new Date();
+                
+                // 3秒后淡出提示
+                setTimeout(() => {
+                    if (statusEl.textContent.includes('✅')) {
+                        statusEl.textContent = '';
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                console.error('保存对话失败:', error);
+                statusEl.textContent = '保存对话失败: ' + error.message;
+                statusEl.style.color = '#e74c3c';
+            }
+        }
+
+        // 绑定保存对话按钮
+        document.getElementById('save-conversation-btn').addEventListener('click', saveConversation);
+
+        // 定时自动保存（每5分钟）
+        function startAutoSave() {
+            if (autoSaveInterval) {
+                clearInterval(autoSaveInterval);
+            }
+            
+            autoSaveInterval = setInterval(() => {
+                console.log('自动保存对话...');
+                saveConversation();
+            }, 5 * 60 * 1000); // 5分钟
+            
+            console.log('✅ 已启动自动保存（每5分钟）');
+        }
+
+        // 页面加载后启动自动保存
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startAutoSave);
+        } else {
+            startAutoSave();
+        }
+
+        // 页面关闭时保存
+        window.addEventListener('beforeunload', (e) => {
+            // 尝试保存（但可能无法完成，因为页面即将关闭）
+            if (navigator.sendBeacon) {
+                // 使用 sendBeacon 可以在页面关闭时发送请求
+                const formData = new FormData();
+                formData.append('team_id', teamId);
+                navigator.sendBeacon(`/api/teams/${teamId}/conversations/save`, formData);
+            }
+        });
+
+        // 页面可见性变化时保存（切换到其他标签页时）
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // 页面隐藏时保存
+                saveConversation();
+            }
+        });
+    </script>
+</body>
+</html>
+

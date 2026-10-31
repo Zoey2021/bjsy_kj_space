@@ -9,6 +9,37 @@ Dify材料/
 database/id_cache.db
 database/id_cache.db-shm
 database/id_cache.db-wal
+database/__pycache__/
 *.log
 .env
 .env.local
+*.zip
+.tmp-bcrypt/
+learn_space.sql
+learn_space_local.sql
+database/update_*_password.sql
+# 科创大体积校本资源（不进 GitHub）
+frontend/public/school/
+# 项目化游戏本地运行产物 / 密钥
+game01/logs/
+game01/tmp*
+game01/__pycache__/
+game01/.venv/
+game01/.venv*/
+game01/*.pid
+game01/private_key.pem
+game01/students_export.csv
+game01/.env
+game01/.env.bak
+game01/gunicorn.pid
+# 本地设计素材
+积分商城/
+学.png
+教.png
+评.png
+第1课-算法与问题解决-教案.docx
+第1课-算法与问题解决-教案.txt
+
+# 误生成的命令文件与本地库
+game01/tat*
+game01/data/*.db

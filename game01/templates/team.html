@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组队向导 - Python+AI小游戏设计课程</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Comic Sans MS','Segoe UI',Arial,sans-serif;}
+        body { background:#f0f7ff; min-height:100vh; padding:20px; display:flex; justify-content:center; }
+        .card { background:#fff; border-radius:20px; box-shadow:0 10px 25px rgba(0,0,0,0.1); width:100%; max-width:1000px; padding:24px 24px 32px; }
+        .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+        .greeting { font-weight:bold; color:#2c5aa0; }
+        .back-btn { border:none; background:#f0f0f0; padding:8px 16px; border-radius:30px; cursor:pointer; display:flex; align-items:center; gap:6px; }
+        .steps { display:flex; gap:10px; margin:12px 0 24px; }
+        .step { flex:1; background:#f7f9fc; border-radius:12px; padding:12px; border:2px dashed #d6e4ff; text-align:center; color:#4d8eff; font-weight:bold; }
+        .panel { border:2px dashed #d6e4ff; border-radius:12px; padding:16px; margin-bottom:16px; background:#f9fcff; }
+        .question { font-size:1.1rem; font-weight:bold; color:#2c5aa0; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+        .students { display:flex; flex-wrap:wrap; gap:10px; }
+        .student { padding:10px 14px; border-radius:24px; background:#fff; border:2px solid #e0e0e0; cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow:0 3px 8px rgba(0,0,0,0.05); }
+        .student.selected { border-color:#4d8eff; background:#e8f1ff; }
+        .student.disabled { background:#f5f5f5; border-color:#ddd; cursor:not-allowed; opacity:0.6; }
+        .avatar { width:30px; height:30px; border-radius:50%; background:#4d8eff; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold; }
+        .leader-options { display:flex; flex-wrap:wrap; gap:10px; }
+        .leader-option { padding:10px 14px; border-radius:12px; border:2px solid #e0e0e0; background:#fff; cursor:pointer; display:flex; align-items:center; gap:8px; }
+        .leader-option.selected { border-color:#4d8eff; background:#e8f1ff; }
+        .input { width:100%; padding:12px 14px; border-radius:12px; border:2px solid #d6e4ff; font-size:1rem; }
+        .input:focus { outline:none; border-color:#4d8eff; box-shadow:0 0 0 3px rgba(77,142,255,0.2); }
+        .actions { display:flex; justify-content:space-between; align-items:center; margin-top:16px; }
+        .primary { background:#4d8eff; color:#fff; border:none; padding:12px 22px; border-radius:30px; cursor:pointer; font-weight:bold; }
+        .secondary { background:#f0f0f0; color:#333; border:none; padding:12px 22px; border-radius:30px; cursor:pointer; font-weight:bold; }
+        .notice { color:#e74c3c; font-weight:bold; margin-top:8px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="topbar">
+            <div>
+                <div class="greeting" id="greeting"></div>
+                <div id="class-info" style="color:#666; margin-top:4px;"></div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="secondary" id="back-home"><i class="fas fa-arrow-left"></i> 返回首页</button>
+                <button class="secondary" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
+            </div>
+        </div>
+
+        <div class="steps">
+            <div class="step">1. 选择队友 (3-5人)</div>
+            <div class="step">2. 选择队长</div>
+            <div class="step">3. 团队名称</div>
+        </div>
+
+        <div class="panel">
+            <div class="question"><i class="fas fa-users"></i> 你们想选择哪些同学为一队？</div>
+            <div class="students" id="students-list"></div>
+            <div class="notice" id="step1-msg"></div>
+        </div>
+
+        <div class="panel">
+            <div class="question"><i class="fas fa-crown"></i> 请从已选队友中选择队长</div>
+            <div class="leader-options" id="leader-options"></div>
+            <div class="notice" id="step2-msg"></div>
+        </div>
+
+        <div class="panel">
+            <div class="question"><i class="fas fa-flag"></i> 请为你们的游戏设计团队取一个名字吧！</div>
+            <input class="input" id="team-name" placeholder="例如：创意星球队、代码小达人队..." maxlength="30">
+            <div class="notice" id="step3-msg"></div>
+        </div>
+
+        <div class="actions">
+            <span id="status" style="color:#666;"></span>
+            <div style="display:flex; gap:10px;">
+                <button class="secondary" id="reset">清空选择</button>
+                <button class="primary" id="submit">完成组队</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allStudents = [];
+        let selected = [];
+        let leader = null;
+        let currentStudent = null;
+
+        const studentsList = document.getElementById('students-list');
+        const leaderOptions = document.getElementById('leader-options');
+        const teamNameInput = document.getElementById('team-name');
+        const step1Msg = document.getElementById('step1-msg');
+        const step2Msg = document.getElementById('step2-msg');
+        const step3Msg = document.getElementById('step3-msg');
+        const statusEl = document.getElementById('status');
+        const greeting = document.getElementById('greeting');
+        const classInfo = document.getElementById('class-info');
+
+        async function fetchMe() {
+            const res = await fetch('/api/me');
+            if (!res.ok) return null;
+            return res.json();
+        }
+
+        async function loadStudents() {
+            const res = await fetch('/api/students');
+            if (res.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            const data = await res.json();
+            // 只使用未组队的学生列表（排除已组队的学生）
+            allStudents = data.available_students || [];
+            // 默认将当前学生加入且不可移除（如果当前学生还未组队）
+            if (currentStudent && !selected.includes(currentStudent.name)) {
+                // 检查当前学生是否在可选列表中
+                const selfInList = allStudents.find(s => s.name === currentStudent.name);
+                if (selfInList) {
+                    selected.push(currentStudent.name);
+                    leader = currentStudent.name; // 默认自己为队长，可后续修改
+                }
+            }
+            renderStudents();
+            renderLeaders();
+            statusEl.textContent = `可选同学：${data.available_count} / ${data.total_count}`;
+        }
+
+        function renderStudents() {
+            studentsList.innerHTML = '';
+            allStudents.forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'student';
+                item.dataset.name = s.name;
+                const isSelf = currentStudent && s.name === currentStudent.name;
+                if (isSelf) item.classList.add('disabled');
+                if (selected.includes(s.name)) item.classList.add('selected');
+                item.innerHTML = `<div class="avatar">${s.name.charAt(0)}</div><div>${s.name}${isSelf ? '（本人）' : ''}</div>`;
+                if (!isSelf) {
+                    item.addEventListener('click', () => toggleSelect(s));
+                }
+                studentsList.appendChild(item);
+            });
+        }
+
+        function toggleSelect(s) {
+            if (s.disabled || (currentStudent && s.name === currentStudent.name)) return;
+            if (selected.includes(s.name)) {
+                selected = selected.filter(n => n !== s.name);
+                if (leader === s.name) leader = null;
+            } else {
+                if (selected.length >= 5) {
+                    step1Msg.textContent = '最多选择5人';
+                    return;
+                }
+                selected.push(s.name);
+            }
+            step1Msg.textContent = '';
+            renderStudents();
+            renderLeaders();
+        }
+
+        function renderLeaders() {
+            leaderOptions.innerHTML = '';
+            selected.forEach(name => {
+                const item = document.createElement('div');
+                item.className = 'leader-option';
+                if (leader === name) item.classList.add('selected');
+                item.innerHTML = `<div class="avatar">${name.charAt(0)}</div><div>${name}</div>`;
+                item.addEventListener('click', () => {
+                    leader = name;
+                    step2Msg.textContent = '';
+                    renderLeaders();
+                });
+                leaderOptions.appendChild(item);
+            });
+        }
+
+        async function submitTeam() {
+            if (selected.length < 3 || selected.length > 5) {
+                step1Msg.textContent = '请选择3-5名同学';
+                return;
+            }
+            if (!leader) {
+                step2Msg.textContent = '请选择队长';
+                return;
+            }
+            const teamName = teamNameInput.value.trim();
+            if (!teamName) {
+                step3Msg.textContent = '请填写团队名称';
+                return;
+            }
+            step3Msg.textContent = '';
+            statusEl.textContent = '提交中...';
+            const payload = {
+                team_name: teamName,
+                game_name: '待定游戏',
+                game_desc: '请在后续课程中补充游戏描述',
+                members: selected,
+                leader
+            };
+            const res = await fetch('/api/teams', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                statusEl.textContent = data.error || '提交失败';
+                return;
+            }
+            
+            // 组队成功，直接跳转到AI对话页面
+            const team = data.team;
+            const teamId = team?.id || data.team_id;
+            
+            statusEl.textContent = '组队成功！正在跳转到AI对话...';
+            setTimeout(() => {
+                window.location.href = `/ai-chat?team_id=${teamId}`;
+            }, 500);
+        }
+
+        
+        function reset() {
+            selected = [];
+            leader = null;
+            teamNameInput.value = '';
+            if (currentStudent && !selected.includes(currentStudent.name)) {
+                selected.push(currentStudent.name);
+                leader = currentStudent.name;
+            }
+            renderStudents();
+            renderLeaders();
+            step1Msg.textContent = '';
+            step2Msg.textContent = '';
+            step3Msg.textContent = '';
+        }
+
+        document.getElementById('submit').addEventListener('click', submitTeam);
+        document.getElementById('reset').addEventListener('click', reset);
+        document.getElementById('back-home').addEventListener('click', () => window.location.href = '/');
+        document.getElementById('logout').addEventListener('click', async () => {
+            try { await fetch('/logout', { method:'POST' }); } catch(e){}
+            window.location.href = '/login';
+        });
+
+        (async function init() {
+            const me = await fetchMe();
+            if (!me || !me.logged_in) {
+                window.location.href = '/login';
+                return;
+            }
+            const s = me.student;
+            currentStudent = s;
+            greeting.textContent = `你好，${s.name}同学！`;
+            classInfo.textContent = `${s.class_name}｜学号 ${s.student_id}`;
+            await loadStudents();
+        })();
+    </script>
+</body>
+</html>
+

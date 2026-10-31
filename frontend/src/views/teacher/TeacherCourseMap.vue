@@ -6,7 +6,7 @@
     </header>
 
     <div class="map-body">
-    <section class="panel panel-main">
+    <section v-if="showMainCourses" class="panel panel-main">
       <h2 class="panel-title">配套课程</h2>
       <el-row :gutter="12" class="grade-row">
         <el-col v-for="g in mainGradeGroups" :key="g.key" :span="6">
@@ -54,18 +54,20 @@
                 v-for="book in series.books"
                 :key="book.id"
                 class="book-slot"
-                @click="openGrade(book.id)"
+                :class="{ 'book-slot-locked': isSchoolLocked(book) }"
+                @click="openGrade(book)"
               >
                 <div class="book-thumb school-thumb">
                   <img v-if="book.coverUrl" :src="book.coverUrl" :alt="book.name" loading="lazy" decoding="async" />
                   <div v-else class="thumb-placeholder school-ph">本</div>
+                  <div v-if="isSchoolLocked(book)" class="slot-mask">暂未开放</div>
                 </div>
                 <div class="book-label">{{ book.name }}</div>
               </div>
             </div>
           </div>
         </el-col>
-        <el-col :span="6">
+        <el-col v-if="showInquiry" :span="6">
           <div class="grade-card grade-card-school">
             <div class="grade-card-head">{{ integratedInquiry.cardTitle }}</div>
             <div class="dual-covers">
@@ -92,9 +94,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { teacherGetTextbooks } from '../../api'
-import { groupSchoolTextbooks } from '../../utils/schoolTextbooks'
+import { groupSchoolTextbooks, provincialCourseUrl, openProvincialCourse } from '../../utils/schoolTextbooks'
 import { INTEGRATED_INQUIRY_COURSE } from '../../constants/pblModule'
+import { isKechuangBook, accountScope, SCOPE_ALL, SCOPE_KECHUANG } from '../../utils/schoolCourseAccess'
 
 const router = useRouter()
 const mainBooks = ref([])
@@ -127,10 +131,33 @@ const mainGradeGroups = computed(() => {
     })
 })
 
-const schoolSeriesGroups = computed(() => groupSchoolTextbooks(schoolBooks.value))
+const schoolSeriesGroups = computed(() => {
+  const groups = groupSchoolTextbooks(schoolBooks.value)
+  if (accountScope() === SCOPE_KECHUANG) {
+    return groups.filter((series) => series.books.some((book) => isKechuangBook(book)))
+  }
+  return groups
+})
 const integratedInquiry = INTEGRATED_INQUIRY_COURSE
+const showMainCourses = computed(() => accountScope() !== SCOPE_KECHUANG)
+const showInquiry = computed(() => accountScope() !== SCOPE_KECHUANG)
+const kechuangOpen = accountScope() === SCOPE_ALL || accountScope() === SCOPE_KECHUANG
 
-const openGrade = (gradeId) => {
+const isSchoolLocked = (book) => isKechuangBook(book) && !kechuangOpen
+
+const openGrade = (target) => {
+  if (typeof target === 'object') {
+    const external = provincialCourseUrl(target)
+    if (external) {
+      openProvincialCourse(external)
+      return
+    }
+  }
+  const gradeId = typeof target === 'object' ? target?.id : target
+  if (typeof target === 'object' && isSchoolLocked(target)) {
+    ElMessage.info('科创启航暂未开放，开通后将点亮入口')
+    return
+  }
   router.push(`/teacher/course-map/grade/${gradeId}`)
 }
 
@@ -143,12 +170,16 @@ const openInquirySlot = (slot) => {
 }
 
 onMounted(async () => {
-  const [main, school] = await Promise.all([
-    teacherGetTextbooks('MAIN'),
-    teacherGetTextbooks('SCHOOL')
-  ])
-  mainBooks.value = main.data || []
-  schoolBooks.value = school.data || []
+  try {
+    const [main, school] = await Promise.all([
+      teacherGetTextbooks('MAIN'),
+      teacherGetTextbooks('SCHOOL')
+    ])
+    mainBooks.value = main.data || []
+    schoolBooks.value = school.data || []
+  } catch {
+    /* 拦截器已提示；这里避免未捕获的失败把整页停住 */
+  }
 })
 </script>
 
@@ -159,8 +190,8 @@ onMounted(async () => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   padding: 0;
   width: 100%;
   box-sizing: border-box;
@@ -291,7 +322,13 @@ onMounted(async () => {
   padding: 2px;
 }
 .book-slot:hover { background: rgba(255, 255, 255, 0.65); }
+.book-slot-locked {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.book-slot-locked:hover { background: transparent; }
 .book-thumb {
+  position: relative;
   flex: 1;
   min-height: 0;
   width: 100%;
@@ -302,6 +339,21 @@ onMounted(async () => {
   background: #fff;
 }
 .book-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.slot-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.55);
+  letter-spacing: 0.04em;
+}
 .thumb-placeholder {
   width: 100%;
   height: 100%;

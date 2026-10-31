@@ -18,7 +18,7 @@
           class="side-menu"
         >
           <el-menu-item
-            v-for="m in TEACHER_MODULES"
+            v-for="m in visibleModules"
             :key="m.key"
             :index="m.path"
             :title="m.desc"
@@ -51,9 +51,12 @@ import {
   MagicStick,
   Trophy,
   Setting,
-  Notebook
+  Notebook,
+  Orange,
+  User
 } from '@element-plus/icons-vue'
 import { TEACHER_MODULES } from '../constants/teacherModules'
+import { accountScope, SCOPE_KECHUANG } from '../utils/schoolCourseAccess'
 
 const route = useRoute()
 const router = useRouter()
@@ -67,8 +70,16 @@ const iconMap = {
   MagicStick,
   Trophy,
   Setting,
-  Notebook
+  Notebook,
+  Orange,
+  User
 }
+
+const visibleModules = computed(() => (
+  accountScope() === SCOPE_KECHUANG
+    ? TEACHER_MODULES.filter((m) => m.key === 'course-map')
+    : TEACHER_MODULES
+))
 
 const activeMenu = computed(() => {
   if (route.path.startsWith('/teacher/pretest')) return '/teacher/course-map'
@@ -79,7 +90,9 @@ const activeMenu = computed(() => {
 const mainClass = computed(() => ({
   'main-flush': route.path.includes('/activity-editor/grade/') || route.path.includes('/course-map/grade/') || /^\/teacher\/pretest\/g[46]$/.test(route.path) || route.path.startsWith('/teacher/scaffold-workbench'),
   'main-lesson': /^\/teacher\/lesson\/\d+$/.test(route.path) || /\/teacher\/pretest\/g[46]\/paper$/.test(route.path),
-  'main-map': route.path === '/teacher/course-map' || route.path === '/teacher/activity-editor'
+  'main-map': route.path === '/teacher/course-map' || route.path === '/teacher/activity-editor',
+  'main-pbl': route.path === '/teacher/pbl',
+  'main-school': /\/teacher\/course-map\/grade\//.test(route.path) || route.path.startsWith('/teacher/school-ppt/')
 }))
 
 const logout = () => {
@@ -184,6 +197,17 @@ const logout = () => {
   padding: 12px 16px 16px !important;
   overflow: hidden;
 }
+.layout :deep(.el-main.main-pbl) {
+  padding: 0 !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.layout :deep(.el-main.main-pbl > *) {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
 .layout :deep(.el-main.main-lesson) {
   padding: 0;
   overflow: hidden;
@@ -199,5 +223,20 @@ const logout = () => {
   min-height: 0;
   height: 100%;
   overflow: hidden;
+}
+.layout :deep(.el-main.main-school) {
+  overflow: hidden;
+  padding: 10px 16px 12px !important;
+  display: flex;
+  flex-direction: column;
+}
+.layout :deep(.el-main.main-school > *) {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  align-self: stretch;
 }
 </style>

@@ -1,0 +1,28 @@
+[Unit]
+Description=Python+AI小游戏设计课程 Flask应用
+After=network.target
+
+[Service]
+Type=notify
+User=www
+Group=www
+WorkingDirectory=/www/wwwroot/game01
+Environment="PATH=/www/wwwroot/game01/venv/bin"
+EnvironmentFile=/www/wwwroot/game01/.env
+ExecStart=/www/wwwroot/game01/venv/bin/gunicorn -c gunicorn_config.py app:app
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=3
+
+# 日志
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=game-app
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+
+

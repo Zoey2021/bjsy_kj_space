@@ -4,7 +4,8 @@
       <h2>📚 我的学习记录</h2>
       <el-tag type="info" size="small">共 {{ totalLogCount }} 次提交</el-tag>
     </header>
-    <p class="panel-tip">展示本课各活动的提交情况；每完成一个环节可获得积分，完整拓展任务额外加分。</p>
+    <p class="panel-tip" v-if="data.preview">教师查看。这里是学生自己的学习记录，教师账号没有作品，所以列表是空的。</p>
+    <p v-else class="panel-tip">展示本课各活动的提交情况；每完成一个环节可获得积分，完整拓展任务额外加分。</p>
 
     <div class="summary-row">
       <div class="summary-card">

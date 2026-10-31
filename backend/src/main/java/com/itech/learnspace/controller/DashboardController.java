@@ -21,12 +21,15 @@ public class DashboardController {
     private final DashboardService dashboardService;
     private final SseService sseService;
     private final AuthService authService;
+    private final com.itech.learnspace.service.AccountAccessService accountAccessService;
 
     public DashboardController(DashboardService dashboardService, SseService sseService,
-                               AuthService authService) {
+                               AuthService authService,
+                               com.itech.learnspace.service.AccountAccessService accountAccessService) {
         this.dashboardService = dashboardService;
         this.sseService = sseService;
         this.authService = authService;
+        this.accountAccessService = accountAccessService;
     }
 
     private void checkTeacher() {
@@ -34,6 +37,7 @@ public class DashboardController {
         if (!"TEACHER".equals(user.getRole()) && !"ADMIN".equals(user.getRole())) {
             throw new BusinessException(403, "仅教师可访问看板");
         }
+        accountAccessService.assertClassData(user);
     }
 
     /** 教师所教班级列表 */
@@ -49,9 +53,7 @@ public class DashboardController {
     public ApiResponse<Map<String, Object>> data(@PathVariable Long classId) {
         checkTeacher();
         SysUser user = authService.currentUser();
-        if ("TEACHER".equals(user.getRole())) {
-            dashboardService.checkTeacherOwnsClass(user.getId(), classId);
-        }
+        dashboardService.checkTeacherOwnsClass(user.getId(), classId);
         return ApiResponse.ok(dashboardService.buildDashboardData(classId));
     }
 
@@ -64,9 +66,7 @@ public class DashboardController {
     public SseEmitter sse(@PathVariable Long classId) {
         checkTeacher();
         SysUser user = authService.currentUser();
-        if ("TEACHER".equals(user.getRole())) {
-            dashboardService.checkTeacherOwnsClass(user.getId(), classId);
-        }
+        dashboardService.checkTeacherOwnsClass(user.getId(), classId);
         return sseService.subscribe(classId);
     }
 
@@ -75,9 +75,7 @@ public class DashboardController {
     public ApiResponse<Map<String, Object>> matrix(@PathVariable Long classId) {
         checkTeacher();
         SysUser user = authService.currentUser();
-        if ("TEACHER".equals(user.getRole())) {
-            dashboardService.checkTeacherOwnsClass(user.getId(), classId);
-        }
+        dashboardService.checkTeacherOwnsClass(user.getId(), classId);
         return ApiResponse.ok(dashboardService.buildMatrix(classId));
     }
 
@@ -94,10 +92,20 @@ public class DashboardController {
             @PathVariable Long classId) {
         checkTeacher();
         SysUser user = authService.currentUser();
-        if ("TEACHER".equals(user.getRole())) {
-            dashboardService.checkTeacherOwnsClass(user.getId(), classId);
-        }
+        dashboardService.checkTeacherOwnsClass(user.getId(), classId);
         return ApiResponse.ok(dashboardService.buildLessonActivityDashboard(lessonId, classId));
+    }
+
+    /** 清除本班本课的学生上课记录 */
+    @DeleteMapping("/lesson/{lessonId}/class/{classId}/records")
+    public ApiResponse<Map<String, Object>> clearLessonClassRecords(
+            @PathVariable Long lessonId,
+            @PathVariable Long classId) {
+        checkTeacher();
+        SysUser user = authService.currentUser();
+        dashboardService.checkTeacherOwnsClass(user.getId(), classId);
+        Map<String, Object> result = dashboardService.clearLessonClassRecords(lessonId, classId);
+        return ApiResponse.ok("已清除本课上课记录", result);
     }
 
     /** 获取或生成班级登录码（教师选班后展示给学生） */

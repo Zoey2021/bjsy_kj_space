@@ -16,6 +16,7 @@ import org.springframework.util.StringUtils;
 
 import javax.persistence.EntityManager;
 import java.security.SecureRandom;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,6 +24,8 @@ import java.util.stream.Collectors;
 public class SchoolManageService {
 
     private static final String PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final String FIRST_PASSWORD_CLASS = "2021级6班";
+    private static final DateTimeFormatter PASSWORD_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int MAX_CLASS_SIZE = 50;
 
@@ -31,25 +34,40 @@ public class SchoolManageService {
     private final PasswordEncoder passwordEncoder;
     private final EntityManager entityManager;
     private final ClassMembershipService classMembershipService;
+    private final TeacherClassService teacherClassService;
 
     public SchoolManageService(SysUserRepository userRepository,
                                SysClassRepository classRepository,
                                PasswordEncoder passwordEncoder,
                                EntityManager entityManager,
-                               ClassMembershipService classMembershipService) {
+                               ClassMembershipService classMembershipService,
+                               TeacherClassService teacherClassService) {
         this.userRepository = userRepository;
         this.classRepository = classRepository;
         this.passwordEncoder = passwordEncoder;
         this.entityManager = entityManager;
         this.classMembershipService = classMembershipService;
+        this.teacherClassService = teacherClassService;
     }
 
     // ---------- 教师 ----------
 
     public List<Map<String, Object>> listTeachers() {
+        Map<Long, SysClass> classes = classRepository.findAll().stream()
+                .collect(Collectors.toMap(SysClass::getId, c -> c, (a, b) -> a));
         return userRepository.findByRole("TEACHER").stream()
                 .sorted(Comparator.comparing(SysUser::getId))
-                .map(this::toUserMap)
+                .map(user -> {
+                    Map<String, Object> row = toUserMap(user);
+                    List<Long> classIds = teacherClassService.matchIds(user.getId());
+                    List<String> labels = new ArrayList<String>();
+                    for (Long classId : classIds) {
+                        labels.add(teacherClassService.classLabel(classes.get(classId)));
+                    }
+                    row.put("classIds", classIds);
+                    row.put("classLabels", labels);
+                    return row;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -106,6 +124,7 @@ public class SchoolManageService {
     @Transactional
     public void deleteTeacher(Long id) {
         SysUser user = requireTeacher(id);
+        teacherClassService.deleteByTeacher(id);
         List<SysClass> classes = classRepository.findByTeacherId(id);
         if (!classes.isEmpty()) {
             throw new BusinessException("该教师名下仍有 " + classes.size() + " 个班级，请先更换班级任课教师后再删除");
@@ -126,10 +145,16 @@ public class SchoolManageService {
 
     // ---------- 班级 ----------
 
-    public List<Map<String, Object>> listClasses() {
+    public List<Map<String, Object>> listClasses(SysUser viewer) {
+        Set<Long> allowed = viewer == null ? null : teacherClassService.allowedClassIds(viewer.getId());
+        if (viewer != null && teacherClassService.canAssign(viewer)) {
+            allowed = null;
+        }
         Map<Long, SysUser> teachers = userRepository.findByRole("TEACHER").stream()
                 .collect(Collectors.toMap(SysUser::getId, u -> u, (a, b) -> a));
+        final Set<Long> visible = allowed;
         return classRepository.findAll().stream()
+                .filter(c -> visible == null || visible.contains(c.getId()))
                 .sorted(Comparator.comparing(SysClass::getId))
                 .map(c -> {
                     Map<String, Object> m = new LinkedHashMap<>();
@@ -200,16 +225,32 @@ public class SchoolManageService {
         if (students > 0) {
             throw new BusinessException("该班级仍有 " + students + " 名学生，请先转移或删除学生后再删班级");
         }
+        teacherClassService.deleteByClass(id);
         classRepository.delete(clazz);
     }
 
     // ---------- 学生 ----------
 
     public List<Map<String, Object>> listStudents(Long classId) {
-        return listStudents(classId, null);
+        return listStudents(null, classId, null);
     }
 
-    public List<Map<String, Object>> listStudents(Long classId, String keyword) {
+    @Transactional
+    public Map<String, Object> saveTeacherClasses(SysUser operator, Long teacherId, List<Long> classIds) {
+        teacherClassService.assertCanAssign(operator);
+        teacherClassService.replaceMatches(teacherId, classIds);
+        Map<String, Object> out = new LinkedHashMap<String, Object>();
+        out.put("teacherId", teacherId);
+        out.put("classIds", teacherClassService.matchIds(teacherId));
+        return out;
+    }
+
+    public List<Map<String, Object>> listStudents(SysUser viewer, Long classId, String keyword) {
+        Set<Long> allowed = viewer == null || teacherClassService.canAssign(viewer)
+                ? null : teacherClassService.allowedClassIds(viewer.getId());
+        if (classId != null && allowed != null && !allowed.contains(classId)) {
+            throw new BusinessException(403, "只能查看已匹配的班级");
+        }
         String q = keyword == null ? "" : keyword.trim();
         List<SysUser> list;
         if (StringUtils.hasText(q) && classId == null) {
@@ -225,11 +266,19 @@ public class SchoolManageService {
         }
         Map<Long, String> classNames = classRepository.findAll().stream()
                 .collect(Collectors.toMap(SysClass::getId, SysClass::getName, (a, b) -> a));
+        final Set<Long> visible = allowed;
         return list.stream()
+                .filter(u -> visible == null || (u.getClassId() != null && visible.contains(u.getClassId())))
                 .map(u -> {
                     Map<String, Object> m = toUserMap(u);
-                    m.put("className", u.getClassId() != null ? classNames.getOrDefault(u.getClassId(), "") : "");
+                    String className = u.getClassId() != null ? classNames.getOrDefault(u.getClassId(), "") : "";
+                    m.put("className", className);
                     m.put("studentNo", PretestG4Service.parseStudentNo(u.getUsername()));
+                    if (FIRST_PASSWORD_CLASS.equals(className == null ? "" : className.trim())) {
+                        m.put("passwordNote", u.getPasswordNote() == null ? "" : u.getPasswordNote());
+                        m.put("passwordChangedAt", u.getPasswordChangedAt() == null
+                                ? "" : PASSWORD_TIME.format(u.getPasswordChangedAt()));
+                    }
                     return m;
                 })
                 .sorted(Comparator
@@ -413,6 +462,7 @@ public class SchoolManageService {
         }
         if (StringUtils.hasText(req.getPassword())) {
             user.setPassword(passwordEncoder.encode(req.getPassword().trim()));
+            clearChosenPassword(user);
         }
         user = userRepository.save(user);
         classMembershipService.replace(user.getId(), user.getClassId());
@@ -432,6 +482,7 @@ public class SchoolManageService {
         SysUser user = requireStudent(id);
         String raw = generatePassword(6);
         user.setPassword(passwordEncoder.encode(raw));
+        clearChosenPassword(user);
         userRepository.save(user);
         Map<String, Object> out = toUserMap(user);
         out.put("initialPassword", raw);
@@ -604,6 +655,11 @@ public class SchoolManageService {
             throw new BusinessException("该账号不是学生");
         }
         return user;
+    }
+
+    private void clearChosenPassword(SysUser user) {
+        user.setPasswordNote(null);
+        user.setPasswordChangedAt(null);
     }
 
     private Map<String, Object> toUserMap(SysUser u) {

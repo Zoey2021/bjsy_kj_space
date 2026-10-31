@@ -7,14 +7,16 @@ export const INTEGRATED_INQUIRY_COURSE = {
       label: '项目化学习',
       coverUrl: '/course-covers/pbl-project-learning.png',
       studentRoute: '/student/pbl',
-      teacherRoute: '/teacher/pbl'
+      teacherRoute: '/teacher/pbl',
+      ready: true
     },
     {
       key: 'interdisciplinary',
       label: '跨学科学习',
       coverUrl: '/course-covers/interdisciplinary-learning.png',
       studentRoute: '/student/interdisciplinary',
-      teacherRoute: '/teacher/interdisciplinary'
+      teacherRoute: '/teacher/interdisciplinary',
+      ready: false
     }
   ]
 }

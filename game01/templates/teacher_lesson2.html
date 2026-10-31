@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教师管理 - 第2课</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI','Helvetica','Arial',sans-serif;}
+        body { background:#f4f7fb; padding:20px; color:#333;}
+        .header { background:#667eea; color:#fff; padding:16px 20px; border-radius:16px; box-shadow:0 6px 15px rgba(0,0,0,0.12); display:flex; justify-content:space-between; align-items:center;}
+        .header h1 { font-size:1.4rem; display:flex; align-items:center; gap:10px;}
+        .controls { display:flex; gap:10px; align-items:center;}
+        select, button { padding:10px 12px; border-radius:10px; border:1px solid #d6e4ff; background:#fff; cursor:pointer; }
+        button.primary { background:#667eea; color:#fff; border:none; }
+        button.primary:hover { background:#5568d3; }
+        .teams-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:16px; margin-top:20px;}
+        .team-card { background:#fff; border-radius:14px; padding:16px; box-shadow:0 4px 12px rgba(0,0,0,0.08); cursor:pointer; transition:transform 0.2s, box-shadow 0.2s; border:2px solid transparent;}
+        .team-card:hover { transform:translateY(-4px); box-shadow:0 8px 20px rgba(0,0,0,0.15); border-color:#667eea;}
+        .team-card.has-update { border-color:#27ae60; animation:pulse 2s infinite;}
+        @keyframes pulse { 0%, 100% { border-color:#27ae60; } 50% { border-color:#2ecc71; } }
+        .team-header { display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;}
+        .team-name { font-size:1.1rem; font-weight:bold; color:#2c5aa0; margin-bottom:4px;}
+        .game-name { font-size:0.95rem; color:#667eea; font-weight:500; margin-bottom:8px;}
+        .game-desc { font-size:0.85rem; color:#666; line-height:1.5; margin-bottom:12px; max-height:60px; overflow:hidden;}
+        .team-info { display:flex; flex-direction:column; gap:6px; font-size:0.85rem; color:#666;}
+        .team-info-item { display:flex; align-items:center; gap:6px;}
+        .team-info-item i { color:#667eea; width:16px;}
+        .status-badge { padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:500;}
+        .status-badge.submitted { background:#d4edda; color:#155724;}
+        .status-badge.pending { background:#fff3cd; color:#856404;}
+        .update-indicator { position:absolute; top:12px; right:12px; width:10px; height:10px; background:#27ae60; border-radius:50%; animation:blink 1s infinite;}
+        @keyframes blink { 0%, 100% { opacity:1; } 50% { opacity:0.3; } }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;}
+        .modal.active { display:flex;}
+        .modal-content { background:#fff; border-radius:16px; padding:24px; max-width:800px; width:90%; max-height:90vh; overflow-y:auto; box-shadow:0 10px 40px rgba(0,0,0,0.2);}
+        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #eee;}
+        .modal-header h2 { color:#2c5aa0; font-size:1.3rem;}
+        .close-btn { background:none; border:none; font-size:1.5rem; color:#999; cursor:pointer; padding:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center;}
+        .close-btn:hover { color:#333;}
+        .modal-section { margin-bottom:24px;}
+        .modal-section h3 { color:#667eea; font-size:1rem; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+        .modal-section-content { background:#f8f9fa; border-radius:10px; padding:16px; white-space:pre-wrap; line-height:1.6; color:#333; font-size:0.9rem;}
+        .empty-state { text-align:center; padding:60px 20px; color:#999;}
+        .empty-state i { font-size:3rem; margin-bottom:16px; color:#ddd;}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-book-open"></i> 教师管理面板 - 第2课</h1>
+        <div class="controls">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="primary" id="lesson1-btn" style="background: #4d8eff;" onclick="window.location.href='/teacher'">
+                    <i class="fas fa-book"></i> 第1课
+                </button>
+                <button class="primary" id="lesson2-btn" style="background: #667eea;">
+                    <i class="fas fa-book-open"></i> 第2课
+                </button>
+            </div>
+            <label>选择班级：</label>
+            <select id="class-select">
+                <option value="">全年级</option>
+                {% for c in classes %}
+                <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+            </select>
+            <button class="primary" id="refresh-btn"><i class="fas fa-sync"></i> 刷新</button>
+            <button id="back-home">返回首页</button>
+        </div>
+    </div>
+
+    <div id="teams-container">
+        <div class="empty-state" id="empty-state">
+            <i class="fas fa-users"></i>
+            <p>请选择班级查看团队</p>
+        </div>
+        <div class="teams-grid" id="teams-grid" style="display:none;"></div>
+    </div>
+
+    <!-- 团队详情模态框 -->
+    <div class="modal" id="team-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-team-name">团队详情</h2>
+                <button class="close-btn" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-section">
+                <h3><i class="fas fa-gamepad"></i> 游戏信息</h3>
+                <div class="modal-section-content" id="modal-game-info"></div>
+            </div>
+            <div class="modal-section">
+                <h3><i class="fas fa-list"></i> 变量清单</h3>
+                <div class="modal-section-content" id="modal-variables"></div>
+            </div>
+            <div class="modal-section">
+                <h3><i class="fas fa-sitemap"></i> 规则清单</h3>
+                <div class="modal-section-content" id="modal-rules"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentClass = '';
+        let teamsData = [];
+        let refreshInterval = null;
+
+        const classSelect = document.getElementById('class-select');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const teamsGrid = document.getElementById('teams-grid');
+        const emptyState = document.getElementById('empty-state');
+        const teamModal = document.getElementById('team-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+
+        // 返回首页
+        document.getElementById('back-home').addEventListener('click', () => {
+            window.location.href = '/';
+        });
+
+        // 班级选择
+        classSelect.addEventListener('change', (e) => {
+            currentClass = e.target.value;
+            loadTeams();
+        });
+
+        // 刷新按钮
+        refreshBtn.addEventListener('click', () => {
+            loadTeams();
+        });
+
+        // 关闭模态框
+        closeModalBtn.addEventListener('click', () => {
+            teamModal.classList.remove('active');
+        });
+
+        teamModal.addEventListener('click', (e) => {
+            if (e.target === teamModal) {
+                teamModal.classList.remove('active');
+            }
+        });
+
+        // 加载团队数据
+        async function loadTeams() {
+            if (!currentClass) {
+                teamsGrid.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/admin/teams?class_name=${encodeURIComponent(currentClass)}`);
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    console.error('加载团队失败:', data.error);
+                    return;
+                }
+
+                teamsData = data.teams || [];
+                renderTeams();
+                
+                // 启动自动刷新（每30秒）
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                }
+                refreshInterval = setInterval(loadTeams, 30000);
+                
+            } catch (error) {
+                console.error('加载团队失败:', error);
+            }
+        }
+
+        // 渲染团队卡片
+        function renderTeams() {
+            if (teamsData.length === 0) {
+                teamsGrid.style.display = 'none';
+                emptyState.style.display = 'block';
+                emptyState.innerHTML = `
+                    <i class="fas fa-inbox"></i>
+                    <p>该班级暂无团队数据</p>
+                `;
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            teamsGrid.style.display = 'grid';
+            teamsGrid.innerHTML = '';
+
+            teamsData.forEach(team => {
+                const card = document.createElement('div');
+                card.className = 'team-card';
+                
+                // 检查是否有更新（有变量和规则数据）
+                const hasData = team.ai_chat_notes || (team.game_name && team.game_name !== '待定游戏');
+                if (hasData) {
+                    card.classList.add('has-update');
+                }
+
+                // 找到队长
+                const leader = team.members?.find(m => m.is_leader) || team.members?.[0];
+                const leaderName = leader?.name || '未知';
+                const members = team.members || [];
+                const membersList = members.map(m => m.name).join('、') || '无';
+
+                // 游戏信息
+                const gameName = team.game_name || team.ai_game_name || '待定游戏';
+                const gameDesc = team.game_name && team.game_name !== '待定游戏' 
+                    ? (team.game_desc || team.ai_game_desc || '暂无描述')
+                    : (team.ai_game_desc || team.game_desc || '暂无描述');
+
+                // 解析变量和规则
+                let variables = '暂无';
+                let rules = '暂无';
+                if (team.ai_chat_notes) {
+                    try {
+                        const notes = JSON.parse(team.ai_chat_notes);
+                        variables = notes.variables || '暂无';
+                        rules = notes.rules || '暂无';
+                    } catch (e) {
+                        // 如果不是JSON，可能是纯文本
+                        variables = team.ai_chat_notes;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div class="team-header">
+                        <div>
+                            <div class="team-name">${team.team_name || '未命名团队'}</div>
+                            <div class="game-name">${gameName}</div>
+                        </div>
+                        ${hasData ? '<div class="update-indicator"></div>' : ''}
+                    </div>
+                    <div class="game-desc">${gameDesc}</div>
+                    <div class="team-info">
+                        <div class="team-info-item">
+                            <i class="fas fa-crown"></i>
+                            <span>队长：${leaderName}</span>
+                        </div>
+                        <div class="team-info-item">
+                            <i class="fas fa-users"></i>
+                            <span>队员：${membersList}</span>
+                        </div>
+                        <div class="team-info-item">
+                            <i class="fas fa-tag"></i>
+                            <span>访问码：${team.access_code?.replace('team_', '') || '未知'}</span>
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    showTeamDetail(team, variables, rules, gameName, gameDesc);
+                });
+
+                teamsGrid.appendChild(card);
+            });
+        }
+
+        // 显示团队详情
+        function showTeamDetail(team, variables, rules, gameName, gameDesc) {
+            const leader = team.members?.find(m => m.is_leader) || team.members?.[0];
+            const leaderName = leader?.name || '未知';
+            const members = team.members || [];
+            const membersList = members.map(m => `${m.name}${m.is_leader ? '（队长）' : ''}`).join('、') || '无';
+
+            document.getElementById('modal-team-name').textContent = team.team_name || '未命名团队';
+            
+            document.getElementById('modal-game-info').innerHTML = `
+                <strong>游戏名称：</strong>${gameName}<br><br>
+                <strong>游戏简介：</strong>${gameDesc}<br><br>
+                <strong>队长：</strong>${leaderName}<br>
+                <strong>队员：</strong>${membersList}<br>
+                <strong>访问码：</strong>${team.access_code?.replace('team_', '') || '未知'}
+            `;
+
+            document.getElementById('modal-variables').textContent = variables || '暂无变量数据';
+            document.getElementById('modal-rules').textContent = rules || '暂无规则数据';
+
+            teamModal.classList.add('active');
+        }
+
+        // 页面加载时，如果有默认班级，自动加载
+        window.addEventListener('load', () => {
+            if (classSelect.value) {
+                currentClass = classSelect.value;
+                loadTeams();
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -5,7 +5,7 @@
       <span v-if="won" class="won">配对成功！</span>
       <el-button size="small" type="primary" @click="reset">重新开始</el-button>
     </div>
-    <div class="board">
+    <div class="board" :style="{ gridTemplateColumns: `repeat(${columns}, 1fr)` }">
       <button
         v-for="card in cards"
         :key="card.id"
@@ -15,27 +15,41 @@
         :disabled="card.matched || lock"
         @click="flip(card)"
       >
-        <span class="front">?</span>
-        <span class="back">{{ card.emoji }}</span>
+        <span v-if="!(card.flipped || card.matched)" class="front">?</span>
+        <span v-else class="back" v-html="card.svg"></span>
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { MEMORY_ICONS } from './parkPictures'
 
-const EMOJIS = ['🍎', '🚀', '🎹', '🐱', '🌟', '⚽', '📚', '🧩']
+const props = defineProps({
+  pairs: { type: Number, default: 8 }
+})
+
 const cards = ref([])
 const first = ref(null)
 const lock = ref(false)
 const moves = ref(0)
 const won = ref(false)
 
+const columns = computed(() => (cards.value.length > 12 ? 4 : cards.value.length > 8 ? 4 : 4))
+
 const reset = () => {
-  const pool = [...EMOJIS, ...EMOJIS]
+  const count = [4, 6, 8].includes(Number(props.pairs)) ? Number(props.pairs) : 8
+  const icons = MEMORY_ICONS.slice(0, count)
+  const pool = [...icons, ...icons]
     .sort(() => Math.random() - 0.5)
-    .map((emoji, i) => ({ id: i, emoji, flipped: false, matched: false }))
+    .map((icon, i) => ({
+      id: i,
+      key: icon.id,
+      svg: icon.svg,
+      flipped: false,
+      matched: false
+    }))
   cards.value = pool
   first.value = null
   lock.value = false
@@ -52,7 +66,7 @@ const flip = (card) => {
   }
   moves.value += 1
   lock.value = true
-  if (first.value.emoji === card.emoji) {
+  if (first.value.key === card.key) {
     first.value.matched = true
     card.matched = true
     first.value = null
@@ -87,42 +101,30 @@ reset()
 .won { color: #059669; }
 .board {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  max-width: 420px;
+  max-width: 460px;
   margin: 0 auto;
 }
 .card {
-  position: relative;
-  height: 72px;
+  height: 84px;
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  background: #312e81;
+  background: #4338ca;
   color: #fff;
   font-size: 28px;
-  perspective: 600px;
+  padding: 0;
 }
 .card .front,
 .card .back {
-  position: absolute;
-  inset: 0;
   display: grid;
   place-items: center;
+  width: 100%;
+  height: 100%;
   border-radius: 12px;
-  backface-visibility: hidden;
-  transition: transform 0.25s ease;
 }
-.card .front { background: #4338ca; }
-.card .back {
-  background: #fff;
-  transform: rotateY(180deg);
-}
-.card.flipped .front { transform: rotateY(180deg); }
-.card.flipped .back { transform: rotateY(0); }
-.card.matched {
-  background: #d1fae5;
-  cursor: default;
-}
+.card .back { background: #fff7ed; }
+.card .back :deep(svg) { width: 48px; height: 48px; }
+.card.matched { cursor: default; }
 .card.matched .back { background: #d1fae5; }
 </style>
