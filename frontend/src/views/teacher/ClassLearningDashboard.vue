@@ -46,12 +46,6 @@
               <el-option v-for="c in classes" :key="c.id" :label="classLabel(c)" :value="c.id" />
             </el-select>
           </div>
-          <div class="pill pill-code" v-if="classId">
-            <span class="pill-label">班级码</span>
-            <span class="pill-value code-val">{{ classLoginCode || (codeLoading ? '…' : '—') }}</span>
-            <button type="button" class="code-copy" title="复制班级码" :disabled="!classLoginCode" @click="copyLoginCode">⎘</button>
-            <button type="button" class="code-refresh" title="刷新班级码（随机6位，8小时有效）" @click="refreshLoginCode">↻</button>
-          </div>
           <div class="pill">
             <span class="pill-label">人数</span>
             <span class="pill-value">{{ data.totalStudents || 0 }} 人</span>
@@ -75,7 +69,6 @@
         <button type="button" class="action-btn indigo" @click="$router.push('/teacher/pretest/g4')">📝 四年级前测</button>
         <button type="button" class="action-btn indigo" @click="$router.push('/teacher/pretest/g6')">📝 六年级前测</button>
         <button type="button" class="action-btn orange" @click="$router.push('/teacher/points')">🏆 班级积分榜单</button>
-        <button type="button" class="action-btn pink" @click="$router.push('/teacher/ai-evaluation')">🤖 AI 课程评价</button>
         <button type="button" class="icon-btn" title="刷新" @click="loadData">↻</button>
       </div>
     </header>
@@ -99,99 +92,6 @@
         <button type="button" class="banner-btn" @click="refreshLoginCode">刷新</button>
       </div>
       <p v-if="codeExpiresHint" class="banner-expires">{{ codeExpiresHint }}</p>
-    </section>
-
-    <section v-if="classId" class="park-section">
-      <div class="section-head">
-        <h3>
-          <span class="sec-icon">🎮</span>
-          游学乐园授权
-          <span v-if="lessonId" class="park-lesson">· {{ currentLessonTitle }}</span>
-          <el-tag v-if="parkPendingCount" size="small" type="warning" style="margin-left:8px">
-            {{ parkPendingCount }} 待审
-          </el-tag>
-        </h3>
-        <div class="park-actions">
-          <button type="button" class="act-btn sm" :disabled="!lessonId" @click="reviewParkClass('approve')">一键授权</button>
-          <button type="button" class="act-btn sm" :disabled="!lessonId" @click="reviewParkClass('revoke')">一键关闭</button>
-          <button type="button" class="act-btn sm" @click="loadParkApps">刷新</button>
-        </div>
-      </div>
-      <p class="park-tip">上方选中哪一课，这里就只控制哪一课。第1课的授权和游玩记录不会带到第2课，关闭第2课也不会关掉第1课。</p>
-      <p v-if="!lessonId" class="empty-hint">请先在上方选择课时。</p>
-      <template v-else>
-      <el-table :data="parkApps" stripe size="small" max-height="280" v-loading="parkLoading">
-        <el-table-column prop="realName" label="学生" width="100" />
-        <el-table-column prop="username" label="学号" width="110" />
-        <el-table-column prop="lessonTitle" label="关联课时" min-width="160">
-          <template #default="{ row }">{{ row.lessonTitle || '—' }}</template>
-        </el-table-column>
-        <el-table-column label="任务" width="90" align="center">
-          <template #default="{ row }">
-            <span :class="row.taskCompleted ? 'done' : 'undone'">
-              {{ row.taskCompleted ? '已完成' : '未完成' }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag size="small" :type="parkStatusType(row.status)">{{ parkStatusText(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="申请时间" width="160">
-          <template #default="{ row }">{{ formatTime(row.appliedAt) }}</template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-if="row.status === 'PENDING' || row.status === 'REJECTED' || row.status === 'REVOKED'"
-              link
-              type="success"
-              size="small"
-              :disabled="!row.taskCompleted"
-              @click="reviewPark(row, 'approve')"
-            >授权</el-button>
-            <el-button
-              v-if="row.status === 'PENDING'"
-              link
-              type="warning"
-              size="small"
-              @click="reviewPark(row, 'reject')"
-            >拒绝</el-button>
-            <el-button
-              v-if="row.status === 'APPROVED'"
-              link
-              type="danger"
-              size="small"
-              @click="reviewPark(row, 'revoke')"
-            >关闭</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <p v-if="!parkApps.length && !parkLoading" class="empty-hint">这一课还没有游学乐园申请</p>
-
-      <h4 class="park-sub">游玩记录 · {{ currentLessonTitle }}</h4>
-      <el-table :data="parkSummary" stripe size="small" empty-text="这一课还没有游玩记录">
-        <el-table-column prop="gameTitle" label="游戏名称" min-width="120" />
-        <el-table-column prop="playerCount" label="游玩人数" width="100" align="center" />
-        <el-table-column label="总时长" width="120" align="center">
-          <template #default="{ row }">{{ formatDuration(row.totalSeconds) }}</template>
-        </el-table-column>
-        <el-table-column label="人均时长" width="120" align="center">
-          <template #default="{ row }">{{ formatDuration(row.avgSeconds) }}</template>
-        </el-table-column>
-      </el-table>
-      <el-table :data="parkRecent" stripe size="small" max-height="220" empty-text="暂无明细" style="margin-top:8px">
-        <el-table-column prop="realName" label="学生" width="100" />
-        <el-table-column prop="gameTitle" label="游戏名称" min-width="120" />
-        <el-table-column label="游戏时长" width="120">
-          <template #default="{ row }">{{ formatDuration(row.durationSeconds) }}</template>
-        </el-table-column>
-        <el-table-column label="时间" min-width="160">
-          <template #default="{ row }">{{ formatTime(row.playedAt) }}</template>
-        </el-table-column>
-      </el-table>
-      </template>
     </section>
 
     <template v-if="lessonId">
@@ -388,6 +288,96 @@
           </div>
           <p v-if="!(data.activities || []).length" class="empty-hint">该课时暂无活动数据</p>
         </div>
+      </section>
+
+      <section class="park-section">
+        <div class="section-head">
+          <h3>
+            <span class="sec-icon">🎮</span>
+            游学乐园授权
+            <span v-if="lessonId" class="park-lesson">· {{ currentLessonTitle }}</span>
+            <el-tag v-if="parkPendingCount" size="small" type="warning" style="margin-left:8px">
+              {{ parkPendingCount }} 待审
+            </el-tag>
+          </h3>
+          <div class="park-actions">
+            <button type="button" class="act-btn sm" :disabled="!lessonId" @click="reviewParkClass('approve')">一键授权</button>
+            <button type="button" class="act-btn sm" :disabled="!lessonId" @click="reviewParkClass('revoke')">一键关闭</button>
+            <button type="button" class="act-btn sm" @click="loadParkApps">刷新</button>
+          </div>
+        </div>
+        <p class="park-tip">上方选中哪一课，这里就只控制哪一课。第1课的授权和游玩记录不会带到第2课，关闭第2课也不会关掉第1课。</p>
+        <el-table :data="parkApps" stripe size="small" max-height="280" v-loading="parkLoading">
+          <el-table-column prop="realName" label="学生" width="100" />
+          <el-table-column prop="username" label="学号" width="110" />
+          <el-table-column prop="lessonTitle" label="关联课时" min-width="160">
+            <template #default="{ row }">{{ row.lessonTitle || '—' }}</template>
+          </el-table-column>
+          <el-table-column label="任务" width="90" align="center">
+            <template #default="{ row }">
+              <span :class="row.taskCompleted ? 'done' : 'undone'">
+                {{ row.taskCompleted ? '已完成' : '未完成' }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag size="small" :type="parkStatusType(row.status)">{{ parkStatusText(row.status) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="申请时间" width="160">
+            <template #default="{ row }">{{ formatTime(row.appliedAt) }}</template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                v-if="row.status === 'PENDING' || row.status === 'REJECTED' || row.status === 'REVOKED'"
+                link
+                type="success"
+                size="small"
+                :disabled="!row.taskCompleted"
+                @click="reviewPark(row, 'approve')"
+              >授权</el-button>
+              <el-button
+                v-if="row.status === 'PENDING'"
+                link
+                type="warning"
+                size="small"
+                @click="reviewPark(row, 'reject')"
+              >拒绝</el-button>
+              <el-button
+                v-if="row.status === 'APPROVED'"
+                link
+                type="danger"
+                size="small"
+                @click="reviewPark(row, 'revoke')"
+              >关闭</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <p v-if="!parkApps.length && !parkLoading" class="empty-hint">这一课还没有游学乐园申请</p>
+
+        <h4 class="park-sub">游玩记录 · {{ currentLessonTitle }}</h4>
+        <el-table :data="parkSummary" stripe size="small" empty-text="这一课还没有游玩记录">
+          <el-table-column prop="gameTitle" label="游戏名称" min-width="120" />
+          <el-table-column prop="playerCount" label="游玩人数" width="100" align="center" />
+          <el-table-column label="总时长" width="120" align="center">
+            <template #default="{ row }">{{ formatDuration(row.totalSeconds) }}</template>
+          </el-table-column>
+          <el-table-column label="人均时长" width="120" align="center">
+            <template #default="{ row }">{{ formatDuration(row.avgSeconds) }}</template>
+          </el-table-column>
+        </el-table>
+        <el-table :data="parkRecent" stripe size="small" max-height="220" empty-text="暂无明细" style="margin-top:8px">
+          <el-table-column prop="realName" label="学生" width="100" />
+          <el-table-column prop="gameTitle" label="游戏名称" min-width="120" />
+          <el-table-column label="游戏时长" width="120">
+            <template #default="{ row }">{{ formatDuration(row.durationSeconds) }}</template>
+          </el-table-column>
+          <el-table-column label="时间" min-width="160">
+            <template #default="{ row }">{{ formatTime(row.playedAt) }}</template>
+          </el-table-column>
+        </el-table>
       </section>
 
       <section v-if="themeActivity" class="matrix-section theme-section">
@@ -679,7 +669,7 @@ const codeExpiresHint = computed(() => {
   if (!codeExpiresAt.value) return ''
   const dt = new Date(codeExpiresAt.value)
   if (Number.isNaN(dt.getTime())) return ''
-  return `有效期至 ${dt.toLocaleString('zh-CN', { hour12: false })}（8 小时内有效）`
+  return `有效期至 ${dt.toLocaleString('zh-CN', { hour12: false })}（1 小时内有效）`
 })
 
 const detailTitle = computed(() => {

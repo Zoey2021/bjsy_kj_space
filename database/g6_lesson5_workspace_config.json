@@ -75,21 +75,21 @@
   "activities": [
     {
       "index": 1,
-      "title": "Bug猎人",
+      "title": "Bug修复",
       "step": 1,
       "path": "/lessons/g6-up-lesson5/index.html",
       "unlocked": true
     },
     {
       "index": 2,
-      "title": "完善算法",
+      "title": "优化程序",
       "step": 2,
       "path": "/lessons/g6-up-lesson5/index.html",
       "unlocked": false
     },
     {
       "index": 3,
-      "title": "通用化改造",
+      "title": "通用化程序",
       "step": 3,
       "path": "/lessons/g6-up-lesson5/index.html",
       "unlocked": false

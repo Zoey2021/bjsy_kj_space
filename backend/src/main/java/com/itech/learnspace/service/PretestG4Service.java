@@ -27,7 +27,10 @@ public class PretestG4Service {
             "双击", "退格", "回车", "加粗", "幻灯片", "文件", "数据", "数据", "条形", "编码"
     };
     private static final String[] CHOICE_KEY = {"B", "B", "A", "B", "A", "A", "A", "A", "A", "A"};
-    private static final Pattern USERNAME_NO = Pattern.compile("20\\d{2}(\\d{2})(\\d{2})$");
+    /** 旧格式：拼音 + 年班学号（末尾） */
+    private static final Pattern USERNAME_NO_SUFFIX = Pattern.compile("20\\d{2}(\\d{2})(\\d{2})$");
+    /** 新格式：年班学号 + 拼音（开头） */
+    private static final Pattern USERNAME_NO_PREFIX = Pattern.compile("^(20\\d{2})(\\d{2})(\\d{2})");
 
     private final LearnPretestG4Repository pretestRepository;
     private final SysClassRepository classRepository;
@@ -52,9 +55,13 @@ public class PretestG4Service {
             return "";
         }
         String raw = username.trim();
-        Matcher m = USERNAME_NO.matcher(raw);
-        if (m.find()) {
-            return String.valueOf(Integer.parseInt(m.group(2)));
+        Matcher prefix = USERNAME_NO_PREFIX.matcher(raw);
+        if (prefix.find()) {
+            return String.valueOf(Integer.parseInt(prefix.group(3)));
+        }
+        Matcher suffix = USERNAME_NO_SUFFIX.matcher(raw);
+        if (suffix.find()) {
+            return String.valueOf(Integer.parseInt(suffix.group(2)));
         }
         if (raw.matches("\\d{1,2}")) {
             return String.valueOf(Integer.parseInt(raw));

@@ -2,7 +2,7 @@
   <el-container class="layout">
     <el-header class="header">
       <span class="logo">教师工作台</span>
-      <span class="header-sub">中小学信息科技学习空间</span>
+      <span class="header-sub">杭州市滨江实验小学信息科技学习平台</span>
       <span class="user">
         {{ realName }}
         <el-button link class="logout" @click="logout">退出</el-button>
@@ -13,23 +13,36 @@
       <el-aside :width="collapsed ? '64px' : '220px'" class="aside">
         <el-menu
           :default-active="activeMenu"
+          :default-openeds="openedMenus"
           :collapse="collapsed"
           router
           class="side-menu"
         >
-          <el-menu-item
-            v-for="m in visibleModules"
-            :key="m.key"
-            :index="m.path"
-            :title="m.desc"
-            :class="{ 'menu-item--shelved': m.shelved }"
-          >
-            <el-icon><component :is="iconMap[m.icon]" /></el-icon>
-            <span class="menu-label">
-              {{ m.title }}
-              <el-tag v-if="m.shelved" size="small" type="info" effect="plain" class="shelved-tag">筹备中</el-tag>
-            </span>
-          </el-menu-item>
+          <template v-for="m in visibleModules" :key="m.key">
+            <el-sub-menu v-if="m.children?.length" :index="m.key">
+              <template #title>
+                <el-icon><component :is="iconMap[m.icon]" /></el-icon>
+                <span>{{ m.title }}</span>
+              </template>
+              <el-menu-item
+                v-for="c in m.children"
+                :key="c.key"
+                :index="c.path"
+                :title="c.desc"
+              >
+                <el-icon><component :is="iconMap[c.icon]" /></el-icon>
+                <span>{{ c.title }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+            <el-menu-item
+              v-else
+              :index="m.path"
+              :title="m.desc"
+            >
+              <el-icon><component :is="iconMap[m.icon]" /></el-icon>
+              <span>{{ m.title }}</span>
+            </el-menu-item>
+          </template>
         </el-menu>
         <el-button class="collapse-btn" text @click="collapsed = !collapsed">
           {{ collapsed ? '展开' : '收起' }}
@@ -53,9 +66,11 @@ import {
   Setting,
   Notebook,
   Orange,
-  User
+  User,
+  Monitor,
+  Cpu
 } from '@element-plus/icons-vue'
-import { TEACHER_MODULES } from '../constants/teacherModules'
+import { TEACHER_MODULES, flattenTeacherModules } from '../constants/teacherModules'
 import { accountScope, SCOPE_KECHUANG } from '../utils/schoolCourseAccess'
 
 const route = useRoute()
@@ -72,7 +87,9 @@ const iconMap = {
   Setting,
   Notebook,
   Orange,
-  User
+  User,
+  Monitor,
+  Cpu
 }
 
 const visibleModules = computed(() => (
@@ -81,16 +98,30 @@ const visibleModules = computed(() => (
     : TEACHER_MODULES
 ))
 
+const flatModules = computed(() => flattenTeacherModules(visibleModules.value))
+
+const openedMenus = computed(() => {
+  const path = route.path
+  const groups = []
+  TEACHER_MODULES.forEach((m) => {
+    if (!m.children?.length) return
+    if (m.children.some((c) => path === c.path || path.startsWith(c.path + '/'))) {
+      groups.push(m.key)
+    }
+  })
+  return groups.length ? groups : ['prepare', 'engage', 'evaluate']
+})
+
 const activeMenu = computed(() => {
   if (route.path.startsWith('/teacher/pretest')) return '/teacher/course-map'
-  const hit = TEACHER_MODULES.find((m) => route.path.startsWith(m.path))
+  const hit = flatModules.value.find((m) => m.path && route.path.startsWith(m.path))
   return hit ? hit.path : route.path
 })
 
 const mainClass = computed(() => ({
   'main-flush': route.path.includes('/activity-editor/grade/') || route.path.includes('/course-map/grade/') || /^\/teacher\/pretest\/g[46]$/.test(route.path) || route.path.startsWith('/teacher/scaffold-workbench'),
   'main-lesson': /^\/teacher\/lesson\/\d+$/.test(route.path) || /\/teacher\/pretest\/g[46]\/paper$/.test(route.path),
-  'main-map': route.path === '/teacher/course-map' || route.path === '/teacher/activity-editor',
+  'main-map': route.path === '/teacher/course-map',
   'main-pbl': route.path === '/teacher/pbl',
   'main-school': /\/teacher\/course-map\/grade\//.test(route.path) || route.path.startsWith('/teacher/school-ppt/')
 }))
@@ -155,32 +186,25 @@ const logout = () => {
   padding: 8px 0;
   overflow-y: auto;
 }
-.side-menu :deep(.el-menu-item) {
+.side-menu :deep(.el-menu-item),
+.side-menu :deep(.el-sub-menu__title) {
   height: auto;
-  min-height: 52px;
+  min-height: 48px;
   line-height: 1.35;
   padding: 10px 16px !important;
   margin: 4px 8px;
   border-radius: 10px;
   white-space: normal;
 }
+.side-menu :deep(.el-sub-menu .el-menu-item) {
+  min-height: 42px;
+  padding-left: 44px !important;
+  margin: 2px 8px;
+}
 .side-menu :deep(.el-menu-item.is-active) {
   background: linear-gradient(135deg, #ede9fe, #e0e7ff) !important;
   color: #5b4fc7;
   font-weight: 600;
-}
-.menu-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.shelved-tag {
-  transform: scale(0.88);
-  vertical-align: middle;
-}
-.side-menu :deep(.menu-item--shelved) {
-  opacity: 0.72;
 }
 .collapse-btn {
   margin: 8px;

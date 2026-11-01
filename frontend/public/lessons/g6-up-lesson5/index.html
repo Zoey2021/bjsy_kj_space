@@ -134,8 +134,9 @@ body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:var(--bg)
 /* Tips */
 .tip-box{background:linear-gradient(135deg,#E8F4F2,#F0FAF8);border-left:4px solid var(--s);border-radius:0 var(--rs) var(--rs) 0;padding:12px 16px;margin:12px 0;font-size:13px}
 body.embedded-mode{background:#fff}
-body.embedded-mode .top-bar{padding:12px 16px}
-body.embedded-mode .top-bar .subtitle{display:none}
+/* 嵌在课时工作台时不再重复显示「第5课…」大标题 */
+body.embedded-mode .top-bar{display:none!important}
+body.embedded-mode .preview-tier{display:none!important}
 body.embedded-mode .tab-nav{display:none!important}
 body.embedded-mode .container{max-width:none;padding:12px 16px 24px}
 .note-mid,.note-c{display:none}
@@ -146,6 +147,9 @@ body.tier-c .chips{display:flex}
 .preview-tier{display:none;gap:6px;align-items:center;margin:0;padding:10px 24px 0;font-size:13px;font-weight:700;color:var(--tx2)}
 .preview-tier button{border:1px solid var(--bd);background:#fff;color:var(--tx);border-radius:999px;padding:4px 12px;font-weight:800;cursor:pointer}
 .preview-tier button.on{background:var(--s);border-color:var(--s);color:#fff}
+.submit-card{border:1.5px solid #cfe8e4;background:linear-gradient(180deg,#f7fffd,#fff)}
+.submit-hint{margin:0 0 12px;font-size:13.5px;color:var(--tx2);line-height:1.6}
+.submit-ok{margin-top:12px;color:var(--s);font-weight:700;font-size:14px}
 </style>
 </head>
 <body>
@@ -167,9 +171,9 @@ body.tier-c .chips{display:flex}
 
 <!-- Tabs -->
 <div class="tab-nav">
-  <button class="tab-btn active" onclick="switchTab(1)">🔍 活动一：Bug猎人</button>
-  <button class="tab-btn" onclick="switchTab(2)">🔧 活动二：完善算法</button>
-  <button class="tab-btn" onclick="switchTab(3)">🚀 活动三：通用化改造</button>
+  <button class="tab-btn active" onclick="switchTab(1)">探究一：Bug修复</button>
+  <button class="tab-btn" onclick="switchTab(2)">探究二：优化程序</button>
+  <button class="tab-btn" onclick="switchTab(3)">探究三：通用化程序</button>
 </div>
 
 <!-- ==================== ACTIVITY 1: Bug Hunter ==================== -->
@@ -179,19 +183,19 @@ body.tier-c .chips{display:flex}
 <div class="card">
   <div class="card-title">🎯 任务说明</div>
   <div class="tip-box">
-    <strong>调试四查：</strong>① 大小写 &nbsp; ② 标点符号 &nbsp; ③ 冒号 &nbsp; ④ 缩进<br>
-    下面三个程序都有Bug，点击<strong>"运行"</strong>查看报错信息，然后选择错误类型并修正！
+    下面三个程序都有问题。<strong>先点「运行」</strong>，根据报错信息自己判断哪里不对，再选错误类型并修正。<br>
+    排查时可对照「调试四查」：① 大小写　② 标点符号　③ 冒号　④ 缩进——但每个程序错在哪一条，要你自己找出来。
   </div>
 </div>
 
 <!-- Bug 1: NameError -->
 <div class="bug-card" id="bug1">
   <div class="bug-header">
-    <div class="bug-title">🐛 Bug 程序 #1 — 大小写错误</div>
-    <div class="bug-status" id="bug1-status">待修复</div>
+    <div class="bug-title">🐛 程序 #1</div>
+    <div class="bug-status" id="bug1-status">待排查</div>
   </div>
   <div class="code-box" id="bug1-code">
-    <div class="code-line"><span class="line-num">1</span><span class="kw">Tu</span> = <span class="num">0</span></div>
+    <div class="code-line"><span class="line-num">1</span>Tu = <span class="num">0</span></div>
     <div class="code-line"><span class="line-num">2</span><span class="kw">while</span> tu <= <span class="num">35</span>:</div>
     <div class="code-line"><span class="line-num">3</span>    tu = <span class="num">35</span> - ji</div>
     <div class="code-line"><span class="line-num">4</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span>:</div>
@@ -212,15 +216,15 @@ body.tier-c .chips{display:flex}
     兔: 12 只
   </div>
   <div id="bug1-quiz" style="display:none;margin-top:12px">
-    <div style="font-weight:700;color:var(--p);margin-bottom:8px">这是什么错误？</div>
+    <div style="font-weight:700;color:var(--p);margin-bottom:8px">根据上面的报错，你判断是什么问题？</div>
     <div class="quiz-options">
       <div class="quiz-option" onclick="selectBugOption(1, 'A')" data-val="A">A. 缺少冒号</div>
-      <div class="quiz-option" onclick="selectBugOption(1, 'B')" data-val="B">B. 大小写不一致（Tu ≠ tu）</div>
+      <div class="quiz-option" onclick="selectBugOption(1, 'B')" data-val="B">B. 大小写不一致</div>
       <div class="quiz-option" onclick="selectBugOption(1, 'C')" data-val="C">C. 缩进错误</div>
       <div class="quiz-option" onclick="selectBugOption(1, 'D')" data-val="D">D. 中文标点</div>
     </div>
     <div id="bug1-fix" style="display:none;margin-top:12px">
-      <div class="hint-box">✅ 正确！第1行的 <span class="err">Tu</span> 应该改为 <span class="ok">tu</span></div>
+      <div class="hint-box">✅ 正确！第1行的 <span class="err">Tu</span> 应该改为 <span class="ok">tu</span>（Python 区分大小写）</div>
       <button class="btn btn-accent" onclick="fixBug(1)">🔧 修正并重新运行</button>
     </div>
   </div>
@@ -229,16 +233,16 @@ body.tier-c .chips{display:flex}
 <!-- Bug 2: SyntaxError (Chinese punctuation) -->
 <div class="bug-card" id="bug2">
   <div class="bug-header">
-    <div class="bug-title">🐛 Bug 程序 #2 — 中文标点错误</div>
-    <div class="bug-status" id="bug2-status">待修复</div>
+    <div class="bug-title">🐛 程序 #2</div>
+    <div class="bug-status" id="bug2-status">待排查</div>
   </div>
   <div class="code-box" id="bug2-code">
     <div class="code-line"><span class="line-num">1</span>ji = <span class="num">0</span></div>
-    <div class="code-line"><span class="line-num">2</span><span class="kw">while</span> ji <= <span class="num">35</span><span class="err">：</span></div>
+    <div class="code-line"><span class="line-num">2</span><span class="kw">while</span> ji <= <span class="num">35</span>：</div>
     <div class="code-line"><span class="line-num">3</span>    tu = <span class="num">35</span> - ji</div>
-    <div class="code-line"><span class="line-num">4</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span><span class="err">：</span></div>
-    <div class="code-line"><span class="line-num">5</span>        <span class="kw">print</span><span class="err">（</span><span class="str">"鸡:"</span>, ji, <span class="str">"只"</span><span class="err">）</span></div>
-    <div class="code-line"><span class="line-num">6</span>        <span class="kw">print</span><span class="err">（</span><span class="str">"兔:"</span>, tu, <span class="str">"只"</span><span class="err">）</span></div>
+    <div class="code-line"><span class="line-num">4</span>    <span class="kw">if</span> <span class="num">2</span>*ji + <span class="num">4</span>*tu == <span class="num">94</span>：</div>
+    <div class="code-line"><span class="line-num">5</span>        <span class="kw">print</span>（<span class="str">"鸡:"</span>, ji, <span class="str">"只"</span>）</div>
+    <div class="code-line"><span class="line-num">6</span>        <span class="kw">print</span>（<span class="str">"兔:"</span>, tu, <span class="str">"只"</span>）</div>
     <div class="code-line"><span class="line-num">7</span>    ji = ji + <span class="num">1</span></div>
   </div>
   <div style="margin-top:12px">
@@ -254,12 +258,12 @@ body.tier-c .chips{display:flex}
     兔: 12 只
   </div>
   <div id="bug2-quiz" style="display:none;margin-top:12px">
-    <div style="font-weight:700;color:var(--p);margin-bottom:8px">这是什么错误？</div>
+    <div style="font-weight:700;color:var(--p);margin-bottom:8px">根据上面的报错，你判断是什么问题？</div>
     <div class="quiz-options">
       <div class="quiz-option" onclick="selectBugOption(2, 'A')" data-val="A">A. 大小写不一致</div>
-      <div class="quiz-option" onclick="selectBugOption(2, 'B')" data-val="B">B. 使用了中文标点（冒号、括号）</div>
+      <div class="quiz-option" onclick="selectBugOption(2, 'B')" data-val="B">B. 使用了中文标点</div>
       <div class="quiz-option" onclick="selectBugOption(2, 'C')" data-val="C">C. 缩进错误</div>
-      <div class="quiz-option" onclick="selectBugOption(2, 'D')" data-val="D">D. 变量名错误</div>
+      <div class="quiz-option" onclick="selectBugOption(2, 'D')" data-val="D">D. 变量名拼写错误</div>
     </div>
     <div id="bug2-fix" style="display:none;margin-top:12px">
       <div class="hint-box">✅ 正确！中文冒号<span class="err">"："</span>应改为英文冒号<span class="ok">":"</span>，中文括号<span class="err">"（）"</span>应改为英文括号<span class="ok">"()"</span></div>
@@ -271,8 +275,8 @@ body.tier-c .chips{display:flex}
 <!-- Bug 3: IndentationError -->
 <div class="bug-card" id="bug3">
   <div class="bug-header">
-    <div class="bug-title">🐛 Bug 程序 #3 — 缩进错误</div>
-    <div class="bug-status" id="bug3-status">待修复</div>
+    <div class="bug-title">🐛 程序 #3</div>
+    <div class="bug-status" id="bug3-status">待排查</div>
   </div>
   <div class="code-box" id="bug3-code">
     <div class="code-line"><span class="line-num">1</span>ji = <span class="num">0</span></div>
@@ -296,33 +300,25 @@ body.tier-c .chips{display:flex}
     兔: 12 只
   </div>
   <div id="bug3-quiz" style="display:none;margin-top:12px">
-    <div style="font-weight:700;color:var(--p);margin-bottom:8px">这是什么错误？</div>
+    <div style="font-weight:700;color:var(--p);margin-bottom:8px">根据上面的报错，你判断是什么问题？</div>
     <div class="quiz-options">
       <div class="quiz-option" onclick="selectBugOption(3, 'A')" data-val="A">A. 大小写不一致</div>
       <div class="quiz-option" onclick="selectBugOption(3, 'B')" data-val="B">B. 中文标点</div>
-      <div class="quiz-option" onclick="selectBugOption(3, 'C')" data-val="C">C. 缩进错误（while/if后面没有缩进）</div>
+      <div class="quiz-option" onclick="selectBugOption(3, 'C')" data-val="C">C. 缩进错误</div>
       <div class="quiz-option" onclick="selectBugOption(3, 'D')" data-val="D">D. 缺少冒号</div>
     </div>
     <div id="bug3-fix" style="display:none;margin-top:12px">
-      <div class="hint-box">✅ 正确！<span class="err">while</span> 和 <span class="err">if</span> 后面的代码必须缩进。第3行和第5行应该加4个空格缩进。</div>
+      <div class="hint-box">✅ 正确！<span class="err">while</span> / <span class="err">if</span> 后面的语句块必须缩进。对照报错行号，把该缩进的行补上空格。</div>
       <button class="btn btn-accent" onclick="fixBug(3)">🔧 修正并重新运行</button>
     </div>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-title">📋 调试成果</div>
-  <div class="checklist" id="bug-checklist">
-    <div class="check-item" id="check-b1"><div class="check-box">✓</div> 修复 Bug #1 — 大小写错误</div>
-    <div class="check-item" id="check-b2"><div class="check-box">✓</div> 修复 Bug #2 — 中文标点</div>
-    <div class="check-item" id="check-b3"><div class="check-box">✓</div> 修复 Bug #3 — 缩进错误</div>
-  </div>
-  <div class="result-area" id="bug-result">
-    <div class="result-title">🎉 恭喜！你已掌握调试三大利器：</div>
-    <div>① 读懂报错类型（NameError / SyntaxError / IndentationError）</div>
-    <div>② 根据行号定位错误</div>
-    <div>③ 对照四查清单修正错误</div>
-  </div>
+<div class="card submit-card">
+  <div class="card-title">📤 提交任务</div>
+  <p class="submit-hint">请先运行并修好上面三个程序，再点「提交任务」。提交后本探究才算完成。</p>
+  <button type="button" class="btn btn-primary" id="submit-act1" onclick="submitActivity(1)">提交任务</button>
+  <div class="submit-ok" id="submit-ok-1" style="display:none">✅ 探究一已提交，可以进入下一探究。</div>
 </div>
 
 </div>
@@ -416,6 +412,13 @@ body.tier-c .chips{display:flex}
     <div class="quiz-option" onclick="selectThink(this, false)">C. jie 变量只是为了增加代码行数</div>
   </div>
   <div id="think-result" style="margin-top:10px;display:none"></div>
+</div>
+
+<div class="card submit-card">
+  <div class="card-title">📤 提交任务</div>
+  <p class="submit-hint">请先完成填空和「想一想」，再点「提交任务」。提交后本探究才算完成。</p>
+  <button type="button" class="btn btn-primary" id="submit-act2" onclick="submitActivity(2)">提交任务</button>
+  <div class="submit-ok" id="submit-ok-2" style="display:none">✅ 探究二已提交，可以进入下一探究。</div>
 </div>
 
 </div>
@@ -521,6 +524,13 @@ body.tier-c .chips{display:flex}
   </div>
 </div>
 
+<div class="card submit-card">
+  <div class="card-title">📤 提交任务</div>
+  <p class="submit-hint">请先完成代码填空，再点「提交任务」。提交后本探究才算完成。</p>
+  <button type="button" class="btn btn-primary" id="submit-act3" onclick="submitActivity(3)">提交任务</button>
+  <div class="submit-ok" id="submit-ok-3" style="display:none">✅ 探究三已提交，可以去做课堂小测。</div>
+</div>
+
 </div>
 </div>
 
@@ -540,6 +550,7 @@ let tier = (function (raw) {
 })(urlParams.get('scaffold'));
 let fill2Passed = false;
 let think2Passed = false;
+let fill3Passed = false;
 
 function applyTier() {
   document.body.classList.remove('tier-a', 'tier-b', 'tier-c');
@@ -576,6 +587,38 @@ function notifyLearnSpaceComplete(step) {
       source: 'g6-up-lesson5'
     }
   }, '*');
+}
+
+/** 只有点「提交任务」才算完成本探究 */
+function submitActivity(step) {
+  if (step === 1) {
+    if (!(bugStates[1] && bugStates[2] && bugStates[3])) {
+      alert('请先运行并修好三个程序，再提交任务。');
+      return;
+    }
+  } else if (step === 2) {
+    if (!fill2Passed) {
+      alert('请先完成填空并检查正确，再提交任务。');
+      return;
+    }
+    if (!think2Passed) {
+      alert('请先完成「想一想」并选对，再提交任务。');
+      return;
+    }
+  } else if (step === 3) {
+    if (!fill3Passed) {
+      alert('请先完成代码填空并检查正确，再提交任务。');
+      return;
+    }
+  }
+  const ok = document.getElementById('submit-ok-' + step);
+  const btn = document.getElementById('submit-act' + step);
+  if (ok) ok.style.display = 'block';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '已提交';
+  }
+  notifyLearnSpaceComplete(step);
 }
 
 // ==================== Activity 1: Bug Hunter ====================
@@ -621,12 +664,6 @@ function fixBug(n){
   const codeBox = document.getElementById('bug'+n+'-code');
   if (codeBox) codeBox.innerHTML = FIXED_BUG_CODE;
 
-  document.getElementById('check-b'+n).classList.add('checked');
-
-  if(bugStates[1] && bugStates[2] && bugStates[3]){
-    document.getElementById('bug-result').classList.add('show');
-    notifyLearnSpaceComplete(1);
-  }
 }
 
 // ==================== Activity 2: Improve Algorithm ====================
@@ -651,12 +688,7 @@ function checkFill2(){
 
   if(correct){
     fill2Passed = true;
-    if(tier === 'A' && !think2Passed){
-      alert('填空对了。请先完成下面的「想一想」，再算这一关完成。');
-      return;
-    }
-    alert('🎉 全部正确！现在测试有解和无解两种情况吧！');
-    notifyLearnSpaceComplete(2);
+    alert('🎉 填空正确！请继续做「想一想」，最后点「提交任务」。');
   } else {
     alert('❌ 有错误，请检查变量名是否一致（都是 jie）');
   }
@@ -706,8 +738,7 @@ function selectThink(el, isCorrect){
   if(isCorrect){
     el.classList.add('correct');
     think2Passed = true;
-    result.innerHTML = '<div style="color:var(--s);font-weight:700">✅ 正确！jie 变量让程序能判断"有解/无解"，对用户更友好！</div>';
-    if(fill2Passed) notifyLearnSpaceComplete(2);
+    result.innerHTML = '<div style="color:var(--s);font-weight:700">✅ 正确！jie 变量让程序能判断"有解/无解"，对用户更友好！请再点下方「提交任务」完成本探究。</div>';
   } else {
     el.classList.add('wrong');
     result.innerHTML = '<div style="color:var(--c)">❌ 不对，再想想 jie 变量的作用是什么？</div>';
@@ -732,8 +763,8 @@ function checkFill3(){
   else { el2.classList.add('wrong'); el2.classList.remove('correct'); }
 
   if(c1 && c2){
-    alert('🎉 正确！现在你的程序能解任意鸡兔同笼问题了！');
-    notifyLearnSpaceComplete(3);
+    fill3Passed = true;
+    alert('🎉 正确！请阅读知识总结后，点「提交任务」完成本探究。');
   } else {
     alert('❌ 有错误，请再看提示！');
   }

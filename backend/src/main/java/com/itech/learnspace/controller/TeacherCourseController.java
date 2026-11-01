@@ -137,4 +137,64 @@ public class TeacherCourseController {
         checkTeacher();
         return ApiResponse.ok(teacherCourseService.uploadFeixiangHtml(lessonId, file, slotIndex));
     }
+
+    /** 课时配置：读取当前已发布探究 */
+    @GetMapping("/lesson/{lessonId}/html-config")
+    public ApiResponse<Map<String, Object>> lessonHtmlConfig(@PathVariable Long lessonId) {
+        checkTeacher();
+        return ApiResponse.ok(teacherCourseService.getLessonHtmlConfig(lessonId));
+    }
+
+    /** 课时配置：修改某一探究标题 */
+    @PutMapping("/lesson/{lessonId}/activity/{seq}/title")
+    public ApiResponse<Map<String, Object>> updateActivityTitle(
+            @PathVariable Long lessonId,
+            @PathVariable int seq,
+            @RequestBody Map<String, Object> body) {
+        checkTeacher();
+        String title = body == null || body.get("title") == null ? "" : String.valueOf(body.get("title"));
+        return ApiResponse.ok("标题已保存",
+                teacherCourseService.updateLessonActivityTitle(lessonId, seq, title));
+    }
+
+    /** 课时配置：保存学习目标等元信息 */
+    @PutMapping("/lesson/{lessonId}/html-meta")
+    public ApiResponse<Map<String, Object>> updateHtmlMeta(
+            @PathVariable Long lessonId,
+            @RequestBody(required = false) Map<String, Object> body) {
+        checkTeacher();
+        return ApiResponse.ok("已保存",
+                teacherCourseService.updateLessonHtmlMeta(lessonId, body));
+    }
+
+    /** 课时配置：单独替换某一探究 HTML */
+    @PostMapping("/lesson/{lessonId}/activity/{seq}/replace-html")
+    public ApiResponse<Map<String, Object>> replaceActivityHtml(
+            @PathVariable Long lessonId,
+            @PathVariable int seq,
+            @RequestParam("file") MultipartFile file) {
+        checkTeacher();
+        return ApiResponse.ok("该探究已更新",
+                teacherCourseService.replaceLessonActivityHtml(lessonId, seq, file));
+    }
+
+    /** 上传整课 HTML 并拆成 2～3 个探究草稿 */
+    @PostMapping("/lesson/{lessonId}/upload-split-html")
+    public ApiResponse<Map<String, Object>> uploadSplitHtml(
+            @PathVariable Long lessonId,
+            @RequestParam("file") MultipartFile file) {
+        checkTeacher();
+        return ApiResponse.ok(teacherCourseService.uploadAndSplitHtml(lessonId, file));
+    }
+
+    /** 确认预览后发布到该课时（学生课程地图可见） */
+    @PostMapping("/lesson/{lessonId}/publish-html-pack")
+    public ApiResponse<Map<String, Object>> publishHtmlPack(
+            @PathVariable Long lessonId,
+            @RequestBody(required = false) Map<String, Object> body) {
+        checkTeacher();
+        SysUser user = authService.currentUser();
+        return ApiResponse.ok("已发布到学生课程地图",
+                teacherCourseService.publishHtmlPack(lessonId, body, user.getId()));
+    }
 }

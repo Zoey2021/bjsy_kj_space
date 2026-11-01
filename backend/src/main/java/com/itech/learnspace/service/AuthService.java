@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Service
 public class AuthService {
 
-    private static final int CLASS_CODE_TTL_HOURS = 8;
+    private static final int CLASS_CODE_TTL_HOURS = 1;
     private static final String FIRST_PASSWORD_CLASS = "2021级6班";
     private final Random random = new Random();
 

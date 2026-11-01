@@ -1,5 +1,9 @@
 # Docker 环境配置（由 docker-compose 激活）
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
   datasource:
     url: jdbc:mysql://mysql:3306/learn_space?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: learnuser
@@ -36,3 +40,14 @@ learn-space:
   activity:
     html-output-dir: /app/lesson-generated
     lesson-html-dir: /app/lessons
+
+# 小派老师（扣子 /stream_run）。图片 URL 须公网 https。
+coze:
+  chat:
+    api-url: ${COZE_CHAT_API_URL:}
+    token: ${COZE_CHAT_TOKEN:}
+    public-origin: ${COZE_PUBLIC_ORIGIN:https://bjsysmartedu.cn}
+
+server:
+  tomcat:
+    max-http-post-size: 20971520

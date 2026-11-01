@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小派老师 · Python编程小导师</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'PingFang SC','Microsoft YaHei',sans-serif; }
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: #eef4ff;
+  }
+  /* 嵌在 iframe 里用 100%，避免 100vh 把输入栏顶出可视区 */
+  .app {
+    max-width: 720px;
+    margin: 0 auto;
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #f7f9ff;
+    overflow: hidden;
+  }
+  header {
+    flex-shrink: 0;
+    background: linear-gradient(135deg,#5b8cff,#8a6bff);
+    color: #fff;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 10px rgba(90,120,255,.25);
+  }
+  .avatar { width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px; }
+  header h1 { font-size:17px; }
+  header p { font-size:12px; opacity:.9; }
+  .messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .msg { max-width:82%; padding:10px 14px; border-radius:16px; line-height:1.6; font-size:15px; white-space:pre-wrap; word-break:break-word; }
+  .user { align-self:flex-end; background:linear-gradient(135deg,#5b8cff,#6ea5ff); color:#fff; border-bottom-right-radius:4px; }
+  .bot { align-self:flex-start; background:#fff; color:#333; border:1px solid #e3e9ff; border-bottom-left-radius:4px; box-shadow:0 1px 4px rgba(0,0,0,.04); }
+  .bot code { background:#f0f3ff; padding:0 4px; border-radius:4px; font-family:Consolas,monospace; font-size:13px; }
+  .bot pre { background:#282c34; color:#e6e6e6; padding:12px 14px; border-radius:10px; overflow-x:auto; margin:6px 0; font-size:13px; font-family:Consolas,monospace; line-height:1.5; white-space:pre-wrap; }
+  .tip { text-align:center; color:#98a2c7; font-size:13px; }
+  .inputbar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: #fff;
+    border-top: 1px solid #eef2ff;
+  }
+  textarea { flex:1; border:1px solid #dbe3ff; border-radius:12px; padding:10px 12px; font-size:15px; resize:none; outline:none; height:44px; min-height:44px; max-height:120px; line-height:1.4; }
+  textarea:focus { border-color:#5b8cff; }
+  .btn { border:none; border-radius:12px; cursor:pointer; font-size:15px; flex-shrink:0; }
+  .send { background:linear-gradient(135deg,#5b8cff,#8a6bff); color:#fff; padding:10px 18px; min-height:44px; }
+  .send:disabled { opacity:.5; cursor:not-allowed; }
+  .upload { background:#eef2ff; color:#5b8cff; padding:10px 12px; font-size:20px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
+  .attach { display:none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="avatar">🐍</div>
+    <div>
+      <h1>小派老师</h1>
+      <p>六年级 Python 编程小导师 · 有想法就说出来 💡</p>
+    </div>
+  </header>
+  <div class="messages" id="messages">
+    <div class="tip">你好呀，我是你的编程小老师！输入问题，或上传算法流程图，都可以来找我~</div>
+  </div>
+  <div class="inputbar">
+    <label class="btn upload" title="上传图片(算法流程图/草稿)">🖼<input class="attach" type="file" id="file" accept="image/*"></label>
+    <textarea id="input" placeholder="问问小派老师，比如：怎么用Python算平均分？"></textarea>
+    <button class="btn send" id="send">发送</button>
+  </div>
+</div>
+
+<script>
+/** 同源代理：JWT 登录校验；扣子 Token 由后端注入；图片先上传再传 URL */
+const CONFIG = {
+  API_URL: "/api/ai-lab/coze/chat",
+  TOKEN: "",
+  UPLOAD_URL: "/api/ai-lab/upload"
+};
+const messagesEl = document.getElementById("messages");
+const inputEl = document.getElementById("input");
+const sendBtn = document.getElementById("send");
+const fileEl = document.getElementById("file");
+let sessionId = "web_" + Date.now();
+/** 已上传图片的公开 URL（非 base64） */
+let hasImageUrl = null;
+let uploading = false;
+
+function authHeaders(extra) {
+  const headers = extra ? Object.assign({}, extra) : {};
+  const jwt = localStorage.getItem("token") || "";
+  if (jwt) headers["Authorization"] = "Bearer " + jwt;
+  if (CONFIG.TOKEN) headers["Authorization"] = "Bearer " + CONFIG.TOKEN;
+  return headers;
+}
+
+function addMsg(role, text) {
+  const d = document.createElement("div");
+  d.className = "msg " + (role === "user" ? "user" : "bot");
+  d.innerHTML = _render(text);
+  messagesEl.appendChild(d);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return d;
+}
+function _render(text) {
+  const esc = String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return esc.replace(/```(\w*)\n([\s\S]*?)```/g, function(_, lang, code){ return '<pre>' + code + '</pre>'; })
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+}
+
+/** 手机大图先压到约 1280 边长，降低上传失败概率 */
+function compressImage(file) {
+  return new Promise(function(resolve) {
+    if (!file || !file.type || file.type.indexOf("image/") !== 0) {
+      resolve(file);
+      return;
+    }
+    if (file.size < 900 * 1024) {
+      resolve(file);
+      return;
+    }
+    var img = new Image();
+    var url = URL.createObjectURL(file);
+    img.onload = function() {
+      URL.revokeObjectURL(url);
+      var max = 1280;
+      var w = img.width, h = img.height;
+      if (w > max || h > max) {
+        if (w >= h) { h = Math.round(h * max / w); w = max; }
+        else { w = Math.round(w * max / h); h = max; }
+      }
+      var canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(function(blob) {
+        if (!blob) { resolve(file); return; }
+        var name = (file.name || "image.jpg").replace(/\.\w+$/, ".jpg");
+        resolve(new File([blob], name, { type: "image/jpeg" }));
+      }, "image/jpeg", 0.82);
+    };
+    img.onerror = function() {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+}
+
+function toAbsoluteUrl(url) {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url)) {
+    // 反代若误写成 http，统一抬成 https
+    if (url.indexOf("http://bjsysmartedu.cn") === 0) {
+      return "https://" + url.slice("http://".length);
+    }
+    return url;
+  }
+  var origin = window.location.origin || "";
+  if (origin.indexOf("http://bjsysmartedu.cn") === 0) origin = "https://bjsysmartedu.cn";
+  if (url.charAt(0) !== "/") url = "/" + url;
+  return origin + url;
+}
+
+async function uploadImage(file) {
+  var prepared = await compressImage(file);
+  const form = new FormData();
+  form.append("file", prepared);
+  const resp = await fetch(CONFIG.UPLOAD_URL, {
+    method: "POST",
+    headers: authHeaders(),
+    body: form
+  });
+  const json = await resp.json().catch(function(){ return null; });
+  if (!resp.ok || !json || (json.code !== 0 && json.code !== 200)) {
+    var msg = (json && json.message) ? json.message : ("上传失败 " + resp.status);
+    if (resp.status === 413) msg = "图片太大，请换一张较小的图";
+    throw new Error(msg);
+  }
+  const data = json.data || {};
+  const url = toAbsoluteUrl(data.url || data.path);
+  if (!url) throw new Error("上传成功但未返回图片地址");
+  return url;
+}
+
+async function send() {
+  if (uploading) {
+    addMsg("bot", "图片还在上传，请稍等一下再发送。");
+    return;
+  }
+  const text = inputEl.value.trim();
+  const img = hasImageUrl;
+  if (!text && !img) return;
+  addMsg("user", (img ? "[图片] " : "") + text);
+  inputEl.value = "";
+  hasImageUrl = null;
+  fileEl.title = "上传图片(算法流程图/草稿)";
+  const content = [];
+  if (text) content.push({ type: "text", text: text });
+  if (img) content.push({ type: "image_url", image_url: { url: img } });
+  const botBox = addMsg("bot", "思考中...");
+  sendBtn.disabled = true;
+  try {
+    const resp = await fetch(CONFIG.API_URL, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        model: "default",
+        session_id: sessionId,
+        stream: true,
+        messages: [{ role: "user", content: content }]
+      })
+    });
+    if (!resp.ok) {
+      let detail = "";
+      try { detail = await resp.text(); } catch (e) {}
+      botBox.innerHTML = "😢 请求失败：" + resp.status + (detail ? ("<br>" + _render(detail.slice(0, 200))) : "");
+      return;
+    }
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "", full = "", started = false;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, idx).trim(); buffer = buffer.slice(idx + 1);
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (data === "[DONE]") continue;
+        try {
+          const obj = JSON.parse(data);
+          if (obj.error && obj.error.message) {
+            botBox.innerHTML = _render("😢 " + obj.error.message);
+            started = true;
+            continue;
+          }
+          if (obj.content && obj.content.error) {
+            var errObj = obj.content.error;
+            var errMsg = (typeof errObj === "string") ? errObj : (errObj.message || JSON.stringify(errObj));
+            botBox.innerHTML = _render("😢 " + errMsg);
+            started = true;
+            continue;
+          }
+          let piece = "";
+          // OpenAI 兼容
+          const delta = obj.choices && obj.choices[0] && obj.choices[0].delta;
+          if (delta && delta.content) piece = delta.content;
+          // 扣子 /stream_run：type=answer
+          if (!piece && obj.type === "answer" && obj.content && obj.content.answer) {
+            piece = obj.content.answer;
+          }
+          if (piece) {
+            if (!started) { botBox.innerHTML = ""; started = true; }
+            full += piece;
+            botBox.innerHTML = _render(full);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+          }
+        } catch (e) {}
+      }
+    }
+    if (!started) botBox.innerHTML = _render(full || "(暂无回复)");
+  } catch (e) {
+    botBox.innerHTML = "😢 连接失败：" + e.message;
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+inputEl.addEventListener("keydown", function(e){
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+});
+sendBtn.addEventListener("click", send);
+fileEl.addEventListener("change", async function(e){
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  uploading = true;
+  sendBtn.disabled = true;
+  const tip = addMsg("bot", "正在上传图片…");
+  try {
+    hasImageUrl = await uploadImage(f);
+    tip.innerHTML = _render("图片已上传，可以输入问题后点发送。");
+  } catch (err) {
+    hasImageUrl = null;
+    tip.innerHTML = _render("😢 图片上传失败：" + (err.message || "请重试"));
+  } finally {
+    uploading = false;
+    sendBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

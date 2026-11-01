@@ -3,25 +3,36 @@
     <el-header class="header">
       <span class="logo">信息科技学习空间</span>
       <el-menu
+        :key="activeMenu"
         mode="horizontal"
-        :default-active="route.path"
+        :default-active="activeMenu"
         router
         background-color="transparent"
         text-color="rgba(255,255,255,0.92)"
         active-text-color="#fde68a"
         class="top-menu"
       >
-        <el-menu-item index="/student/map">课程地图</el-menu-item>
-        <el-menu-item index="/student/records">学习记录</el-menu-item>
+        <el-menu-item index="/student/map">课程内容</el-menu-item>
+        <el-menu-item index="/student/ai-lab">人工智能实验室</el-menu-item>
+        <el-menu-item index="/student/tech-space">科技空间</el-menu-item>
         <el-menu-item index="/student/park">游学乐园</el-menu-item>
         <el-menu-item index="/student/mall">积分商城</el-menu-item>
       </el-menu>
       <div class="user">
-        <div class="user-row">
-          <span class="user-name">{{ realName }}</span>
-          <el-button link class="logout" @click="logout">退出</el-button>
-        </div>
-        <button type="button" class="pwd-link" @click="openPassword">修改密码</button>
+        <el-dropdown trigger="click" @command="onUserCommand">
+          <button type="button" class="user-name-btn">
+            <span class="user-name">{{ realName }}</span>
+            <span class="user-caret" aria-hidden="true">▾</span>
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+              <el-dropdown-item command="records">学习记录</el-dropdown-item>
+              <el-dropdown-item command="password">修改密码</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-button link class="logout" @click="logout">退出</el-button>
       </div>
     </el-header>
 
@@ -76,6 +87,36 @@ const openPassword = () => {
   pwdVisible.value = true
 }
 
+const onUserCommand = (cmd) => {
+  if (cmd === 'profile') {
+    router.push('/student/profile')
+    return
+  }
+  if (cmd === 'records') {
+    router.push('/student/records')
+    return
+  }
+  if (cmd === 'password') openPassword()
+}
+
+const activeMenu = computed(() => {
+  const p = route.path
+  if (
+    p === '/student/map'
+    || p.startsWith('/student/lesson/')
+    || p.startsWith('/student/pretest/')
+    || p.startsWith('/student/textbook/')
+    || p.startsWith('/student/school-ppt/')
+  ) {
+    return '/student/map'
+  }
+  if (p === '/student/ai-lab' || p.startsWith('/student/ai-lab/')) return '/student/ai-lab'
+  if (p === '/student/tech-space' || p.startsWith('/student/tech-space/')) return '/student/tech-space'
+  if (p === '/student/park' || p.startsWith('/student/park/')) return '/student/park'
+  if (p === '/student/mall' || p.startsWith('/student/mall/')) return '/student/mall'
+  return p
+})
+
 const submitPassword = async () => {
   const next = String(pwdForm.value.newPassword || '').trim()
   if (!pwdForm.value.oldPassword) {
@@ -115,6 +156,8 @@ const mainClass = computed(() => ({
   'main-lesson': route.path.includes('/student/lesson/') || route.path.startsWith('/student/pretest/'),
   'main-map': route.path === '/student/map',
   'main-pbl': route.path === '/student/pbl',
+  'main-ai-lab': route.path === '/student/ai-lab' || route.path.startsWith('/student/ai-lab/'),
+  'main-tech-space': route.path === '/student/tech-space' || route.path.startsWith('/student/tech-space/'),
   'main-school': route.path.startsWith('/student/textbook/') || route.path.startsWith('/student/school-ppt/')
 }))
 
@@ -257,30 +300,32 @@ onUnmounted(() => {
 .user {
   margin-left: auto;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 1.2;
-}
-.user-row {
-  display: flex;
   align-items: center;
   white-space: nowrap;
+  line-height: 1.2;
+}
+.user-name-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  color: #fff;
+}
+.user-name-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 .user-name {
   color: #fff;
   font-size: 14px;
 }
-.pwd-link {
-  margin-top: 2px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #fde68a;
-  font-size: 12px;
-  cursor: pointer;
-}
-.pwd-link:hover {
-  color: #fff;
+.user-caret {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  line-height: 1;
 }
 .pwd-tip {
   margin: 0 0 14px;
@@ -331,6 +376,19 @@ onUnmounted(() => {
   min-height: 0;
   height: 100%;
   overflow: hidden;
+}
+.layout :deep(.el-main.main-ai-lab),
+.layout :deep(.el-main.main-tech-space) {
+  overflow: hidden;
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+}
+.layout :deep(.el-main.main-ai-lab > *),
+.layout :deep(.el-main.main-tech-space > *) {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
 }
 .layout :deep(.el-main.main-school) {
   overflow: hidden;

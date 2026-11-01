@@ -211,6 +211,601 @@ public class TeacherCourseService {
         return saved;
     }
 
+    /**
+     * 课时配置页：读取当前已发布探究（含平台预置课）。
+     */
+    public Map<String, Object> getLessonHtmlConfig(Long lessonId) {
+        CourseLesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new BusinessException("课时不存在"));
+        CourseTask external = findExternalTask(lessonId);
+        Map<String, Object> cfg = readConfigMap(external);
+        List<Map<String, Object>> activities = extractActivityList(cfg);
+
+        String source = "empty";
+        if (!activities.isEmpty()) {
+            String firstPath = String.valueOf(activities.get(0).get("path"));
+            if (firstPath.contains("/lessons/generated/lesson-" + lessonId + "-pack/")) {
+                source = "teacher_pack";
+            } else if (firstPath.contains("/lessons/generated/")) {
+                source = "generated";
+            } else {
+                source = "platform";
+            }
+        }
+
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("lessonId", lessonId);
+        result.put("lessonTitle", lesson.getTitle());
+        result.put("status", activities.isEmpty() ? "empty" : "published");
+        result.put("source", source);
+        result.put("objectives", cfg.get("objectives") == null ? "" : String.valueOf(cfg.get("objectives")));
+        result.put("activityCount", Integer.valueOf(activities.size()));
+        result.put("activities", activities);
+        result.put("hasRichWorkspace", Boolean.valueOf(
+                cfg.containsKey("quiz") || cfg.containsKey("evaluationForm") || cfg.containsKey("introMap")));
+        return result;
+    }
+
+    /** 仅修改某一探究标题（保留测验、评价等其它配置） */
+    @Transactional
+    public Map<String, Object> updateLessonActivityTitle(Long lessonId, int seq, String title) {
+        if (seq < 1 || seq > 3) {
+            throw new BusinessException("探究序号无效");
+        }
+        if (!StringUtils.hasText(title)) {
+            throw new BusinessException("请填写探究标题");
+        }
+        CourseLesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new BusinessException("课时不存在"));
+        CourseTask external = findExternalTask(lessonId);
+        if (external == null || !StringUtils.hasText(external.getConfigJson())) {
+            throw new BusinessException("本课尚未配置探究活动");
+        }
+        Map<String, Object> cfg = readConfigMap(external);
+        List<Map<String, Object>> activities = extractActivityList(cfg);
+        boolean found = false;
+        for (Map<String, Object> act : activities) {
+            int idx = toInt(act.get("index"), toInt(act.get("seq"), 0));
+            if (idx == seq) {
+                act.put("title", title.trim());
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            throw new BusinessException("未找到探究 " + seq);
+        }
+        cfg.put("activities", activities);
+        if (!StringUtils.hasText(String.valueOf(cfg.get("lessonTitle")))) {
+            cfg.put("lessonTitle", lesson.getTitle());
+        }
+        external.setConfigJson(writeConfigMap(cfg));
+        taskRepository.save(external);
+        return getLessonHtmlConfig(lessonId);
+    }
+
+    /** 保存学习目标（合并进现有 workspace 配置） */
+    @Transactional
+    public Map<String, Object> updateLessonHtmlMeta(Long lessonId, Map<String, Object> body) {
+        CourseLesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new BusinessException("课时不存在"));
+        CourseTask external = findExternalTask(lessonId);
+        if (external == null || !StringUtils.hasText(external.getConfigJson())) {
+            throw new BusinessException("本课尚未配置探究活动");
+        }
+        Map<String, Object> cfg = readConfigMap(external);
+        if (body != null && body.get("objectives") != null) {
+            cfg.put("objectives", String.valueOf(body.get("objectives")).trim());
+        }
+        if (!StringUtils.hasText(String.valueOf(cfg.get("lessonTitle")))) {
+            cfg.put("lessonTitle", lesson.getTitle());
+        }
+        external.setConfigJson(writeConfigMap(cfg));
+        taskRepository.save(external);
+        return getLessonHtmlConfig(lessonId);
+    }
+
+    /**
+     * 单独替换某一探究 HTML（写入 pack，并只更新该槽 path；不覆盖其它探究与测验配置）。
+     */
+    @Transactional
+    public Map<String, Object> replaceLessonActivityHtml(Long lessonId, int seq, MultipartFile file) {
+        if (seq < 1 || seq > 3) {
+            throw new BusinessException("探究序号无效");
+        }
+        CourseLesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new BusinessException("课时不存在"));
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException("请选择 HTML 文件");
+        }
+        String original = file.getOriginalFilename();
+        if (original == null || !original.toLowerCase(Locale.ROOT).endsWith(".html")) {
+            throw new BusinessException("仅支持 .html 文件");
+        }
+        String html;
+        try {
+            html = new String(file.getBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new BusinessException("读取文件失败：" + e.getMessage());
+        }
+        if (!StringUtils.hasText(html)) {
+            throw new BusinessException("HTML 内容为空");
+        }
+        if (!html.toLowerCase(Locale.ROOT).contains("<html")) {
+            html = wrapHtmlFragment(html, "探究" + seq);
+        }
+
+        String publishSlug = "lesson-" + lessonId + "-pack";
+        Path publishDir = Paths.get(activityProperties.getHtmlOutputDir(), publishSlug);
+        String actFile = "act" + seq + ".html";
+        String publicPath = "/lessons/generated/" + publishSlug + "/" + actFile;
+        try {
+            Files.createDirectories(publishDir);
+            Files.write(publishDir.resolve(actFile), html.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new BusinessException("保存失败：" + e.getMessage());
+        }
+
+        CourseTask external = findExternalTask(lessonId);
+        Map<String, Object> cfg;
+        if (external == null) {
+            external = new CourseTask();
+            external.setLessonId(lessonId);
+            external.setSortOrder(1);
+            external.setMaxScore(100);
+            external.setTitle(lesson.getTitle() + " · 探究");
+            external.setDescription("教师配置的探究活动");
+            external.setTaskType("EXTERNAL");
+            cfg = new HashMap<String, Object>();
+            cfg.put("layout", "student_workspace");
+            cfg.put("lessonTitle", lesson.getTitle());
+            cfg.put("objectives", "");
+            cfg.put("evaluationHint", "完成探究后，请填写学习评价并作答课堂小测。");
+            cfg.put("activities", new ArrayList<Map<String, Object>>());
+        } else {
+            cfg = readConfigMap(external);
+            if (!StringUtils.hasText(String.valueOf(cfg.get("layout")))) {
+                cfg.put("layout", "student_workspace");
+            }
+        }
+
+        List<Map<String, Object>> activities = extractActivityList(cfg);
+        Map<String, Object> target = null;
+        for (Map<String, Object> act : activities) {
+            int idx = toInt(act.get("index"), toInt(act.get("seq"), 0));
+            if (idx == seq) {
+                target = act;
+                break;
+            }
+        }
+        if (target == null) {
+            target = new HashMap<String, Object>();
+            target.put("index", Integer.valueOf(seq));
+            target.put("step", Integer.valueOf(seq));
+            target.put("title", "探究" + seq);
+            target.put("unlocked", Boolean.TRUE);
+            activities.add(target);
+            // 按 index 排序
+            Collections.sort(activities, new Comparator<Map<String, Object>>() {
+                @Override
+                public int compare(Map<String, Object> a, Map<String, Object> b) {
+                    return Integer.compare(
+                            toInt(a.get("index"), toInt(a.get("seq"), 0)),
+                            toInt(b.get("index"), toInt(b.get("seq"), 0)));
+                }
+            });
+        }
+        target.put("index", Integer.valueOf(seq));
+        target.put("step", Integer.valueOf(seq));
+        target.put("path", publicPath);
+        target.put("unlocked", Boolean.TRUE);
+        if (!StringUtils.hasText(String.valueOf(target.get("title")))) {
+            target.put("title", "探究" + seq);
+        }
+
+        cfg.put("activities", activities);
+        if (!StringUtils.hasText(String.valueOf(cfg.get("lessonTitle")))) {
+            cfg.put("lessonTitle", lesson.getTitle());
+        }
+        external.setConfigJson(writeConfigMap(cfg));
+        external.setTaskType("EXTERNAL");
+        taskRepository.save(external);
+
+        Map<String, Object> result = getLessonHtmlConfig(lessonId);
+        result.put("replacedSeq", Integer.valueOf(seq));
+        result.put("replacedPath", publicPath);
+        return result;
+    }
+
+    /**
+     * 教师上传整课 HTML，自动拆成 2～3 个探究草稿，供预览确认。
+     */
+    public Map<String, Object> uploadAndSplitHtml(Long lessonId, MultipartFile file) {
+        CourseLesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new BusinessException("课时不存在"));
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException("请选择 HTML 文件");
+        }
+        String original = file.getOriginalFilename();
+        if (original == null || !original.toLowerCase(Locale.ROOT).endsWith(".html")) {
+            throw new BusinessException("仅支持 .html 文件");
+        }
+        String html;
+        try {
+            html = new String(file.getBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new BusinessException("读取文件失败：" + e.getMessage());
+        }
+        if (!StringUtils.hasText(html)) {
+            throw new BusinessException("HTML 内容为空");
+        }
+
+        List<Map<String, String>> parts = splitTeacherHtml(html);
+        if (parts.isEmpty()) {
+            throw new BusinessException("未能从 HTML 中拆出探究内容");
+        }
+        if (parts.size() > 3) {
+            parts = new ArrayList<Map<String, String>>(parts.subList(0, 3));
+        }
+        if (parts.size() == 1) {
+            // 尽量保证至少有两个探究入口：复制一份并改标题，便于教师后续替换
+            Map<String, String> second = new HashMap<String, String>();
+            second.put("title", "探究二");
+            second.put("html", wrapHtmlFragment(parts.get(0).get("html"), "探究二"));
+            parts.add(second);
+        }
+
+        String draftSlug = "lesson-" + lessonId + "-draft";
+        Path dir = Paths.get(activityProperties.getHtmlOutputDir(), draftSlug);
+        List<Map<String, Object>> activities = new ArrayList<Map<String, Object>>();
+        try {
+            Files.createDirectories(dir);
+            // 保留原稿
+            Files.write(dir.resolve("source.html"), html.getBytes(StandardCharsets.UTF_8));
+            for (int i = 0; i < parts.size(); i++) {
+                int seq = i + 1;
+                String actFile = "act" + seq + ".html";
+                String body = parts.get(i).get("html");
+                Files.write(dir.resolve(actFile), body.getBytes(StandardCharsets.UTF_8));
+                Map<String, Object> item = new HashMap<String, Object>();
+                item.put("seq", Integer.valueOf(seq));
+                item.put("title", parts.get(i).get("title"));
+                item.put("previewPath", "/lessons/generated/" + draftSlug + "/" + actFile);
+                activities.add(item);
+            }
+        } catch (IOException e) {
+            throw new BusinessException("保存草稿失败：" + e.getMessage());
+        }
+
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("lessonId", lessonId);
+        result.put("lessonTitle", lesson.getTitle());
+        result.put("draftSlug", draftSlug);
+        result.put("count", Integer.valueOf(activities.size()));
+        result.put("activities", activities);
+        result.put("tip", "已拆成 " + activities.size() + " 个探究，请预览确认标题后发布");
+        return result;
+    }
+
+    /**
+     * 确认草稿无误后，发布到该课时（学生课程地图进入本课即可看到）。
+     */
+    @Transactional
+    public Map<String, Object> publishHtmlPack(Long lessonId, Map<String, Object> body, Long teacherId) {
+        CourseLesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new BusinessException("课时不存在"));
+        String draftSlug = "lesson-" + lessonId + "-draft";
+        Path draftDir = Paths.get(activityProperties.getHtmlOutputDir(), draftSlug);
+        if (!Files.isDirectory(draftDir)) {
+            throw new BusinessException("请先上传并拆分 HTML");
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> titleOverrides = body == null ? null
+                : (List<Map<String, Object>>) body.get("activities");
+        List<Map<String, Object>> activityMeta = new ArrayList<Map<String, Object>>();
+        String publishSlug = "lesson-" + lessonId + "-pack";
+        Path publishDir = Paths.get(activityProperties.getHtmlOutputDir(), publishSlug);
+
+        try {
+            Files.createDirectories(publishDir);
+            for (int seq = 1; seq <= 3; seq++) {
+                Path draftFile = draftDir.resolve("act" + seq + ".html");
+                if (!Files.exists(draftFile)) {
+                    break;
+                }
+                Path target = publishDir.resolve("act" + seq + ".html");
+                Files.copy(draftFile, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                String title = "探究" + seq;
+                if (titleOverrides != null) {
+                    for (Map<String, Object> row : titleOverrides) {
+                        Object s = row.get("seq");
+                        if (s != null && Integer.parseInt(String.valueOf(s)) == seq
+                                && row.get("title") != null
+                                && StringUtils.hasText(String.valueOf(row.get("title")))) {
+                            title = String.valueOf(row.get("title")).trim();
+                        }
+                    }
+                }
+                Map<String, Object> meta = new HashMap<String, Object>();
+                meta.put("index", Integer.valueOf(seq));
+                meta.put("step", Integer.valueOf(seq));
+                meta.put("title", title);
+                meta.put("path", "/lessons/generated/" + publishSlug + "/act" + seq + ".html");
+                meta.put("unlocked", Boolean.TRUE);
+                activityMeta.add(meta);
+            }
+        } catch (IOException e) {
+            throw new BusinessException("发布失败：" + e.getMessage());
+        }
+        if (activityMeta.isEmpty()) {
+            throw new BusinessException("没有可发布的探究页面");
+        }
+
+        String objectives = body != null && body.get("objectives") != null
+                ? String.valueOf(body.get("objectives")).trim() : "";
+
+        CourseResource web = null;
+        for (CourseResource r : resourceRepository.findByLessonIdOrderBySortOrderAsc(lessonId)) {
+            if ("WEB".equals(r.getResType()) && r.getContentUrl() != null
+                    && r.getContentUrl().contains("/lessons/generated/lesson-" + lessonId + "-pack/")) {
+                web = r;
+                break;
+            }
+        }
+        if (web == null) {
+            web = new CourseResource();
+            web.setLessonId(lessonId);
+            web.setSortOrder(1);
+        }
+        web.setTitle(lesson.getTitle() + " · 探究活动");
+        web.setResType("WEB");
+        web.setContentUrl(String.valueOf(activityMeta.get(0).get("path")));
+        web = resourceRepository.save(web);
+
+        CourseTask external = findExternalTask(lessonId);
+        Map<String, Object> cfg = readConfigMap(external);
+        if (cfg.isEmpty()) {
+            cfg.put("layout", "student_workspace");
+            cfg.put("evaluationHint", "完成探究后，请填写学习评价并作答课堂小测。");
+        }
+        if (!StringUtils.hasText(String.valueOf(cfg.get("layout")))) {
+            cfg.put("layout", "student_workspace");
+        }
+        cfg.put("lessonTitle", lesson.getTitle());
+        if (StringUtils.hasText(objectives)) {
+            cfg.put("objectives", objectives);
+        } else if (cfg.get("objectives") == null) {
+            cfg.put("objectives", "");
+        }
+        // 整课覆盖只替换探究列表，保留测验 / 评价 / 导图等既有字段
+        cfg.put("activities", activityMeta);
+
+        if (external == null) {
+            external = new CourseTask();
+            external.setLessonId(lessonId);
+            external.setSortOrder(1);
+            external.setMaxScore(100);
+        }
+        external.setTitle(lesson.getTitle() + " · 探究");
+        external.setDescription("教师上传 HTML 发布的探究活动");
+        external.setTaskType("EXTERNAL");
+        external.setConfigJson(writeConfigMap(cfg));
+        external = taskRepository.save(external);
+
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("lessonId", lessonId);
+        result.put("lessonTitle", lesson.getTitle());
+        result.put("resourceId", web.getId());
+        result.put("taskId", external.getId());
+        result.put("activityCount", Integer.valueOf(activityMeta.size()));
+        result.put("activities", activityMeta);
+        result.put("publishedBy", teacherId);
+        return result;
+    }
+
+    private String buildStudentWorkspaceConfigJson(String lessonTitle, String objectives,
+                                                   List<Map<String, Object>> activities) {
+        try {
+            Map<String, Object> cfg = new HashMap<String, Object>();
+            cfg.put("layout", "student_workspace");
+            cfg.put("lessonTitle", lessonTitle);
+            cfg.put("objectives", objectives);
+            cfg.put("evaluationHint", "完成探究后，请填写学习评价并作答课堂小测。");
+            cfg.put("activities", activities);
+            return objectMapper.writeValueAsString(cfg);
+        } catch (Exception e) {
+            return "{\"layout\":\"student_workspace\",\"activities\":[]}";
+        }
+    }
+
+    private CourseTask findExternalTask(Long lessonId) {
+        for (CourseTask t : taskRepository.findByLessonIdOrderBySortOrderAsc(lessonId)) {
+            if ("EXTERNAL".equals(t.getTaskType())) {
+                return t;
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> readConfigMap(CourseTask external) {
+        Map<String, Object> empty = new LinkedHashMap<String, Object>();
+        if (external == null || !StringUtils.hasText(external.getConfigJson())) {
+            return empty;
+        }
+        try {
+            Map<String, Object> cfg = objectMapper.readValue(external.getConfigJson(), Map.class);
+            return cfg == null ? empty : cfg;
+        } catch (Exception e) {
+            return empty;
+        }
+    }
+
+    private String writeConfigMap(Map<String, Object> cfg) {
+        try {
+            return objectMapper.writeValueAsString(cfg);
+        } catch (Exception e) {
+            return "{\"layout\":\"student_workspace\",\"activities\":[]}";
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> extractActivityList(Map<String, Object> cfg) {
+        List<Map<String, Object>> out = new ArrayList<Map<String, Object>>();
+        if (cfg == null || cfg.get("activities") == null) {
+            return out;
+        }
+        Object raw = cfg.get("activities");
+        if (!(raw instanceof List)) {
+            return out;
+        }
+        for (Object item : (List<?>) raw) {
+            if (!(item instanceof Map)) {
+                continue;
+            }
+            Map<String, Object> src = (Map<String, Object>) item;
+            int idx = toInt(src.get("index"), toInt(src.get("seq"), out.size() + 1));
+            Map<String, Object> row = new LinkedHashMap<String, Object>();
+            row.put("seq", Integer.valueOf(idx));
+            row.put("index", Integer.valueOf(idx));
+            row.put("step", Integer.valueOf(toInt(src.get("step"), idx)));
+            row.put("title", src.get("title") == null ? ("探究" + idx) : String.valueOf(src.get("title")));
+            String path = src.get("path") == null ? "" : String.valueOf(src.get("path"));
+            row.put("path", path);
+            row.put("previewPath", path);
+            row.put("unlocked", src.get("unlocked") == null ? Boolean.TRUE : src.get("unlocked"));
+            out.add(row);
+        }
+        return out;
+    }
+
+    private static int toInt(Object v, int fallback) {
+        if (v == null) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(String.valueOf(v).trim());
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    /** 按「探究一/二/三」或标题标签拆分；不足时按大标题拆 */
+    private List<Map<String, String>> splitTeacherHtml(String html) {
+        String lower = html.toLowerCase(Locale.ROOT);
+        int bodyStart = lower.indexOf("<body");
+        int bodyOpenEnd = bodyStart >= 0 ? lower.indexOf(">", bodyStart) : -1;
+        int bodyEnd = lower.lastIndexOf("</body>");
+        String headStyles = extractHeadStyles(html);
+        String body = (bodyOpenEnd >= 0 && bodyEnd > bodyOpenEnd)
+                ? html.substring(bodyOpenEnd + 1, bodyEnd)
+                : html;
+
+        List<int[]> marks = new ArrayList<int[]>();
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile(
+                "探究\\s*([一二三四五六123456])|探究活动\\s*([一二三四五六123456])");
+        java.util.regex.Matcher m = p.matcher(body);
+        while (m.find()) {
+            marks.add(new int[] { m.start(), m.end() });
+        }
+        List<Map<String, String>> parts = new ArrayList<Map<String, String>>();
+        if (marks.size() >= 2) {
+            for (int i = 0; i < marks.size() && parts.size() < 3; i++) {
+                int start = marks.get(i)[0];
+                int end = (i + 1 < marks.size()) ? marks.get(i + 1)[0] : body.length();
+                String fragment = body.substring(start, end).trim();
+                String title = defaultInquiryTitle(parts.size() + 1);
+                java.util.regex.Matcher tm = java.util.regex.Pattern
+                        .compile("探究\\s*([一二三四五六123456][^\\s<]{0,12})")
+                        .matcher(fragment);
+                if (tm.find()) {
+                    title = "探究" + tm.group(1).replaceAll("[：:].*$", "").trim();
+                    if (title.length() > 16) {
+                        title = defaultInquiryTitle(parts.size() + 1);
+                    }
+                }
+                Map<String, String> row = new HashMap<String, String>();
+                row.put("title", title);
+                row.put("html", wrapHtmlFragment(fragment, title, headStyles));
+                parts.add(row);
+            }
+            return parts;
+        }
+
+        // 按 h1/h2 拆
+        java.util.regex.Pattern hp = java.util.regex.Pattern.compile("(?is)<h[12][^>]*>.*?</h[12]>");
+        java.util.regex.Matcher hm = hp.matcher(body);
+        List<Integer> heads = new ArrayList<Integer>();
+        while (hm.find()) {
+            heads.add(Integer.valueOf(hm.start()));
+        }
+        if (heads.size() >= 2) {
+            for (int i = 0; i < heads.size() && parts.size() < 3; i++) {
+                int start = heads.get(i).intValue();
+                int end = (i + 1 < heads.size()) ? heads.get(i + 1).intValue() : body.length();
+                String fragment = body.substring(start, end).trim();
+                String title = defaultInquiryTitle(parts.size() + 1);
+                java.util.regex.Matcher tm = java.util.regex.Pattern
+                        .compile("(?is)<h[12][^>]*>(.*?)</h[12]>")
+                        .matcher(fragment);
+                if (tm.find()) {
+                    String t = tm.group(1).replaceAll("<[^>]+>", "").trim();
+                    if (StringUtils.hasText(t) && t.length() <= 20) {
+                        title = t;
+                    }
+                }
+                Map<String, String> row = new HashMap<String, String>();
+                row.put("title", title);
+                row.put("html", wrapHtmlFragment(fragment, title, headStyles));
+                parts.add(row);
+            }
+            return parts;
+        }
+
+        Map<String, String> only = new HashMap<String, String>();
+        only.put("title", defaultInquiryTitle(1));
+        only.put("html", wrapHtmlFragment(body, defaultInquiryTitle(1), headStyles));
+        parts.add(only);
+        return parts;
+    }
+
+    private static String defaultInquiryTitle(int seq) {
+        if (seq == 1) {
+            return "探究一";
+        }
+        if (seq == 2) {
+            return "探究二";
+        }
+        return "探究三";
+    }
+
+    private static String extractHeadStyles(String html) {
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("(?is)<style[^>]*>(.*?)</style>")
+                .matcher(html);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            sb.append("<style>").append(m.group(1)).append("</style>\n");
+        }
+        return sb.toString();
+    }
+
+    private static String wrapHtmlFragment(String fragment, String title) {
+        return wrapHtmlFragment(fragment, title, "");
+    }
+
+    private static String wrapHtmlFragment(String fragment, String title, String headStyles) {
+        String safeTitle = title == null ? "探究" : title.replace("<", "").replace(">", "");
+        return "<!DOCTYPE html>\n<html lang=\"zh-CN\"><head><meta charset=\"UTF-8\">"
+                + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+                + "<title>" + safeTitle + "</title>"
+                + (headStyles == null ? "" : headStyles)
+                + "<style>body{margin:16px;font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#0f172a;background:#fff}"
+                + "img{max-width:100%}table{border-collapse:collapse}</style>"
+                + "</head><body>\n" + fragment + "\n</body></html>";
+    }
+
     /** 上传飞象老师 HTML（活动槽选用 feixiang 源时使用） */
     public Map<String, String> uploadFeixiangHtml(Long lessonId, MultipartFile file, int slotIndex) {
         lessonRepository.findById(lessonId)

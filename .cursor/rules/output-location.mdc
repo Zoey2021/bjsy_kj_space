@@ -1,0 +1,11 @@
+---
+description: 生成的 zip/部署包等输出文件只放项目目录，不放桌面根目录
+alwaysApply: true
+---
+
+# 输出文件位置
+
+- 新生成的 zip、部署包、脚本产物、导出文件等，一律放到项目目录：
+  `/Users/zhangyouyu/Desktop/信息科技学习空间/`
+- **不要**写到桌面根目录 `/Users/zhangyouyu/Desktop/`（例如不要再生成 `Desktop/xxx.zip`）。
+- 向用户说明路径时，优先给项目目录内的路径。

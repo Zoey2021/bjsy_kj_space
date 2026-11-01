@@ -30,8 +30,11 @@ export function detectEnrollmentYear(profile) {
   const fromClass = className.match(/(20\d{2})级/)
   if (fromClass) return fromClass[1]
 
-  // 2. 学号用户名（如 wangziming20230432 → 2023）
+  // 2. 学号用户名
+  // 新格式：20230432wangziming → 2023；旧格式：wangziming20230432 → 2023
   const username = profile?.username || localStorage.getItem('username') || ''
+  const fromUserPrefix = username.match(/^(20[12]\d)\d{4}/)
+  if (fromUserPrefix) return fromUserPrefix[1]
   const fromUserSuffix = username.match(/(20[12]\d)\d{4,}$/)
   if (fromUserSuffix) return fromUserSuffix[1]
   const fromUser = username.match(/(20\d{2})/)

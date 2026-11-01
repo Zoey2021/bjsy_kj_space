@@ -1,12 +1,12 @@
 <template>
   <div class="workbench" v-loading="booting">
     <header class="wb-head">
-      <div>
-        <h1>分层脚手架工作台</h1>
+      <div class="wb-head-main">
+        <h1><span class="title-icon">🧱</span> 分层脚手架</h1>
         <p>为每个探究活动配置 A / B / C 三档任务。发布后学生按前测档位自动收到对应内容，学生端不显示档位标签。</p>
       </div>
-      <el-tag v-if="status === 'published'" type="success">已发布</el-tag>
-      <el-tag v-else-if="lessonId" type="warning">草稿</el-tag>
+      <el-tag v-if="status === 'published'" type="success" effect="dark">已发布</el-tag>
+      <el-tag v-else-if="lessonId" type="warning" effect="dark">草稿</el-tag>
     </header>
 
     <el-steps :active="step" align-center finish-status="success" class="wb-steps">
@@ -27,7 +27,7 @@
         <el-select v-model="gradeId" placeholder="选择教材" filterable class="full" @change="onGradeChange">
           <el-option v-for="g in grades" :key="g.id" :label="g.name" :value="g.id" />
         </el-select>
-        <p class="aside-tip">单元 → 课时（需先在活动编辑中配置探究活动）</p>
+        <p class="aside-tip">单元 → 课时（需先在「课时配置」上传并发布探究）</p>
         <template v-for="unit in outline?.units || []" :key="unit.id">
           <p class="unit-name">{{ unit.name }}</p>
           <div
@@ -74,7 +74,7 @@
           <div class="wb-actions">
             <el-tooltip
               :disabled="!!activities.length"
-              content="该课时还没有探究活动，请先到「活动编辑」里配置"
+              content="该课时还没有探究活动，请先到「课时配置」上传 HTML 并发布"
               placement="top"
             >
               <el-button type="primary" :disabled="!activities.length" @click="goStep(1)">下一步：生成草稿</el-button>
@@ -533,23 +533,35 @@ onMounted(async () => {
   height: calc(100vh - 56px);
   display: flex;
   flex-direction: column;
-  padding: 12px 16px 16px;
+  background: #f5f3ff;
 }
 .wb-head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 8px;
+  padding: 14px 20px 16px;
+  background: linear-gradient(135deg, #5b4fc7 0%, #7c3aed 45%, #9333ea 100%);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(91, 79, 199, 0.35);
 }
-.wb-head h1 { margin: 0 0 4px; font-size: 20px; }
-.wb-head p { margin: 0; color: #64748b; font-size: 13px; }
-.wb-steps { margin: 8px 0 4px; }
+.wb-head-main { min-width: 0; }
+.wb-head h1 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.title-icon { font-size: 20px; }
+.wb-head p { margin: 0; opacity: 0.9; font-size: 12px; line-height: 1.5; max-width: 720px; }
+.wb-steps { margin: 12px 16px 4px; }
 .wb-steps :deep(.el-step__head),
 .wb-steps :deep(.el-step__title) { cursor: pointer; }
 .step-jump {
   text-align: center;
-  margin: 0 0 10px;
+  margin: 0 16px 10px;
   color: #64748b;
   font-size: 13px;
 }
@@ -567,15 +579,17 @@ onMounted(async () => {
   min-height: 0;
   display: flex;
   gap: 16px;
+  padding: 0 16px 16px;
 }
 .wb-aside {
   width: 260px;
   flex-shrink: 0;
   background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border: 1px solid #e9e5ff;
+  border-radius: 14px;
   padding: 12px;
   overflow-y: auto;
+  box-shadow: 0 2px 12px rgba(91, 79, 199, 0.06);
 }
 .aside-tip { font-size: 12px; color: #64748b; margin: 10px 0; }
 .unit-name { font-size: 13px; font-weight: 700; color: #1e40af; margin: 10px 0 6px; }
@@ -591,10 +605,11 @@ onMounted(async () => {
 .wb-main {
   flex: 1;
   background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border: 1px solid #e9e5ff;
+  border-radius: 14px;
   padding: 16px 20px;
   overflow-y: auto;
+  box-shadow: 0 2px 12px rgba(91, 79, 199, 0.06);
 }
 .wb-main.empty { display: flex; align-items: center; justify-content: center; }
 .full { width: 100%; }

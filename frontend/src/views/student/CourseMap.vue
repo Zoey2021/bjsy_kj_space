@@ -1,7 +1,7 @@
 <template>
   <div class="map-page">
     <header class="page-header">
-      <h1 class="page-title">我的课程地图</h1>
+      <h1 class="page-title">课程内容</h1>
       <p class="page-sub">选择配套或校本教材，阅读电子课本或进入单元课时学习</p>
     </header>
 

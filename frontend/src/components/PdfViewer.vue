@@ -91,11 +91,11 @@ async function loadPdf(url) {
     await loadPageCount(url)
   } catch (e) {
     if (e?.message === 'FORBIDDEN') {
-      error.value = 'PDF 无法访问（403）。请执行：chmod 644 frontend/public/textbooks/*.pdf 后刷新'
+      error.value = 'PDF 无法访问。请确认已上传到 OSS（learn-space-static），或检查网络。'
     } else if (e?.message === 'NOT_FOUND') {
-      error.value = `未找到 ${url}，请确认 PDF 在 frontend/public/textbooks/ 目录中`
+      error.value = `未找到教材 PDF：${url}`
     } else {
-      error.value = `PDF 无法打开（${url}），请检查文件与权限后刷新`
+      error.value = `PDF 无法打开（${url}），请检查 OSS 地址与网络后刷新`
     }
   } finally {
     loading.value = false

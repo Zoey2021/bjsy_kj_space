@@ -62,6 +62,8 @@ export const manageBatchCreateStudents = (data) => request.post('/teacher/manage
 export const manageUpdateStudent = (id, data) => request.put(`/teacher/manage/students/${id}`, data)
 export const manageDeleteStudent = (id) => request.delete(`/teacher/manage/students/${id}`)
 export const manageResetStudentPassword = (id) => request.put(`/teacher/manage/students/${id}/reset-password`)
+export const manageNormalizeClassUsernames = (classId) =>
+  request.post(`/teacher/manage/classes/${classId}/normalize-usernames`)
 
 export const teacherIntervene = (data) => request.post('/teacher/intervene', data)
 export const setClassCurrentLesson = (classId, lessonId) =>
@@ -128,6 +130,56 @@ export const teacherUploadFeixiang = (lessonId, file, slotIndex) => {
     timeout: 60000
   })
 }
+
+/** AI 实验室（学生端四馆） */
+export const getAiLabConfig = () => request.get('/ai-lab/config')
+export const teacherGetAiLabConfig = () => request.get('/teacher/ai-lab/config')
+export const teacherSaveAiLabConfig = (data) => request.put('/teacher/ai-lab/config', data || {})
+export const teacherUploadAiLabHtml = (hallId, file, title) => {
+  const form = new FormData()
+  form.append('file', file)
+  if (title) form.append('title', title)
+  return request.post(`/teacher/ai-lab/${hallId}/upload-html`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000
+  })
+}
+
+/** 课时配置：读取当前已发布探究 */
+export const teacherGetLessonHtmlConfig = (lessonId) =>
+  request.get(`/teacher/course/lesson/${lessonId}/html-config`)
+
+/** 课时配置：修改某一探究标题 */
+export const teacherUpdateActivityTitle = (lessonId, seq, title) =>
+  request.put(`/teacher/course/lesson/${lessonId}/activity/${seq}/title`, { title })
+
+/** 课时配置：保存学习目标 */
+export const teacherUpdateLessonHtmlMeta = (lessonId, data) =>
+  request.put(`/teacher/course/lesson/${lessonId}/html-meta`, data || {})
+
+/** 课时配置：单独替换某一探究 HTML */
+export const teacherReplaceActivityHtml = (lessonId, seq, file) => {
+  const form = new FormData()
+  form.append('file', file)
+  return request.post(`/teacher/course/lesson/${lessonId}/activity/${seq}/replace-html`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000
+  })
+}
+
+/** 课时配置：上传整课 HTML 并拆成 2～3 个探究草稿 */
+export const teacherUploadSplitHtml = (lessonId, file) => {
+  const form = new FormData()
+  form.append('file', file)
+  return request.post(`/teacher/course/lesson/${lessonId}/upload-split-html`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000
+  })
+}
+
+/** 课时配置：确认预览后发布到学生课程地图 */
+export const teacherPublishHtmlPack = (lessonId, data) =>
+  request.post(`/teacher/course/lesson/${lessonId}/publish-html-pack`, data || {}, { timeout: 60000 })
 
 /** 分层脚手架工作台 */
 export const teacherGetScaffoldTemplates = () => request.get('/teacher/scaffold/templates')

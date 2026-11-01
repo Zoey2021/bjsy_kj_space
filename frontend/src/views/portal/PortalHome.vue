@@ -48,7 +48,7 @@ const enterLearn = () => {
     go('/student/map')
     return
   }
-  go('/teacher/student-view')
+  go('/teacher/tech-world')
 }
 
 const logout = () => {

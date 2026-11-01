@@ -68,7 +68,7 @@
       <div class="feature-row">
         <button type="button" class="feature-btn" @click="showClassScreen = true">班级学习大屏</button>
         <button type="button" class="feature-btn" @click="openMall">兑换商城</button>
-        <button v-if="isTeacherPreview" type="button" class="feature-btn" @click="router.push('/teacher/student-view/park')">游学乐园</button>
+        <button v-if="isTeacherPreview" type="button" class="feature-btn" @click="router.push('/teacher/tech-world/park')">游学乐园</button>
       </div>
 
       <template v-if="!isTeacherPreview">
@@ -909,7 +909,11 @@ const chineseNum = (n) => ({ 1: '一', 2: '二', 3: '三', 4: '四' }[n] || n)
 
 const inquiryActivityLabel = (index) => `探究${chineseNum(index)}`
 
-const activityMenuLabel = (act) => `${inquiryActivityLabel(act.index)}：${act.title}`
+const activityMenuLabel = (act) => {
+  const base = inquiryActivityLabel(act.index)
+  const t = String(act?.title || '').trim()
+  return t ? `${base}：${t}` : base
+}
 
 const activityDone = (index) => completedActivities.value.has(index) || completedActivities.value.has(Number(index))
 
@@ -1015,7 +1019,7 @@ const onQuickNav = (key) => {
 }
 
 const openMall = () => {
-  router.push(isTeacherPreview.value ? '/teacher/student-view/mall' : '/student/mall')
+  router.push(isTeacherPreview.value ? '/teacher/tech-world/mall' : '/student/mall')
 }
 
 const goActivityFromRecords = (act) => {

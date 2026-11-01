@@ -154,4 +154,14 @@ public class SchoolManageController {
         checkTeacherOrAdmin();
         return ApiResponse.ok("密码已重置", schoolManageService.resetStudentPassword(id));
     }
+
+    /** 将本班学生账号整理为「年+班+学号+拼音」，不改密码与学习数据 */
+    @PostMapping("/classes/{id}/normalize-usernames")
+    public ApiResponse<Map<String, Object>> normalizeClassUsernames(@PathVariable Long id) {
+        checkTeacherOrAdmin();
+        Map<String, Object> result = schoolManageService.normalizeClassStudentUsernames(id);
+        int changed = result.get("changedCount") instanceof Number
+                ? ((Number) result.get("changedCount")).intValue() : 0;
+        return ApiResponse.ok("已整理 " + changed + " 个账号", result);
+    }
 }

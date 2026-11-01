@@ -1,18 +1,22 @@
 <template>
   <div class="settings-page" v-loading="booting">
-    <div class="page-head">
-      <h2>后台管理</h2>
-      <p>教师、班级、学生账号与班级归属，数据直接写入数据库</p>
-    </div>
+    <header class="settings-header">
+      <div class="header-main">
+        <h1><span class="title-icon">⚙️</span> 后台管理</h1>
+        <p>教师、班级、学生账号与任课归属</p>
+      </div>
+    </header>
 
-    <el-tabs v-model="activeTab" @tab-change="onTabChange">
+    <div class="settings-body">
+    <el-tabs v-model="activeTab" class="settings-tabs" @tab-change="onTabChange">
       <!-- 教师管理 -->
       <el-tab-pane label="教师管理" name="teachers">
+        <div class="panel">
         <div class="toolbar">
-          <el-button type="primary" @click="openTeacherDialog()">新增教师</el-button>
-          <el-button @click="loadTeachers">刷新</el-button>
+          <button type="button" class="btn primary" @click="openTeacherDialog()">新增教师</button>
+          <button type="button" class="btn ghost" @click="loadTeachers">刷新</button>
         </div>
-        <el-table :data="teachers" stripe border size="small" v-loading="loadingTeachers">
+        <el-table :data="teachers" stripe class="soft-table" size="small" v-loading="loadingTeachers">
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="username" label="账号" min-width="120" />
           <el-table-column prop="realName" label="姓名" min-width="100" />
@@ -40,18 +44,25 @@
             </template>
           </el-table-column>
         </el-table>
+        </div>
       </el-tab-pane>
 
       <!-- 班级管理 -->
       <el-tab-pane label="班级管理" name="classes">
+        <div class="panel">
         <div class="toolbar">
-          <el-button type="primary" @click="openClassDialog()">新增班级</el-button>
-          <el-button @click="loadClasses">刷新</el-button>
+          <button type="button" class="btn primary" @click="openClassDialog()">新增班级</button>
+          <button type="button" class="btn ghost" @click="loadClasses">刷新</button>
         </div>
-        <el-table :data="classes" stripe border size="small" v-loading="loadingClasses">
+        <el-table :data="classes" stripe class="soft-table" size="small" v-loading="loadingClasses">
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="name" label="班级名称" min-width="140" />
-          <el-table-column prop="gradeName" label="年级" width="100" />
+          <el-table-column label="年级" width="100">
+            <template #default="{ row }">{{ row.gradeLabel || row.gradeName || '—' }}</template>
+          </el-table-column>
+          <el-table-column label="班级" width="90">
+            <template #default="{ row }">{{ row.classLabel || '—' }}</template>
+          </el-table-column>
           <el-table-column prop="teacherName" label="任课教师" width="110" />
           <el-table-column prop="studentCount" label="学生数" width="90" align="center" />
           <el-table-column prop="loginCode" label="班级码" width="100" />
@@ -63,15 +74,18 @@
             </template>
           </el-table-column>
         </el-table>
+        </div>
       </el-tab-pane>
 
       <!-- 学生管理 -->
       <el-tab-pane label="学生管理" name="students">
+        <div class="panel">
         <div class="toolbar">
           <el-select
             v-model="filterClassId"
             filterable
             placeholder="请选择班级"
+            class="soft-select"
             style="width: 260px"
             @change="loadStudents"
           >
@@ -82,18 +96,25 @@
               :value="c.id"
             />
           </el-select>
-          <el-button type="primary" @click="openStudentDialog()">新增学生</el-button>
-          <el-button type="success" @click="openBatchDialog">批量添加学生</el-button>
+          <button type="button" class="btn primary" @click="openStudentDialog()">新增学生</button>
+          <button type="button" class="btn success" @click="openBatchDialog">批量添加学生</button>
           <el-input
             v-model="studentKeyword"
             clearable
             placeholder="搜索姓名 / 学号 / 账号"
+            class="soft-input"
             style="width: 220px"
             @keyup.enter="loadStudents"
             @clear="loadStudents"
           />
-          <el-button :disabled="!filterClassId && !studentKeyword" @click="loadStudents">刷新</el-button>
-          <el-button :disabled="!filterClassId" @click="downloadStudentRoster">下载学生名单</el-button>
+          <button type="button" class="btn ghost" :disabled="!filterClassId && !studentKeyword" @click="loadStudents">刷新</button>
+          <button type="button" class="btn ghost" :disabled="!filterClassId" @click="downloadStudentRoster">下载学生名单</button>
+          <button
+            type="button"
+            class="btn ghost"
+            :disabled="!filterClassId || normalizing"
+            @click="normalizeUsernames"
+          >整理账号格式</button>
         </div>
         <p v-if="selectedClass" class="roster-hint">
           当前班级：<strong>{{ selectedClass.name }}</strong>
@@ -113,16 +134,21 @@
         <el-table
           :data="students"
           stripe
-          border
+          class="soft-table"
           size="small"
           v-loading="loadingStudents"
           :empty-text="filterClassId || studentKeyword ? '没有匹配的学生，可换个班级或用姓名搜索' : '请先选择班级'"
         >
           <el-table-column prop="id" label="ID" width="70" />
-          <el-table-column prop="username" label="账号" min-width="140" />
+          <el-table-column label="年级" width="90">
+            <template #default="{ row }">{{ row.gradeLabel || '—' }}</template>
+          </el-table-column>
+          <el-table-column label="班级" width="80">
+            <template #default="{ row }">{{ row.classLabel || '—' }}</template>
+          </el-table-column>
           <el-table-column prop="studentNo" label="学号" width="80" />
           <el-table-column prop="realName" label="姓名" min-width="100" />
-          <el-table-column prop="className" label="班级" min-width="140" />
+          <el-table-column prop="username" label="账号" min-width="160" sortable />
           <el-table-column v-if="showChangedPassword" label="修改后的密码" min-width="130">
             <template #default="{ row }">
               <span v-if="row.passwordNote">{{ row.passwordNote }}</span>
@@ -152,24 +178,24 @@
             </template>
           </el-table-column>
         </el-table>
+        </div>
       </el-tab-pane>
 
       <!-- 其他占位 -->
       <el-tab-pane label="更多配置" name="more">
-        <el-row :gutter="16">
-          <el-col :xs="24" :md="12" v-for="block in moreBlocks" :key="block.key">
-            <el-card shadow="hover" class="block-card">
-              <div class="block-icon">{{ block.icon }}</div>
-              <h3>{{ block.title }}</h3>
-              <ul>
-                <li v-for="(f, i) in block.features" :key="i">{{ f }}</li>
-              </ul>
-              <el-tag size="small" type="info">即将上线</el-tag>
-            </el-card>
-          </el-col>
-        </el-row>
+        <div class="more-grid">
+          <article v-for="block in moreBlocks" :key="block.key" class="block-card">
+            <div class="block-icon">{{ block.icon }}</div>
+            <h3>{{ block.title }}</h3>
+            <ul>
+              <li v-for="(f, i) in block.features" :key="i">{{ f }}</li>
+            </ul>
+            <span class="soon">即将上线</span>
+          </article>
+        </div>
       </el-tab-pane>
     </el-tabs>
+    </div>
 
     <!-- 教师弹窗 -->
     <el-dialog v-model="teacherVisible" :title="teacherForm.id ? '编辑教师' : '新增教师'" width="440px">
@@ -334,6 +360,7 @@ import {
   manageUpdateClass,
   manageDeleteClass,
   manageListStudents,
+  manageNormalizeClassUsernames,
   manageCreateStudent,
   manageBatchCreateStudents,
   manageUpdateStudent,
@@ -352,6 +379,7 @@ const students = ref([])
 const loadingTeachers = ref(false)
 const loadingClasses = ref(false)
 const loadingStudents = ref(false)
+const normalizing = ref(false)
 const filterClassId = ref(null)
 const studentKeyword = ref('')
 const selectedClass = computed(() => classes.value.find((c) => Number(c.id) === Number(filterClassId.value)) || null)
@@ -501,6 +529,34 @@ const loadStudents = async () => {
     ElMessage.error(e?.message || '加载学生失败')
   } finally {
     loadingStudents.value = false
+  }
+}
+
+const normalizeUsernames = async () => {
+  if (!filterClassId.value) {
+    ElMessage.warning('请先选择班级')
+    return
+  }
+  const className = selectedClass.value?.name || '当前班级'
+  try {
+    await ElMessageBox.confirm(
+      `把「${className}」学生账号整理为「年+班+学号+拼音」格式（如 20210101baiyuxuan）。只改账号，不改密码和学习记录。学生需用新账号登录。`,
+      '整理账号格式',
+      { type: 'warning', confirmButtonText: '开始整理', cancelButtonText: '取消' }
+    )
+  } catch {
+    return
+  }
+  normalizing.value = true
+  try {
+    const res = await manageNormalizeClassUsernames(filterClassId.value)
+    const changed = res.data?.changedCount ?? 0
+    ElMessage.success(res.message || `已整理 ${changed} 个账号`)
+    await loadStudents()
+  } catch (e) {
+    ElMessage.error(e?.message || '整理失败')
+  } finally {
+    normalizing.value = false
   }
 }
 
@@ -877,29 +933,154 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.settings-page { max-width: 1100px; margin: 0 auto; }
-.match-note { margin: 0 0 12px; color: #64748b; font-size: 13px; line-height: 1.6; }
-.grade-block { margin-bottom: 12px; }
-.grade-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.match-count { float: left; color: #64748b; font-size: 13px; line-height: 32px; }
-.page-head { margin-bottom: 16px; }
-.page-head h2 { margin: 0 0 4px; font-size: 22px; }
-.page-head p { margin: 0; color: #64748b; font-size: 13px; }
+.settings-page {
+  min-height: calc(100vh - 72px);
+  margin: -16px -20px -24px;
+  background: #eef0f6;
+}
+.settings-header {
+  padding: 16px 20px 18px;
+  background: linear-gradient(135deg, #5b4fc7 0%, #7c3aed 45%, #9333ea 100%);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(91, 79, 199, 0.28);
+}
+.header-main h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.title-icon { font-size: 20px; }
+.header-main p {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.82);
+}
+.settings-body {
+  padding: 16px 20px 28px;
+}
+.settings-tabs :deep(.el-tabs__header) {
+  margin: 0 0 14px;
+  border: 0;
+}
+.settings-tabs :deep(.el-tabs__nav-wrap::after) {
+  display: none;
+}
+.settings-tabs :deep(.el-tabs__nav) {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+.settings-tabs :deep(.el-tabs__item) {
+  height: 36px;
+  line-height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  color: #64748b;
+  font-weight: 600;
+}
+.settings-tabs :deep(.el-tabs__item.is-active) {
+  color: #5b4fc7;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+.settings-tabs :deep(.el-tabs__active-bar) {
+  display: none;
+}
+.panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 16px 12px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+}
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   align-items: center;
+}
+.btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn.primary {
+  color: #fff;
+  background: linear-gradient(135deg, #5b4fc7, #7c3aed);
+  box-shadow: 0 4px 12px rgba(91, 79, 199, 0.28);
+}
+.btn.success {
+  color: #fff;
+  background: linear-gradient(135deg, #059669, #34d399);
+}
+.btn.ghost {
+  color: #5b4fc7;
+  background: #ede9fe;
+}
+.btn:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+.soft-select :deep(.el-input__wrapper),
+.soft-input :deep(.el-input__wrapper) {
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px #e2e8f0 inset;
+}
+.soft-table {
+  --el-table-border-color: transparent;
+  --el-table-header-bg-color: #f8fafc;
+  --el-table-row-hover-bg-color: #f5f3ff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.soft-table :deep(.el-table__inner-wrapper::before) {
+  display: none;
+}
+.soft-table :deep(th.el-table__cell) {
+  color: #64748b;
+  font-weight: 700;
+  border-bottom: 1px solid #eef2f7 !important;
+}
+.soft-table :deep(td.el-table__cell) {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+.soft-table :deep(.el-table__row) {
+  height: 48px;
 }
 .roster-hint {
   margin: 0 0 10px;
   font-size: 13px;
   color: #475569;
 }
-.block-card { border-radius: 12px; margin-bottom: 16px; min-height: 200px; }
-.block-icon { font-size: 36px; margin-bottom: 8px; }
-.block-card h3 { margin: 0 0 12px; font-size: 16px; }
+.more-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 800px) {
+  .more-grid { grid-template-columns: 1fr; }
+}
+.block-card {
+  border-radius: 14px;
+  min-height: 200px;
+  padding: 18px 18px 16px;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+}
+.block-icon { font-size: 32px; margin-bottom: 8px; }
+.block-card h3 { margin: 0 0 10px; font-size: 16px; color: #0f172a; }
 .block-card ul {
   margin: 0 0 14px;
   padding-left: 18px;
@@ -907,6 +1088,19 @@ onMounted(async () => {
   font-size: 13px;
   line-height: 1.8;
 }
+.soon {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+.match-note { margin: 0 0 12px; color: #64748b; font-size: 13px; line-height: 1.6; }
+.grade-block { margin-bottom: 12px; }
+.grade-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.match-count { float: left; color: #64748b; font-size: 13px; line-height: 32px; }
 .batch-tip { margin: 0 0 10px; color: #64748b; font-size: 13px; line-height: 1.6; }
 .batch-result { margin-top: 12px; font-size: 13px; color: #334155; }
 </style>

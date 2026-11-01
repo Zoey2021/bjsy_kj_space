@@ -5,6 +5,10 @@ server:
 spring:
   application:
     name: learn-space
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
   datasource:
     # characterEncoding 必须用 UTF-8（Java 8 不认识 utf8mb4 这个 Charset 名）；库表仍用 utf8mb4 即可
     url: jdbc:mysql://localhost:3306/learn_space?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
@@ -67,3 +71,10 @@ learn-space:
   activity:
     html-output-dir: ./lesson-generated
     lesson-html-dir: ./frontend/public/lessons
+
+coze:
+  chat:
+    api-url: ${COZE_CHAT_API_URL:}
+    token: ${COZE_CHAT_TOKEN:}
+    # 上传图片对外公网根地址（须 https，扣子要能直接下载）
+    public-origin: ${COZE_PUBLIC_ORIGIN:https://bjsysmartedu.cn}

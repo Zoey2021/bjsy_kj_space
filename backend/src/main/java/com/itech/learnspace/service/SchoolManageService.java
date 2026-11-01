@@ -273,6 +273,8 @@ public class SchoolManageService {
                     Map<String, Object> m = toUserMap(u);
                     String className = u.getClassId() != null ? classNames.getOrDefault(u.getClassId(), "") : "";
                     m.put("className", className);
+                    m.put("gradeLabel", gradeLabelFromClassName(className));
+                    m.put("classLabel", classLabelFromClassName(className));
                     m.put("studentNo", PretestG4Service.parseStudentNo(u.getUsername()));
                     if (FIRST_PASSWORD_CLASS.equals(className == null ? "" : className.trim())) {
                         m.put("passwordNote", u.getPasswordNote() == null ? "" : u.getPasswordNote());
@@ -282,7 +284,8 @@ public class SchoolManageService {
                     return m;
                 })
                 .sorted(Comparator
-                        .comparingInt((Map<String, Object> m) -> parseStudentNoOrder(m.get("studentNo")))
+                        .comparing((Map<String, Object> m) -> String.valueOf(m.getOrDefault("username", "")))
+                        .thenComparingInt((Map<String, Object> m) -> parseStudentNoOrder(m.get("studentNo")))
                         .thenComparing(m -> String.valueOf(m.getOrDefault("realName", ""))))
                 .collect(Collectors.toList());
     }
@@ -639,6 +642,65 @@ public class SchoolManageService {
         return count != null && count.intValue() > 0;
     }
 
+    /**
+     * 把本班学生账号整理为「年+班+学号+拼音」新格式，便于排序。
+     * 只改 username，不改密码、积分、学习记录。
+     */
+    @Transactional
+    public Map<String, Object> normalizeClassStudentUsernames(Long classId) {
+        if (classId == null) {
+            throw new BusinessException("请选择班级");
+        }
+        SysClass clazz = classRepository.findById(classId)
+                .orElseThrow(() -> new BusinessException("班级不存在"));
+        String className = clazz.getName() == null ? "" : clazz.getName();
+        List<SysUser> students = loadStudentsOfClass(classId);
+        int changed = 0;
+        int skipped = 0;
+        List<Map<String, Object>> items = new ArrayList<Map<String, Object>>();
+        for (SysUser u : students) {
+            String oldName = u.getUsername() == null ? "" : u.getUsername();
+            String noRaw = PretestG4Service.parseStudentNo(oldName);
+            int studentNo;
+            try {
+                studentNo = Integer.parseInt(noRaw);
+            } catch (Exception e) {
+                skipped++;
+                continue;
+            }
+            String next = rebuildStudentUsername(oldName, className, studentNo);
+            if (next.equals(oldName)) {
+                skipped++;
+                continue;
+            }
+            SysUser clash = userRepository.findByUsername(next).orElse(null);
+            if (clash != null && !clash.getId().equals(u.getId())) {
+                skipped++;
+                Map<String, Object> fail = new LinkedHashMap<String, Object>();
+                fail.put("oldUsername", oldName);
+                fail.put("newUsername", next);
+                fail.put("reason", "目标账号已被占用");
+                items.add(fail);
+                continue;
+            }
+            u.setUsername(next);
+            userRepository.save(u);
+            changed++;
+            Map<String, Object> ok = new LinkedHashMap<String, Object>();
+            ok.put("oldUsername", oldName);
+            ok.put("newUsername", next);
+            ok.put("realName", u.getRealName());
+            items.add(ok);
+        }
+        Map<String, Object> out = new LinkedHashMap<String, Object>();
+        out.put("classId", classId);
+        out.put("className", className);
+        out.put("changedCount", Integer.valueOf(changed));
+        out.put("skippedCount", Integer.valueOf(skipped));
+        out.put("items", items);
+        return out;
+    }
+
     private SysUser requireTeacher(Long id) {
         SysUser user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("教师不存在"));
@@ -679,7 +741,10 @@ public class SchoolManageService {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", c.getId());
         m.put("name", c.getName());
-        m.put("gradeName", c.getGradeName());
+        String derivedGrade = gradeLabelFromClassName(c.getName());
+        m.put("gradeName", StringUtils.hasText(derivedGrade) ? derivedGrade : c.getGradeName());
+        m.put("gradeLabel", derivedGrade);
+        m.put("classLabel", classLabelFromClassName(c.getName()));
         m.put("teacherId", c.getTeacherId());
         userRepository.findById(c.getTeacherId()).ifPresent(t -> m.put("teacherName", t.getRealName()));
         long allStudents = userRepository.findByClassId(c.getId()).stream()
@@ -767,11 +832,34 @@ public class SchoolManageService {
         return s;
     }
 
+    /**
+     * 学生账号：入学年 + 班号 + 学号 + 姓名拼音字母，便于按账号排序。
+     * 例：2021级1班、学号1、baiyuxuan → 20210101baiyuxuan
+     * 兼容旧账号（拼音在前）的解析见 PretestG4Service.parseStudentNo。
+     */
     static String buildStudentUsername(String realName, String className, int studentNo) {
         String letters = realName == null ? "" : realName.replaceAll("[^A-Za-z]", "").toLowerCase();
         if (!StringUtils.hasText(letters)) {
             letters = "s";
         }
+        String[] parts = parseClassNameParts(className);
+        String year = parts[0];
+        String classNo = parts[1];
+        return year + classNo + String.format("%02d", studentNo) + letters;
+    }
+
+    /** 从旧账号中抽出拼音字母，再按新规则重排：年+班+学号+拼音 */
+    static String rebuildStudentUsername(String oldUsername, String className, int studentNo) {
+        String letters = oldUsername == null ? "" : oldUsername.replaceAll("[^A-Za-z]", "").toLowerCase();
+        if (!StringUtils.hasText(letters)) {
+            letters = "s";
+        }
+        String[] parts = parseClassNameParts(className);
+        return parts[0] + parts[1] + String.format("%02d", studentNo) + letters;
+    }
+
+    /** @return [year, classNo2] 如 ["2021","01"] */
+    static String[] parseClassNameParts(String className) {
         String year = "0000";
         String classNo = "00";
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("(20\\d{2})级0*(\\d+)班")
@@ -780,6 +868,36 @@ public class SchoolManageService {
             year = m.group(1);
             classNo = String.format("%02d", Integer.parseInt(m.group(2)));
         }
-        return letters + year + classNo + String.format("%02d", studentNo);
+        return new String[] { year, classNo };
+    }
+
+    /** 2021级 → 六年级（按当前届别） */
+    static String gradeLabelFromClassName(String className) {
+        String[] parts = parseClassNameParts(className);
+        String year = parts[0];
+        if ("2021".equals(year)) {
+            return "六年级";
+        }
+        if ("2022".equals(year)) {
+            return "五年级";
+        }
+        if ("2023".equals(year)) {
+            return "四年级";
+        }
+        if ("2024".equals(year)) {
+            return "三年级";
+        }
+        if ("0000".equals(year)) {
+            return "";
+        }
+        return year + "级";
+    }
+
+    static String classLabelFromClassName(String className) {
+        String[] parts = parseClassNameParts(className);
+        if ("00".equals(parts[1]) && (className == null || !className.contains("班"))) {
+            return className == null ? "" : className;
+        }
+        return Integer.parseInt(parts[1]) + "班";
     }
 }
