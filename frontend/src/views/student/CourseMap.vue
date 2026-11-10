@@ -245,20 +245,20 @@ const openGradeResult = (group) => {
 }
 
 onMounted(async () => {
-  let main = { data: [] }
-  let school = { data: [] }
   let meRes = { data: {} }
   try {
-    ;[main, school, meRes] = await Promise.all([
-      getTextbooks('MAIN'),
-      getTextbooks('SCHOOL'),
-      getMe().catch(() => ({ data: {} }))
-    ])
+    // 配套课与个人信息先返回，校本列表并行但不阻塞首屏
+    const mainPromise = getTextbooks('MAIN')
+    const schoolPromise = getTextbooks('SCHOOL')
+    meRes = await getMe().catch(() => ({ data: {} }))
+    const main = await mainPromise
+    mainBooks.value = main.data || []
+    schoolPromise.then((school) => {
+      schoolBooks.value = school.data || []
+    }).catch(() => {})
   } catch {
     /* 拦截器已提示 */
   }
-  mainBooks.value = main.data || []
-  schoolBooks.value = school.data || []
   const profile = meRes.data || {}
   enrollmentYear.value = detectEnrollmentYear(profile)
   if (profile.username) localStorage.setItem('username', profile.username)

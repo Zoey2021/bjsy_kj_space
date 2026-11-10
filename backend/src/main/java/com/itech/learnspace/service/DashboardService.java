@@ -525,7 +525,22 @@ public class DashboardService {
                 def.put("index", act.path("index").asInt());
                 def.put("title", act.path("title").asText("活动"));
                 def.put("unlocked", act.path("unlocked").asBoolean(true));
-                def.put("type", "INTERACTIVE");
+                String actType = act.path("type").asText("INTERACTIVE");
+                if (!StringUtils.hasText(actType)) {
+                    actType = "INTERACTIVE";
+                }
+                def.put("type", actType);
+                if (act.path("voteChart").asBoolean(false)
+                        || "VOTE".equalsIgnoreCase(actType)
+                        || "SURVEY".equalsIgnoreCase(actType)) {
+                    def.put("voteChart", true);
+                }
+                if (act.path("surveyTheme").asBoolean(false)
+                        || act.path("openResponses").asBoolean(false)) {
+                    def.put("surveyTheme", true);
+                    def.put("openResponses", act.path("openResponses").asBoolean(false)
+                            || act.path("surveyTheme").asBoolean(false));
+                }
                 defs.add(def);
             }
         }
@@ -1087,15 +1102,48 @@ public class DashboardService {
     }
 
     private boolean isSurveyThemeActivity(Map<String, Object> def) {
-        return def != null
-                && Integer.valueOf(3).equals(def.get("index"))
-                && "收回汇总".equals(String.valueOf(def.get("title")));
+        if (def == null) {
+            return false;
+        }
+        if (Boolean.TRUE.equals(def.get("voteChart"))) {
+            return true;
+        }
+        if (Boolean.TRUE.equals(def.get("surveyTheme")) || Boolean.TRUE.equals(def.get("openResponses"))) {
+            return true;
+        }
+        String type = String.valueOf(def.get("type"));
+        if ("VOTE".equalsIgnoreCase(type) || "SURVEY".equalsIgnoreCase(type)) {
+            return true;
+        }
+        String title = String.valueOf(def.get("title"));
+        if (title.contains("观点投票") || title.contains("调查主题") || title.contains("收回汇总")
+                || title.contains("验证与升级")) {
+            return true;
+        }
+        return Integer.valueOf(3).equals(def.get("index"))
+                && "收回汇总".equals(title);
     }
 
     private String surveyThemeOf(LearnSubmission sub) {
         JsonNode node = parseContentJson(sub);
         if (node == null) {
             return "";
+        }
+        String voteLabel = node.path("voteLabel").asText("").trim();
+        String voteChoice = node.path("voteChoice").asText("").trim().toUpperCase();
+        if (StringUtils.hasText(voteChoice) || StringUtils.hasText(voteLabel)) {
+            if (StringUtils.hasText(voteChoice) && StringUtils.hasText(voteLabel)) {
+                return voteChoice + " · " + voteLabel;
+            }
+            return StringUtils.hasText(voteLabel) ? voteLabel : voteChoice;
+        }
+        String theme = node.path("surveyTheme").asText("").trim();
+        if (StringUtils.hasText(theme)) {
+            return theme;
+        }
+        String openIdea = node.path("openIdea").asText("").trim();
+        if (StringUtils.hasText(openIdea)) {
+            return openIdea;
         }
         JsonNode fields = node.path("activityDrafts").path("3").path("fields");
         if (fields.isArray()) {
@@ -1108,7 +1156,7 @@ public class DashboardService {
                 }
             }
         }
-        return node.path("surveyTheme").asText("").trim();
+        return "";
     }
 
     private JsonNode parseContentJson(LearnSubmission sub) {

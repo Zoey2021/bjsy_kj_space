@@ -106,6 +106,14 @@ export const teacherDeleteResource = (id) => request.delete(`/teacher/course/res
 export const teacherLessonStats = (lessonId, classId) =>
   request.get(`/teacher/course/lesson/${lessonId}/stats`, { params: { classId } })
 
+/** 评价中心 / 智能评价 */
+export const getEvaluationRoster = (classId, gradeId) =>
+  request.get(`/teacher/evaluation/class/${classId}/roster`, { params: { gradeId } })
+export const getEvaluationStudent = (classId, studentId, gradeId) =>
+  request.get(`/teacher/evaluation/class/${classId}/student/${studentId}`, { params: { gradeId } })
+export const getEvaluationLesson = (classId, studentId, lessonId) =>
+  request.get(`/teacher/evaluation/class/${classId}/student/${studentId}/lesson/${lessonId}`)
+
 /** AI 活动推荐（Dify，工作流可能需 30～120 秒） */
 export const aiRecommendActivities = (lessonId) =>
   request.post(`/ai/recommend/${lessonId}`, null, { timeout: 180000 })

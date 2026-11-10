@@ -70,7 +70,8 @@ public class CourseService {
             m.put("textbookType", g.getTextbookType());
             m.put("sortOrder", g.getSortOrder());
             boolean hasPdf = pdfUrl != null && !pdfUrl.isEmpty();
-            boolean hasUnits = !unitRepository.findByGradeIdOrderBySortOrderAsc(g.getId()).isEmpty();
+            // 用 exists，勿 find 全量单元：首页教材入口对每册多一次全表会明显卡顿
+            boolean hasUnits = unitRepository.existsByGradeId(g.getId());
             m.put("hasResource", hasPdf || hasUnits);
             out.add(m);
         }

@@ -8,7 +8,7 @@
     <div class="map-body">
     <section v-if="showMainCourses" class="panel panel-main">
       <h2 class="panel-title">配套课程</h2>
-      <el-row :gutter="12" class="grade-row">
+      <el-row v-if="mainGradeGroups.length" :gutter="12" class="grade-row">
         <el-col v-for="g in mainGradeGroups" :key="g.key" :span="6">
           <div class="grade-card">
             <div class="grade-card-head">
@@ -28,7 +28,16 @@
                 @click="openGrade(slot.book.id)"
               >
                 <div class="book-thumb">
-                  <img v-if="slot.book.coverUrl" :src="slot.book.coverUrl" :alt="slot.book.name" loading="lazy" decoding="async" />
+                  <img
+                    v-if="slot.book.coverUrl"
+                    :src="slot.book.coverUrl"
+                    :alt="slot.book.name"
+                    width="160"
+                    height="220"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                  />
                   <div v-else class="thumb-placeholder">封面</div>
                 </div>
                 <div class="book-label">{{ slot.book.name }}</div>
@@ -37,11 +46,14 @@
           </div>
         </el-col>
       </el-row>
+      <div v-else class="map-skeleton-row" aria-hidden="true">
+        <div v-for="n in 4" :key="'m'+n" class="map-skeleton-card" />
+      </div>
     </section>
 
     <section class="panel panel-school">
       <h2 class="panel-title">校本课程</h2>
-      <el-row :gutter="12" class="grade-row">
+      <el-row v-if="schoolReady" :gutter="12" class="grade-row">
         <el-col
           v-for="series in schoolSeriesGroups"
           :key="series.key"
@@ -58,7 +70,16 @@
                 @click="openGrade(book)"
               >
                 <div class="book-thumb school-thumb">
-                  <img v-if="book.coverUrl" :src="book.coverUrl" :alt="book.name" loading="lazy" decoding="async" />
+                  <img
+                    v-if="book.coverUrl"
+                    :src="book.coverUrl"
+                    :alt="book.name"
+                    width="160"
+                    height="220"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                  />
                   <div v-else class="thumb-placeholder school-ph">本</div>
                   <div v-if="isSchoolLocked(book)" class="slot-mask">暂未开放</div>
                 </div>
@@ -78,7 +99,15 @@
                 @click="openInquirySlot(slot)"
               >
                 <div class="book-thumb school-thumb">
-                  <img :src="slot.coverUrl" :alt="slot.label" loading="lazy" decoding="async" />
+                  <img
+                    :src="slot.coverUrl"
+                    :alt="slot.label"
+                    width="160"
+                    height="220"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                  />
                 </div>
                 <div class="book-label">{{ slot.label }}</div>
               </div>
@@ -86,6 +115,9 @@
           </div>
         </el-col>
       </el-row>
+      <div v-else class="map-skeleton-row" aria-hidden="true">
+        <div v-for="n in 4" :key="'s'+n" class="map-skeleton-card" />
+      </div>
     </section>
     </div>
   </div>
@@ -103,6 +135,7 @@ import { isKechuangBook, accountScope, SCOPE_ALL, SCOPE_KECHUANG } from '../../u
 const router = useRouter()
 const mainBooks = ref([])
 const schoolBooks = ref([])
+const schoolReady = ref(false)
 
 const mainGradeGroups = computed(() => {
   const books = [...mainBooks.value].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
@@ -170,15 +203,20 @@ const openInquirySlot = (slot) => {
 }
 
 onMounted(async () => {
+  // 先出配套课，再出校本，避免两次接口都返回前整页空白卡顿
   try {
-    const [main, school] = await Promise.all([
-      teacherGetTextbooks('MAIN'),
-      teacherGetTextbooks('SCHOOL')
-    ])
+    const main = await teacherGetTextbooks('MAIN')
     mainBooks.value = main.data || []
+  } catch {
+    /* 拦截器已提示 */
+  }
+  try {
+    const school = await teacherGetTextbooks('SCHOOL')
     schoolBooks.value = school.data || []
   } catch {
-    /* 拦截器已提示；这里避免未捕获的失败把整页停住 */
+    /* 拦截器已提示 */
+  } finally {
+    schoolReady.value = true
   }
 })
 </script>
@@ -230,6 +268,23 @@ onMounted(async () => {
   margin-bottom: 0;
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
   overflow: hidden;
+}
+.map-skeleton-row {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.map-skeleton-card {
+  border-radius: 12px;
+  background: linear-gradient(90deg, #eef2f7 25%, #f8fafc 50%, #eef2f7 75%);
+  background-size: 200% 100%;
+  animation: map-shimmer 1.1s ease-in-out infinite;
+}
+@keyframes map-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
 }
 .panel-main { border-top: 3px solid #2563eb; }
 .panel-school {

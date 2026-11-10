@@ -9,6 +9,7 @@ import com.itech.learnspace.entity.SysUser;
 import com.itech.learnspace.exception.BusinessException;
 import com.itech.learnspace.repository.SysClassRepository;
 import com.itech.learnspace.repository.SysUserRepository;
+import com.itech.learnspace.security.PasswordPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import org.springframework.util.StringUtils;
 
 import javax.persistence.EntityManager;
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,6 +34,7 @@ public class SchoolManageService {
     private final SysUserRepository userRepository;
     private final SysClassRepository classRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordPolicy passwordPolicy;
     private final EntityManager entityManager;
     private final ClassMembershipService classMembershipService;
     private final TeacherClassService teacherClassService;
@@ -39,12 +42,14 @@ public class SchoolManageService {
     public SchoolManageService(SysUserRepository userRepository,
                                SysClassRepository classRepository,
                                PasswordEncoder passwordEncoder,
+                               PasswordPolicy passwordPolicy,
                                EntityManager entityManager,
                                ClassMembershipService classMembershipService,
                                TeacherClassService teacherClassService) {
         this.userRepository = userRepository;
         this.classRepository = classRepository;
         this.passwordEncoder = passwordEncoder;
+        this.passwordPolicy = passwordPolicy;
         this.entityManager = entityManager;
         this.classMembershipService = classMembershipService;
         this.teacherClassService = teacherClassService;
@@ -79,11 +84,14 @@ public class SchoolManageService {
             throw new BusinessException("账号已存在");
         }
         boolean auto = !StringUtils.hasText(req.getPassword());
-        String raw = auto ? generatePassword(6) : req.getPassword().trim();
+        String raw = auto ? generatePassword(10) : req.getPassword().trim();
+        if (!auto) {
+            passwordPolicy.validateNewPassword("TEACHER", raw);
+        }
 
         SysUser user = new SysUser();
         user.setUsername(req.getUsername().trim());
-        user.setPassword(passwordEncoder.encode(raw));
+        assignPassword(user, raw, "TEACHER", auto);
         user.setRealName(req.getRealName().trim());
         user.setRole("TEACHER");
         user.setClassId(null);
@@ -116,7 +124,9 @@ public class SchoolManageService {
             user.setStatus(req.getStatus());
         }
         if (StringUtils.hasText(req.getPassword())) {
-            user.setPassword(passwordEncoder.encode(req.getPassword().trim()));
+            String raw = req.getPassword().trim();
+            passwordPolicy.validateNewPassword("TEACHER", raw);
+            assignPassword(user, raw, "TEACHER", false);
         }
         return toUserMap(userRepository.save(user));
     }
@@ -135,8 +145,8 @@ public class SchoolManageService {
     @Transactional
     public Map<String, Object> resetTeacherPassword(Long id) {
         SysUser user = requireTeacher(id);
-        String raw = generatePassword(6);
-        user.setPassword(passwordEncoder.encode(raw));
+        String raw = generatePassword(10);
+        assignPassword(user, raw, "TEACHER", true);
         userRepository.save(user);
         Map<String, Object> out = toUserMap(user);
         out.put("initialPassword", raw);
@@ -386,10 +396,13 @@ public class SchoolManageService {
         }
         boolean auto = !StringUtils.hasText(req.getPassword());
         String raw = auto ? generatePassword(6) : req.getPassword().trim();
+        if (!auto) {
+            passwordPolicy.validateNewPassword("STUDENT", raw);
+        }
 
         SysUser user = new SysUser();
         user.setUsername(username);
-        user.setPassword(passwordEncoder.encode(raw));
+        assignPassword(user, raw, "STUDENT", auto);
         user.setRealName(realName);
         user.setRole("STUDENT");
         user.setClassId(req.getClassId());
@@ -464,8 +477,9 @@ public class SchoolManageService {
             user.setStatus(req.getStatus());
         }
         if (StringUtils.hasText(req.getPassword())) {
-            user.setPassword(passwordEncoder.encode(req.getPassword().trim()));
-            clearChosenPassword(user);
+            String raw = req.getPassword().trim();
+            passwordPolicy.validateNewPassword("STUDENT", raw);
+            assignPassword(user, raw, "STUDENT", false);
         }
         user = userRepository.save(user);
         classMembershipService.replace(user.getId(), user.getClassId());
@@ -484,8 +498,7 @@ public class SchoolManageService {
     public Map<String, Object> resetStudentPassword(Long id) {
         SysUser user = requireStudent(id);
         String raw = generatePassword(6);
-        user.setPassword(passwordEncoder.encode(raw));
-        clearChosenPassword(user);
+        assignPassword(user, raw, "STUDENT", true);
         userRepository.save(user);
         Map<String, Object> out = toUserMap(user);
         out.put("initialPassword", raw);
@@ -581,7 +594,7 @@ public class SchoolManageService {
             String raw = generatePassword(6);
             SysUser user = new SysUser();
             user.setUsername(username);
-            user.setPassword(passwordEncoder.encode(raw));
+            assignPassword(user, raw, "STUDENT", true);
             user.setRealName(realName);
             user.setRole("STUDENT");
             user.setClassId(classId);
@@ -722,6 +735,22 @@ public class SchoolManageService {
     private void clearChosenPassword(SysUser user) {
         user.setPasswordNote(null);
         user.setPasswordChangedAt(null);
+    }
+
+    /** temporary=true：系统生成的临时口令，清空改密记录；false：人工设定，记为已改密。 */
+    private void assignPassword(SysUser user, String raw, String role, boolean temporary) {
+        if (!temporary) {
+            passwordPolicy.validateNewPassword(role, raw);
+        } else if (passwordPolicy.isWeakPlaintext(raw)) {
+            throw new BusinessException("临时密码不合格，请重试");
+        }
+        user.setPassword(passwordEncoder.encode(raw));
+        if (temporary) {
+            clearChosenPassword(user);
+        } else {
+            user.setPasswordChangedAt(LocalDateTime.now());
+            user.setPasswordNote(null);
+        }
     }
 
     private Map<String, Object> toUserMap(SysUser u) {

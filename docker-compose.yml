@@ -11,9 +11,9 @@ services:
       MYSQL_DATABASE: learn_space
       MYSQL_USER: learnuser
       MYSQL_PASSWORD: learnpass123
-    # 本机若已安装 MySQL（Navicat 常用 3306），此处改为 3307:3306 避免端口冲突
+    # 仅绑定本机，避免公网直接扫到数据库端口（宝塔/本机客户端连 127.0.0.1:3307）
     ports:
-      - "3307:3306"
+      - "127.0.0.1:3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -27,8 +27,9 @@ services:
   backend:
     build: ./backend
     container_name: learn-backend
+    # 仅本机可达；对外请走宝塔 Nginx 反代，勿在安全组放行 8080
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       mysql:
         condition: service_healthy
@@ -77,8 +78,9 @@ services:
     container_name: learn-frontend
     # 跳过官方 entrypoint 对 default.conf 做 md5（overlayfs 上会卡住，Nginx 起不来，站点 502）
     entrypoint: ["nginx", "-g", "daemon off;"]
+    # 仅本机可达；公网通过域名 → 宝塔 Nginx → 127.0.0.1:8088，勿直接暴露 8088
     ports:
-      - "8088:80"
+      - "127.0.0.1:8088:80"
     depends_on:
       - backend
     volumes:
@@ -94,12 +96,14 @@ services:
       - ./frontend/public/lessons/g4-up-lesson4:/usr/share/nginx/html/lessons/g4-up-lesson4:ro
       - ./frontend/public/lessons/g4-up-lesson5:/usr/share/nginx/html/lessons/g4-up-lesson5:ro
       - ./frontend/public/lessons/g4-up-lesson6:/usr/share/nginx/html/lessons/g4-up-lesson6:ro
+      - ./frontend/public/lessons/g4-up-lesson7:/usr/share/nginx/html/lessons/g4-up-lesson7:ro
       - ./frontend/public/lessons/g6-up-lesson1:/usr/share/nginx/html/lessons/g6-up-lesson1:ro
       - ./frontend/public/lessons/g6-up-lesson2:/usr/share/nginx/html/lessons/g6-up-lesson2:ro
       - ./frontend/public/lessons/g6-up-lesson3:/usr/share/nginx/html/lessons/g6-up-lesson3:ro
       - ./frontend/public/lessons/g6-up-lesson4:/usr/share/nginx/html/lessons/g6-up-lesson4:ro
       - ./frontend/public/lessons/g6-up-lesson5:/usr/share/nginx/html/lessons/g6-up-lesson5:ro
       - ./frontend/public/lessons/g6-up-lesson6:/usr/share/nginx/html/lessons/g6-up-lesson6:ro
+      - ./frontend/public/lessons/g6-up-lesson7:/usr/share/nginx/html/lessons/g6-up-lesson7:ro
       # school / textbooks 已改走 OSS（见 nginx.conf 301），不再挂载本机大目录
       - ./frontend/public/pdfjs:/usr/share/nginx/html/pdfjs:ro
 

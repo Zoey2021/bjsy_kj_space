@@ -1,0 +1,57 @@
+-- 六年级上第7课：绑定互动工作台（不依赖后端 Seeder）
+SET NAMES utf8mb4;
+USE learn_space;
+
+SET @lesson_id := (
+  SELECT cl.id FROM course_lesson cl
+  INNER JOIN course_unit cu ON cl.unit_id = cu.id
+  INNER JOIN course_grade cg ON cu.grade_id = cg.id
+  WHERE cg.name='六年级上册' AND cg.textbook_type='MAIN'
+    AND cu.name='第一单元 算法的实现'
+    AND (cl.title='第7课 用人工智能辅助算法实现' OR cl.title='第7课 猜数字算法验证' OR cl.title LIKE '第7课%')
+  ORDER BY CASE WHEN cl.title LIKE '%人工智能%' THEN 0 ELSE 1 END
+  LIMIT 1
+);
+
+SELECT @lesson_id AS lesson_id;
+SET @cfg := '{"layout":"student_workspace","lessonTitle":"第7课 用人工智能辅助算法实现","objectives":"我能体验猜数字游戏并梳理算法步骤，读懂循环与条件判断，用算法小助手辅助写出程序并自评，再参与观点投票。","evaluationHint":"完成四个探究后，请如实填写学习评价，再作答课堂小测。","introMap":{"title":"用 AI 辅助实现猜数字","branches":[{"label":"本课学习目标","nodes":[{"text":"玩会猜数字，排出算法步骤"},{"text":"读懂 input / if / while"},{"text":"用算法小助手生成并完善代码"},{"text":"投票交流：AI 时代还要学编程吗"}]},{"label":"课堂完成顺序","nodes":[{"text":"探究一：玩游戏，析规则"},{"text":"探究二：读代码，懂判断"},{"text":"探究三：算法小助手辅助实现"},{"text":"探究四：观点投票"},{"text":"学习评价与课堂小测"}]}]},"evaluationForm":{"title":"学习评价","intro":"以下题目没有标准答案，请根据本课真实学习感受选择。","questions":[{"id":"e1","aspect":"学习兴趣","stem":"本课「用人工智能辅助算法实现」的内容，你的学习兴趣如何？","options":["非常感兴趣，还想继续用小助手写小游戏","比较感兴趣，愿意完成探究","一般，能跟着完成要求","不太感兴趣，觉得有点难"]},{"id":"e2","aspect":"难度感知","stem":"你觉得本课哪个探究最有挑战性？","options":["探究一：玩猜数字并排步骤","探究二：补全代码与预测输出","探究三：用算法小助手写程序并评分","我觉得都不难，掌握较好"]},{"id":"e3","aspect":"学习信心","stem":"完成探究后，你对自己「借助 AI 实现简单算法」的信心如何？","options":["非常有信心，能独立写提示词并检查代码","比较有信心，偶尔需要提示","信心一般，还需要再练一次","还不太有信心，希望获得更多帮助"]}]},"activities":[{"index":1,"title":"玩游戏，析规则","step":1,"path":"/lessons/g6-up-lesson7/index.html","unlocked":true},{"index":2,"title":"读代码，懂判断","step":2,"path":"/lessons/g6-up-lesson7/index.html","unlocked":true},{"index":3,"title":"算法小助手辅助实现","step":3,"path":"/lessons/g6-up-lesson7/index.html","unlocked":true},{"index":4,"title":"观点投票","step":4,"type":"VOTE","voteChart":true,"path":"/lessons/g6-up-lesson7/index.html","unlocked":true}],"quiz":{"title":"课堂小测","unlockAfterActivity":4,"questions":[{"id":"k1","dimension":"知识掌握","stem":"猜数字游戏里，告诉玩家「大了 / 小了」主要用到：","options":["只靠顺序结构","条件判断（分支）","只靠画图","随机取消"],"answer":1,"explanation":"比较猜的数和答案，分流提示，这是条件判断。"},{"id":"k2","dimension":"知识掌握","stem":"玩家猜错后还能继续猜，主要体现：","options":["循环结构","只能猜一次","不需要输入","去掉判断"],"answer":0,"explanation":"反复执行输入与判断，这是循环。"},{"id":"a1","dimension":"能力提升","stem":"用算法小助手写程序时，最重要的第一步通常是：","options":["随便点生成","写清晰明确的提示词","先交空白作业","关掉运行窗口"],"answer":1,"explanation":"提示词写清楚，AI 才更可能生成符合规则的代码。"},{"id":"a2","dimension":"能力提升","stem":"AI 生成代码后，你还应该：","options":["完全不看直接交","运行测试并检查是否符合规则","永远不要改提示词","删掉所有注释"],"answer":1,"explanation":"人要负责验证：运行、检查、多轮修改。"},{"id":"l1","dimension":"素养变化","stem":"关于「AI 会写程序了，还要不要学编程」，更合理的态度是：","options":["完全不用学，全交给 AI","AI 是工具，人要会提需求、看得懂、改得了","学编程只是为了背语法","AI 永远不能帮忙"],"answer":1,"explanation":"人负责想清楚问题与验证结果，AI 负责加速实现。"},{"id":"l2","dimension":"素养变化","stem":"给 AI 的提示词写得不清楚时，最可能发生：","options":["一定生成满分程序","生成结果偏离需求，需要你改提示词再试","计算机会自动读懂你的心思","不用再测试"],"answer":1,"explanation":"提示词越清晰，生成越靠谱；不清楚就要多轮修改。"}]}}';
+
+UPDATE course_lesson
+SET title='第7课 用人工智能辅助算法实现',
+    content='<p>本课学习<strong>用人工智能辅助算法实现</strong>：体验猜数字并梳理步骤，读懂循环与条件判断，用<strong>算法小助手</strong>生成并完善程序，再参与观点投票。</p><p>请依次完成<strong>探究一～探究四</strong>，然后作答<strong>课堂小测</strong>并填写<strong>学习评价</strong>。</p>'
+WHERE id=@lesson_id;
+
+-- WEB 资源
+INSERT INTO course_resource (lesson_id, title, res_type, content_url, sort_order)
+SELECT @lesson_id, '猜数字 AI 辅助实现探究活动', 'WEB', '/lessons/g6-up-lesson7/index.html', 1
+FROM DUAL
+WHERE @lesson_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM course_resource
+    WHERE lesson_id=@lesson_id AND res_type='WEB' AND content_url='/lessons/g6-up-lesson7/index.html'
+  );
+
+-- EXTERNAL 工作台
+SET @task_id := (
+  SELECT id FROM course_task WHERE lesson_id=@lesson_id AND task_type='EXTERNAL' ORDER BY id LIMIT 1
+);
+
+UPDATE course_task
+SET title='猜数字 AI 辅助实现探究',
+    description='六年级上第7课：探究一游戏规则、探究二读代码、探究三算法小助手、探究四观点投票、学习评价、课堂小测',
+    config_json=@cfg,
+    max_score=100
+WHERE id=@task_id;
+
+INSERT INTO course_task (lesson_id, title, description, task_type, config_json, max_score, sort_order)
+SELECT @lesson_id,
+       '猜数字 AI 辅助实现探究',
+       '六年级上第7课：探究一游戏规则、探究二读代码、探究三算法小助手、探究四观点投票、学习评价、课堂小测',
+       'EXTERNAL', @cfg, 100, 1
+FROM DUAL
+WHERE @lesson_id IS NOT NULL AND @task_id IS NULL;
+
+SELECT cl.id, cl.title, LEFT(cl.content, 40) content_head,
+       (SELECT COUNT(*) FROM course_resource r WHERE r.lesson_id=cl.id AND r.content_url LIKE '%g6-up-lesson7%') web_cnt,
+       (SELECT COUNT(*) FROM course_task t WHERE t.lesson_id=cl.id AND t.task_type='EXTERNAL') task_cnt
+FROM course_lesson cl WHERE cl.id=@lesson_id;

@@ -72,7 +72,15 @@ request.interceptors.response.use(
     if (status === 401 && !isPublicAuth) {
       leaveToLogin(serverMsg || '登录已失效，请重新登录')
     } else if (status === 403) {
-      notice(serverMsg || '刚才没连上，请刷新页面再试一次。')
+      if (body && body.mustChangePassword) {
+        localStorage.setItem('mustChangePassword', '1')
+        notice(serverMsg || '请先修改密码后再使用平台')
+        if (router.currentRoute.value.path !== '/login') {
+          router.push('/login')
+        }
+      } else {
+        notice(serverMsg || '刚才没连上，请刷新页面再试一次。')
+      }
     } else if (err.code === 'ECONNABORTED' || (err.message && err.message.includes('timeout'))) {
       const slowAi = reqUrl.includes('/scaffold/generate') || reqUrl.includes('/ai/') || reqUrl.includes('/generate-activities')
       notice(slowAi

@@ -18,6 +18,8 @@ database/__pycache__/
 learn_space.sql
 learn_space_local.sql
 database/update_*_password.sql
+database/harden_passwords.sql
+_pdf_preview/
 # 科创大体积校本资源（不进 GitHub）
 frontend/public/school/
 # 项目化游戏本地运行产物 / 密钥

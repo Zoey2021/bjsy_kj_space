@@ -148,13 +148,15 @@
       :close-on-press-escape="false"
       :show-close="false"
     >
-      <p style="margin:0 0 14px;line-height:1.6;color:#475569">第一次使用账号密码登录，需要先改成自己的密码。请设置一个自己记得住的新密码。</p>
+      <p style="margin:0 0 14px;line-height:1.6;color:#475569">
+        检测到当前仍是弱口令或首次登录，必须先修改密码后才能继续使用。教师/管理员请设置至少 8 位、含字母和数字的密码；请勿再用 123456 等常见弱口令。
+      </p>
       <el-form label-width="88px" @submit.prevent>
         <el-form-item label="原密码">
           <el-input v-model="changeForm.oldPassword" type="password" show-password />
         </el-form-item>
         <el-form-item label="新密码">
-          <el-input v-model="changeForm.newPassword" type="password" show-password placeholder="4 到 20 位" />
+          <el-input v-model="changeForm.newPassword" type="password" show-password :placeholder="passwordHint" />
         </el-form-item>
         <el-form-item label="再输入一次">
           <el-input v-model="changeForm.confirm" type="password" show-password @keyup.enter="submitNewPassword" />
@@ -192,6 +194,10 @@ const pickerLoading = ref(false)
 const pickerKeyword = ref('')
 const pendingCode = ref('')
 const changeVisible = ref(false)
+const passwordHint = computed(() => {
+  const r = localStorage.getItem('role')
+  return (r === 'TEACHER' || r === 'ADMIN') ? '8～32 位，需含字母和数字' : '6～20 位，勿用常见弱口令'
+})
 const changing = ref(false)
 const changeForm = ref({ oldPassword: '', newPassword: '', confirm: '' })
 
@@ -271,14 +277,28 @@ const saveLoginAndRedirect = (data) => {
   })
 }
 
+const WEAK_PASSWORDS = ['123456', '12345678', '111111', '000000', 'password', 'admin', 'admin123', 'qwerty', 'abc123', '654321']
+
 const submitNewPassword = async () => {
   const next = String(changeForm.value.newPassword || '').trim()
+  const role = localStorage.getItem('role')
+  const staff = role === 'TEACHER' || role === 'ADMIN'
   if (!changeForm.value.oldPassword) {
     ElMessage.warning('请填写原来的密码')
     return
   }
-  if (next.length < 4 || next.length > 20) {
-    ElMessage.warning('新密码请设置 4 到 20 位')
+  const min = staff ? 8 : 6
+  const max = staff ? 32 : 20
+  if (next.length < min || next.length > max) {
+    ElMessage.warning(staff ? '新密码请设置 8 到 32 位' : '新密码请设置 6 到 20 位')
+    return
+  }
+  if (WEAK_PASSWORDS.some((w) => w.toLowerCase() === next.toLowerCase())) {
+    ElMessage.warning('新密码过于简单，请勿使用常见弱口令')
+    return
+  }
+  if (staff && (!/[A-Za-z]/.test(next) || !/\d/.test(next))) {
+    ElMessage.warning('教师/管理员密码需同时包含字母和数字')
     return
   }
   if (next !== String(changeForm.value.confirm || '').trim()) {

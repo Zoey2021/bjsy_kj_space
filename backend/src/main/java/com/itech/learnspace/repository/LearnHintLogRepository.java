@@ -11,6 +11,8 @@ public interface LearnHintLogRepository extends JpaRepository<LearnHintLog, Long
             Long studentId, Long lessonId, Integer activityIndex, Integer hintIndex);
 
     List<LearnHintLog> findByLessonId(Long lessonId);
+    List<LearnHintLog> findByStudentIdAndLessonId(Long studentId, Long lessonId);
+    List<LearnHintLog> findByStudentId(Long studentId);
     long deleteByLessonIdAndStudentIdIn(Long lessonId, List<Long> studentIds);
 
     @Query("SELECT COUNT(h) FROM LearnHintLog h WHERE h.studentId = ?1 AND h.lessonId = ?2 AND h.activityIndex = ?3")

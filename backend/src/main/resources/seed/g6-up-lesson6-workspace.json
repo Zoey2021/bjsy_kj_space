@@ -92,7 +92,9 @@
       "title": "验证与升级",
       "step": 3,
       "path": "/lessons/g6-up-lesson6/index.html",
-      "unlocked": true
+      "unlocked": true,
+      "openResponses": true,
+      "surveyTheme": true
     }
   ],
   "quiz": {

@@ -1,6 +1,16 @@
 <template>
   <!-- 学生工作台：左侧课程信息 + 右侧内容（六年级上第1课等） -->
-  <div v-if="workspacePlan" class="lesson-studio" :class="{ 'studio-play-fs': playFullscreen }">
+  <div v-if="lessonExpired" class="lesson-expired-page">
+    <el-page-header @back="goBack" :content="lesson?.title || '课程'" />
+    <div class="expired-card">
+      <p class="expired-badge">已过期</p>
+      <h2>{{ lesson?.title }}</h2>
+      <p>{{ expiredMeta?.tip || '本课学习资源已收回。' }}</p>
+      <el-button type="primary" @click="goBack">返回目录</el-button>
+    </div>
+  </div>
+
+  <div v-else-if="workspacePlan" class="lesson-studio" :class="{ 'studio-play-fs': playFullscreen }">
     <aside class="studio-left">
       <div class="lesson-title-bar">{{ workspacePlan.lessonTitle || lesson?.title }}</div>
 
@@ -317,6 +327,7 @@ import LessonIntroMindMap from '../../components/student/LessonIntroMindMap.vue'
 import ClassLearningScreen from '../../components/student/ClassLearningScreen.vue'
 import ActivityScaffoldPanel from '../../components/student/ActivityScaffoldPanel.vue'
 import { buildLessonIntroMap } from '../../utils/buildLessonIntroMap'
+import { isExpiredLesson, expiredLessonMeta } from '../../constants/expiredLessons'
 
 const route = useRoute()
 const router = useRouter()
@@ -324,9 +335,16 @@ const isTeacherPreview = computed(() =>
   route.meta.teacherPreview === true || /^\/teacher\/lesson\/\d+$/.test(route.path)
 )
 const lesson = ref(null)
+const lessonGradeName = ref('')
 const resources = ref([])
 const tasks = ref([])
 const textbookPdfUrl = ref('')
+const lessonExpired = computed(() =>
+  !isTeacherPreview.value && isExpiredLesson(lesson.value, lessonGradeName.value)
+)
+const expiredMeta = computed(() =>
+  expiredLessonMeta(lesson.value, lessonGradeName.value)
+)
 const savingProgress = ref(false)
 const handingIn = ref(false)
 const handedIn = ref(false)
@@ -486,6 +504,12 @@ const appendActivityParams = (path, act) => {
         ? '&v=20261023b'
       : path.includes('/lessons/g6-up-lesson4/')
         ? '&v=20261024b'
+      : path.includes('/lessons/g6-up-lesson6/')
+        ? '&v=20261110c'
+      : path.includes('/lessons/g6-up-lesson7/')
+        ? '&v=20261103b'
+      : path.includes('/lessons/g4-up-lesson7/')
+        ? '&v=20261105a'
       : path.includes('/lessons/g4-up-lesson5/')
         ? '&v=20261021g'
       : path.includes('/lessons/g4-up-lesson4/')
@@ -1470,10 +1494,15 @@ onMounted(async () => {
 
   const lessonRes = await getLesson(route.params.id)
   lesson.value = lessonRes.data.lesson
+  lessonGradeName.value = lessonRes.data.gradeName || ''
   resources.value = lessonRes.data.resources || []
   tasks.value = lessonRes.data.tasks || []
   textbookPdfUrl.value = lessonRes.data.textbookPdfUrl || ''
   tasks.value.forEach((t) => { answers[t.id] = {} })
+
+  if (lessonExpired.value) {
+    return
+  }
 
   if (!isTeacherPreview.value) {
     const [meRes, recordsRes, pretestRes, contentRes] = await Promise.all([
@@ -1929,6 +1958,39 @@ onUnmounted(() => {
 }
 .immersive-title { flex: 1; font-weight: 600; font-size: 15px; }
 .immersive-frame { flex: 1; width: 100%; border: none; }
+.lesson-expired-page {
+  max-width: 720px;
+  margin: 24px auto;
+  padding: 0 16px 40px;
+}
+.expired-card {
+  margin-top: 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+}
+.expired-badge {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+}
+.expired-card h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  color: #1e293b;
+}
+.expired-card p {
+  margin: 0 0 20px;
+  color: #64748b;
+  line-height: 1.7;
+}
 .lesson-page { max-width: 900px; margin: 0 auto; }
 .section { margin-top: 20px; }
 .resource-item, .task-item { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee; }

@@ -5,87 +5,243 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>小派老师 · Python编程小导师</title>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; font-family:'PingFang SC','Microsoft YaHei',sans-serif; }
+  :root {
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: rgba(15, 23, 42, 0.08);
+    --paper: #f1f5f9;
+    --panel: #ffffff;
+    --accent: #0e7490;
+    --accent-deep: #155e75;
+    --user: #0f172a;
+    --shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    --sans: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
   html, body {
     height: 100%;
     width: 100%;
     overflow: hidden;
-    background: #eef4ff;
+    background:
+      radial-gradient(800px 380px at 8% -8%, rgba(14, 116, 144, 0.12), transparent 55%),
+      radial-gradient(640px 320px at 100% 0%, rgba(100, 116, 139, 0.10), transparent 50%),
+      linear-gradient(180deg, #e8eef5 0%, var(--paper) 45%, #e2e8f0 100%);
+    color: var(--ink);
+    font-family: var(--sans);
   }
-  /* 嵌在 iframe 里用 100%，避免 100vh 把输入栏顶出可视区 */
   .app {
-    max-width: 720px;
+    width: 100%;
+    max-width: 920px;
     margin: 0 auto;
     height: 100%;
-    max-height: 100%;
     display: flex;
     flex-direction: column;
-    background: #f7f9ff;
     overflow: hidden;
   }
-  header {
+  header.top {
     flex-shrink: 0;
-    background: linear-gradient(135deg,#5b8cff,#8a6bff);
-    color: #fff;
-    padding: 12px 16px;
     display: flex;
     align-items: center;
     gap: 12px;
-    box-shadow: 0 2px 10px rgba(90,120,255,.25);
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px);
   }
-  .avatar { width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px; }
-  header h1 { font-size:17px; }
-  header p { font-size:12px; opacity:.9; }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #155e75, #0e7490 60%, #22d3ee);
+    color: #ecfeff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    box-shadow: 0 6px 14px rgba(14, 116, 144, 0.25);
+    flex-shrink: 0;
+  }
+  .who { min-width: 0; }
+  .who h1 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+  }
+  .who p {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .badge {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-deep);
+    background: rgba(14, 116, 144, 0.08);
+    border: 1px solid rgba(14, 116, 144, 0.14);
+    border-radius: 999px;
+    padding: 4px 9px;
+    white-space: nowrap;
+  }
   .messages {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 16px;
+    padding: 18px 18px 10px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
   }
-  .msg { max-width:82%; padding:10px 14px; border-radius:16px; line-height:1.6; font-size:15px; white-space:pre-wrap; word-break:break-word; }
-  .user { align-self:flex-end; background:linear-gradient(135deg,#5b8cff,#6ea5ff); color:#fff; border-bottom-right-radius:4px; }
-  .bot { align-self:flex-start; background:#fff; color:#333; border:1px solid #e3e9ff; border-bottom-left-radius:4px; box-shadow:0 1px 4px rgba(0,0,0,.04); }
-  .bot code { background:#f0f3ff; padding:0 4px; border-radius:4px; font-family:Consolas,monospace; font-size:13px; }
-  .bot pre { background:#282c34; color:#e6e6e6; padding:12px 14px; border-radius:10px; overflow-x:auto; margin:6px 0; font-size:13px; font-family:Consolas,monospace; line-height:1.5; white-space:pre-wrap; }
-  .tip { text-align:center; color:#98a2c7; font-size:13px; }
-  .inputbar {
+  .tip {
+    align-self: center;
+    max-width: 520px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.65;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.45);
+    border: 1px solid var(--line);
+  }
+  .msg {
+    max-width: min(78%, 640px);
+    padding: 11px 14px;
+    border-radius: 16px;
+    line-height: 1.65;
+    font-size: 14.5px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    animation: rise .28s ease both;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  .user {
+    align-self: flex-end;
+    background: var(--user);
+    color: #f5f5f4;
+    border-bottom-right-radius: 5px;
+    box-shadow: 0 8px 20px rgba(30, 58, 58, 0.18);
+  }
+  .bot {
+    align-self: flex-start;
+    background: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-bottom-left-radius: 5px;
+    box-shadow: var(--shadow);
+  }
+  .bot strong { font-weight: 700; }
+  .bot a { color: var(--accent-deep); }
+  .bot code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: rgba(14, 116, 144, 0.08);
+    padding: 1px 5px;
+    border-radius: 5px;
+  }
+  .bot pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin: 8px 0;
+    font-size: 12.5px;
+    font-family: var(--mono);
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+  .composer {
     flex-shrink: 0;
+    padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(180deg, transparent, rgba(241, 245, 249, 0.95) 30%);
+  }
+  .inputbar {
     display: flex;
     align-items: flex-end;
     gap: 8px;
-    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    padding: 8px;
+    border-radius: 16px;
     background: #fff;
-    border-top: 1px solid #eef2ff;
+    border: 1px solid var(--line);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
   }
-  textarea { flex:1; border:1px solid #dbe3ff; border-radius:12px; padding:10px 12px; font-size:15px; resize:none; outline:none; height:44px; min-height:44px; max-height:120px; line-height:1.4; }
-  textarea:focus { border-color:#5b8cff; }
-  .btn { border:none; border-radius:12px; cursor:pointer; font-size:15px; flex-shrink:0; }
-  .send { background:linear-gradient(135deg,#5b8cff,#8a6bff); color:#fff; padding:10px 18px; min-height:44px; }
-  .send:disabled { opacity:.5; cursor:not-allowed; }
-  .upload { background:#eef2ff; color:#5b8cff; padding:10px 12px; font-size:20px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
-  .attach { display:none; }
+  textarea {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    padding: 10px 8px;
+    font-size: 14.5px;
+    font-family: var(--sans);
+    resize: none;
+    outline: none;
+    height: 44px;
+    min-height: 44px;
+    max-height: 120px;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+  textarea::placeholder { color: #a8a29e; }
+  .btn {
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: var(--sans);
+    flex-shrink: 0;
+  }
+  .send {
+    background: var(--accent);
+    color: #fff;
+    padding: 0 16px;
+    min-height: 42px;
+    transition: background .15s ease, transform .15s ease;
+  }
+  .send:hover { background: var(--accent-deep); }
+  .send:active { transform: translateY(1px); }
+  .send:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  .upload {
+    width: 42px;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    color: var(--ink);
+    font-size: 16px;
+  }
+  .upload:hover { background: rgba(14, 116, 144, 0.12); color: var(--accent-deep); }
+  .attach { display: none; }
 </style>
 </head>
 <body>
 <div class="app">
-  <header>
-    <div class="avatar">🐍</div>
-    <div>
+  <header class="top">
+    <div class="avatar" aria-hidden="true">Py</div>
+    <div class="who">
       <h1>小派老师</h1>
-      <p>六年级 Python 编程小导师 · 有想法就说出来 💡</p>
+      <p>六年级 Python 编程小导师</p>
     </div>
+    <span class="badge">在线辅导</span>
   </header>
   <div class="messages" id="messages">
-    <div class="tip">你好呀，我是你的编程小老师！输入问题，或上传算法流程图，都可以来找我~</div>
+    <div class="tip">你好，我是小派老师。可以问 Python 问题，也可以上传算法流程图一起看。</div>
   </div>
-  <div class="inputbar">
-    <label class="btn upload" title="上传图片(算法流程图/草稿)">🖼<input class="attach" type="file" id="file" accept="image/*"></label>
-    <textarea id="input" placeholder="问问小派老师，比如：怎么用Python算平均分？"></textarea>
-    <button class="btn send" id="send">发送</button>
+  <div class="composer">
+    <div class="inputbar">
+      <label class="btn upload" title="上传图片（算法流程图 / 草稿）">＋<input class="attach" type="file" id="file" accept="image/*"></label>
+      <textarea id="input" placeholder="例如：怎么用 Python 算平均分？"></textarea>
+      <button class="btn send" id="send">发送</button>
+    </div>
   </div>
 </div>
 
@@ -170,7 +326,6 @@ function compressImage(file) {
 function toAbsoluteUrl(url) {
   if (!url) return url;
   if (/^https?:\/\//i.test(url)) {
-    // 反代若误写成 http，统一抬成 https
     if (url.indexOf("http://bjsysmartedu.cn") === 0) {
       return "https://" + url.slice("http://".length);
     }
@@ -214,11 +369,11 @@ async function send() {
   addMsg("user", (img ? "[图片] " : "") + text);
   inputEl.value = "";
   hasImageUrl = null;
-  fileEl.title = "上传图片(算法流程图/草稿)";
+  fileEl.title = "上传图片（算法流程图 / 草稿）";
   const content = [];
   if (text) content.push({ type: "text", text: text });
   if (img) content.push({ type: "image_url", image_url: { url: img } });
-  const botBox = addMsg("bot", "思考中...");
+  const botBox = addMsg("bot", "思考中…");
   sendBtn.disabled = true;
   try {
     const resp = await fetch(CONFIG.API_URL, {
@@ -234,7 +389,7 @@ async function send() {
     if (!resp.ok) {
       let detail = "";
       try { detail = await resp.text(); } catch (e) {}
-      botBox.innerHTML = "😢 请求失败：" + resp.status + (detail ? ("<br>" + _render(detail.slice(0, 200))) : "");
+      botBox.innerHTML = "请求失败：" + resp.status + (detail ? ("<br>" + _render(detail.slice(0, 200))) : "");
       return;
     }
     const reader = resp.body.getReader();
@@ -253,22 +408,20 @@ async function send() {
         try {
           const obj = JSON.parse(data);
           if (obj.error && obj.error.message) {
-            botBox.innerHTML = _render("😢 " + obj.error.message);
+            botBox.innerHTML = _render(obj.error.message);
             started = true;
             continue;
           }
           if (obj.content && obj.content.error) {
             var errObj = obj.content.error;
             var errMsg = (typeof errObj === "string") ? errObj : (errObj.message || JSON.stringify(errObj));
-            botBox.innerHTML = _render("😢 " + errMsg);
+            botBox.innerHTML = _render(errMsg);
             started = true;
             continue;
           }
           let piece = "";
-          // OpenAI 兼容
           const delta = obj.choices && obj.choices[0] && obj.choices[0].delta;
           if (delta && delta.content) piece = delta.content;
-          // 扣子 /stream_run：type=answer
           if (!piece && obj.type === "answer" && obj.content && obj.content.answer) {
             piece = obj.content.answer;
           }
@@ -283,7 +436,7 @@ async function send() {
     }
     if (!started) botBox.innerHTML = _render(full || "(暂无回复)");
   } catch (e) {
-    botBox.innerHTML = "😢 连接失败：" + e.message;
+    botBox.innerHTML = "连接失败：" + e.message;
   } finally {
     sendBtn.disabled = false;
   }
@@ -302,10 +455,10 @@ fileEl.addEventListener("change", async function(e){
   const tip = addMsg("bot", "正在上传图片…");
   try {
     hasImageUrl = await uploadImage(f);
-    tip.innerHTML = _render("图片已上传，可以输入问题后点发送。");
+    tip.innerHTML = _render("图片已上传，输入问题后点发送即可。");
   } catch (err) {
     hasImageUrl = null;
-    tip.innerHTML = _render("😢 图片上传失败：" + (err.message || "请重试"));
+    tip.innerHTML = _render("图片上传失败：" + (err.message || "请重试"));
   } finally {
     uploading = false;
     sendBtn.disabled = false;

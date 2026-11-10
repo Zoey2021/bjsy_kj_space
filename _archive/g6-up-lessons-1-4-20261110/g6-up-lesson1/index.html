@@ -1,0 +1,2203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>算法与问题解决 — 探究活动</title>
+<script>
+(function () {
+  try {
+    if (new URLSearchParams(location.search).get('embedded') === '1') {
+      document.documentElement.classList.add('embedded-mode');
+    }
+  } catch (e) {}
+})();
+</script>
+<style>
+:root {
+  --p: #264653; --s: #2A9D8F; --a: #E9C46A; --l: #F4A261; --coral: #E76F51;
+  --bg: #F7F6F2; --card: #FFF; --bd: #E0E0E0; --tx: #333; --tx2: #666;
+  --sh: 0 2px 12px rgba(0,0,0,0.08); --sh2: 0 4px 24px rgba(0,0,0,0.12);
+  --r: 12px; --rs: 8px; --tr: 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC","Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+
+/* Header */
+.header{background:linear-gradient(135deg,var(--p),#1a3a45);color:#FFF;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh2);z-index:100;position:relative}
+.header-left{display:flex;align-items:center;gap:14px}
+.header-icon{width:42px;height:42px;background:var(--a);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.header h1{font-size:20px;font-weight:700;letter-spacing:.5px}
+.header-sub{font-size:11px;opacity:.75;margin-top:2px}
+.btn-reset{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#FFF;padding:7px 16px;border-radius:var(--rs);cursor:pointer;font-size:13px;transition:var(--tr);font-family:inherit}
+.btn-reset:hover{background:rgba(255,255,255,.22)}
+
+/* Step Nav */
+.step-nav{display:flex;background:var(--card);border-bottom:1px solid var(--bd);padding:0 32px;position:sticky;top:0;z-index:99;box-shadow:0 1px 4px rgba(0,0,0,.04);gap:4px}
+.step-tab{padding:14px 24px;cursor:pointer;font-size:14px;font-weight:600;color:var(--tx2);border-bottom:3px solid transparent;transition:var(--tr);display:flex;align-items:center;gap:8px;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none}
+.step-tab:hover{color:var(--s);background:rgba(42,157,143,.04)}
+.step-tab.active{color:var(--p);border-bottom-color:var(--s)}
+.step-tab .step-num{width:26px;height:26px;border-radius:50%;background:var(--bd);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--tx2);transition:var(--tr)}
+.step-tab.active .step-num{background:var(--s);color:#FFF}
+.step-tab.done .step-num{background:var(--s);color:#FFF}
+.step-tab .done-icon{display:none}
+.step-tab.done .done-icon{display:inline}
+.step-tab.done .num-txt{display:none}
+
+/* Main */
+.main{padding:20px 32px;max-width:1440px;margin:0 auto}
+.step-panel{display:none}
+.step-panel.active{display:block;animation:fadeIn .35s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== STEP 1: Flowchart Builder ===== */
+.fc-layout{display:flex;gap:16px;height:calc(100vh - 200px);min-height:540px}
+/* Left info panel — 题目 + Logo */
+.fc-info-panel{width:210px;min-width:210px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.fc-info-title{font-size:15px;font-weight:700;color:var(--p);display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:2px solid rgba(42,157,143,.2)}
+.fc-info-desc{font-size:13px;color:var(--tx);line-height:1.75}
+.fc-logos-wrap{margin-top:auto;padding-top:6px;border-top:1px dashed rgba(42,157,143,.25)}
+.fc-logos-wrap .fc-logos{margin-top:6px}
+.fc-logos{display:flex;flex-direction:row;gap:8px;flex-shrink:0}
+.fc-logos-label{width:100%;font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:-4px}
+.fc-logo-item{flex:1;min-width:0;background:#F8F9FA;border:1.5px solid var(--bd);border-radius:var(--rs);padding:6px 8px;text-align:center}
+.fc-logo-item img{max-width:100%;max-height:56px;width:auto;height:auto;object-fit:contain;border-radius:4px;margin-bottom:4px;display:block;margin-left:auto;margin-right:auto}
+.fc-logo-label{font-size:11px;font-weight:700;color:var(--s)}
+.fc-logo-sub,.logo-sub{font-size:10px;color:var(--tx2);margin-top:1px;line-height:1.3}
+
+/* Right workspace — 素材面板 + 工具栏 + 画布 */
+.fc-workspace{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.fc-palette-bar{display:flex;gap:8px;padding:10px 14px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);flex-wrap:wrap;align-items:center}
+.fc-palette-bar .pal-label{font-size:12px;font-weight:700;color:var(--tx2);margin-right:4px}
+.fc-sidebar{width:180px;min-width:180px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px;display:flex;flex-direction:column;gap:10px}
+.fc-sidebar h3{font-size:13px;color:var(--tx2);text-align:center;padding-bottom:8px;border-bottom:1px solid var(--bd);margin-bottom:2px}
+.pal-item{padding:10px 8px;border:2px dashed var(--bd);border-radius:var(--rs);cursor:grab;text-align:center;font-size:12px;font-weight:600;transition:var(--tr);user-select:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+.pal-item:hover{border-color:var(--s);background:rgba(42,157,143,.04);transform:translateY(-2px);box-shadow:var(--sh)}
+.pal-item:active{cursor:grabbing}
+.pal-item .pal-shape{pointer-events:none}
+.pal-preview-term{width:70px;height:28px;border-radius:14px;background:var(--p)}
+.pal-preview-io{width:76px;height:28px;background:#E3F2FD;border:2px solid #64B5F6;transform:skewX(-12deg);border-radius:2px}
+.pal-preview-proc{width:80px;height:30px;border-radius:4px;background:#E8F4F2;border:2px solid var(--s)}
+.pal-preview-dec{width:44px;height:44px;background:#FEF9E7;border:2px solid var(--a);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+
+.fc-main{flex:1;display:flex;flex-direction:column;gap:10px}
+.fc-toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.fc-toolbar button{padding:7px 16px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--card);cursor:pointer;font-size:12px;font-family:inherit;font-weight:500;transition:var(--tr);display:flex;align-items:center;gap:5px}
+.fc-toolbar button:hover{border-color:var(--s);color:var(--s)}
+.fc-toolbar .active-mode{background:var(--s);color:#FFF;border-color:var(--s)}
+.fc-toolbar .btn-danger:hover{border-color:var(--coral);color:var(--coral)}
+.mode-hint{font-size:11px;color:var(--tx2);padding:7px 0;margin-left:auto}
+.mode-hint .mh-connect{color:var(--l);font-weight:600}
+.mode-hint .mh-move{color:var(--s);font-weight:600}
+
+.fc-canvas-wrap{flex:1;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;position:relative}
+.fc-canvas{width:100%;height:100%;position:relative;background-image:radial-gradient(circle,#ddd 1px,transparent 1px);background-size:20px 20px;overflow:auto}
+
+/* Task card (Step 1) — inside left panel */
+.fc-task-card{background:linear-gradient(135deg,#E8F4F2,#F0FAF8);border:1.5px solid rgba(42,157,143,.3);border-radius:var(--r);padding:14px 16px;box-shadow:0 1px 6px rgba(42,157,143,.1)}
+.fc-task-title{font-size:14px;font-weight:700;color:var(--p);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.fc-task-body{display:flex;flex-direction:column;gap:10px}
+.fc-task-desc{font-size:12.5px;color:var(--tx);line-height:1.7}
+.fc-task-steps{display:flex;flex-direction:column;gap:5px}
+.fc-step{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;font-size:12.5px;color:var(--tx2);line-height:1.6}
+.fc-step-num{width:22px;height:22px;border-radius:50%;background:var(--s);color:#FFF;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
+.fc-step-text{min-width:0;word-break:normal;white-space:normal}
+.fc-task-tip{width:100%;margin-top:8px;padding:8px 12px;background:rgba(233,196,106,.18);border:1px solid rgba(233,196,106,.35);border-radius:var(--rs);font-size:12.5px;color:#8B6E00;line-height:1.5}
+.scaf-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.scaf-C{background:#fdeaea;color:#b91c1c}
+.scaf-B{background:#fdf3e0;color:#b45309}
+.scaf-A{background:#e6f6ec;color:#15803d}
+.scaf-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.55;color:#334155}
+.scaf-card b{color:#0f766e}
+.scaf-symbols{display:grid;grid-template-columns:22px 1fr;gap:5px 8px;align-items:center}
+.sym{width:20px;height:16px}
+.sym-term{border-radius:10px;background:#264653}
+.sym-io{background:#E3F2FD;border:1.5px solid #64B5F6;transform:skewX(-16deg)}
+.sym-proc{background:#E8F4F2;border:1.5px solid #2A9D8F;border-radius:2px}
+.sym-dec{width:16px;height:16px;background:#FEF9E7;border:1.5px solid #E9C46A;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.preview-tier{display:none;gap:6px;align-items:center;margin:0 0 10px;font-size:13px;font-weight:700;color:#64748b}
+.preview-tier button{border:1px solid #d0d7de;background:#fff;color:#264653;border-radius:999px;padding:4px 12px;cursor:pointer;font-weight:800}
+.preview-tier button.on{background:#2A9D8F;border-color:#2A9D8F;color:#fff}
+.fc-canvas-inner{position:relative;width:1100px;height:920px;overflow:visible;isolation:isolate}
+.fc-conn-svg{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;overflow:visible;pointer-events:none;background:transparent;fill:none}
+.fc-conn-svg .conn-line{fill:none;stroke:#264653;stroke-width:2.4;marker-end:url(#arrowhead);pointer-events:none}
+.fc-conn-svg .conn-hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
+.fc-conn-svg.mode-delete .conn-hit:hover{stroke:rgba(231,111,81,.28)}
+.fc-conn-svg .conn-line.is-hot{stroke:#E76F51}
+
+/* Nodes — 四种标准流程图形状 */
+.fc-node{position:absolute;cursor:move;user-select:none;z-index:20;transition:box-shadow .15s;overflow:visible}
+.fc-node:hover{z-index:30}
+.fc-node.dragging{z-index:40;opacity:.92}
+.fc-node .n-body{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;font-weight:600;line-height:1.3;transition:var(--tr)}
+.fc-node .n-text{position:relative;z-index:2;padding:4px 8px;word-break:break-word;pointer-events:none;max-width:100%}
+/* 开始/结束：圆角矩形 */
+.fc-node.type-start .n-body,.fc-node.type-end .n-body{width:125px;height:46px;border-radius:23px;background:var(--p);color:#FFF;border:2px solid var(--p)}
+.fc-node.type-start .n-text,.fc-node.type-end .n-text{color:#FFF}
+/* 处理：长方形 */
+.fc-node.type-process .n-body{width:150px;height:52px;border-radius:4px;background:#E8F4F2;border:2px solid var(--s);color:var(--p)}
+/* 输入/输出：平行四边形 */
+.fc-node.type-io .n-body{width:150px;height:48px;background:#E3F2FD;border:2px solid #64B5F6;color:#1565C0;transform:skewX(-12deg);border-radius:2px}
+.fc-node.type-io .n-text{transform:skewX(12deg);display:block;width:100%}
+/* 判断：旋转正方形，避免 clip-path 在部分电脑上把图块“画没” */
+.fc-node.type-decision .n-body{width:58px;height:58px;margin:11px auto 0;background:#FEF9E7;border:2px solid var(--a);transform:rotate(45deg);border-radius:4px;color:var(--p)}
+.fc-node.type-decision .n-text{transform:rotate(-45deg);width:92px}
+
+/* 四向连接点（上下左右） */
+.port{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--card);border:2px solid var(--s);z-index:40;cursor:crosshair;transition:opacity .15s,transform .15s,background .15s;opacity:0}
+.fc-node:hover .port,.fc-node .port.port-active{opacity:1}
+.port:hover,.port.port-active{background:var(--a);border-color:var(--a)}
+.port-top{top:-6px;left:50%;transform:translateX(-50%)}
+.port-top:hover,.port-top.port-active{transform:translateX(-50%) scale(1.35)}
+.port-bottom{bottom:-6px;left:50%;transform:translateX(-50%)}
+.port-bottom:hover,.port-bottom.port-active{transform:translateX(-50%) scale(1.35)}
+.port-left{left:-6px;top:50%;transform:translateY(-50%)}
+.port-left:hover,.port-left.port-active{transform:translateY(-50%) scale(1.35)}
+.port-right{right:-6px;top:50%;transform:translateY(-50%)}
+.port-right:hover,.port-right.port-active{transform:translateY(-50%) scale(1.35)}
+.pl-yes,.pl-no{position:absolute;font-size:10px;font-weight:700;color:var(--s);pointer-events:none;z-index:41;opacity:0}
+.fc-node.type-decision:hover .pl-yes,.fc-node.type-decision:hover .pl-no{opacity:1}
+.pl-yes{left:-14px;top:50%;transform:translateY(-50%)}
+.pl-no{right:-14px;top:50%;transform:translateY(-50%)}
+/* Delete btn */
+.n-del{position:absolute;top:-10px;right:-10px;width:20px;height:20px;border-radius:50%;background:var(--coral);color:#FFF;border:none;cursor:pointer;font-size:11px;display:none;align-items:center;justify-content:center;z-index:50;line-height:1}
+.fc-node:hover .n-del{display:flex}
+
+/* Ghost */
+.ghost-elem{position:fixed;pointer-events:none;z-index:9999;opacity:.7;transform:translate(-50%,-50%)}
+
+/* Toast */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--p);color:#FFF;padding:12px 24px;border-radius:24px;font-size:14px;z-index:999;box-shadow:var(--sh2);animation:toastIn .35s ease;font-family:inherit}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ===== STEP 2 & 3: Code Activities ===== */
+.code-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;min-height:480px}
+.code-panel{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:22px;display:flex;flex-direction:column}
+.code-panel h3{font-size:15px;color:var(--p);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.code-panel h3 .cp-badge{font-size:11px;background:var(--s);color:#FFF;padding:2px 10px;border-radius:12px;font-weight:400}
+
+/* Code Editor (Python-style) */
+.code-editor{flex:1;background:#1E1E2E;border-radius:var(--rs);padding:18px 12px;font-family:"SF Mono","Fira Code","Consolas","Courier New",monospace;font-size:14px;line-height:1.85;color:#CDD6F4;overflow:auto;position:relative}
+.code-editor{counter-reset:line}
+.code-line{display:block;padding:0 8px;border-radius:3px;white-space:pre;font-family:inherit;font-size:inherit}
+.code-line:hover{background:rgba(255,255,255,.03)}
+/* Syntax colors */
+.code-editor .kw{color:#CBA6F7;font-weight:600}
+.code-editor .st{color:#A6E3A1}
+.code-editor .cm{color:#6C7086;font-style:italic}
+.code-editor .nu{color:#FAB387}
+.code-editor .fn{color:#89B4FA}
+.code-editor .op{color:#89DCEB}
+.code-editor .n{color:#CDD6F4}
+/* PEP8 Indent — 4 spaces per level */
+.indent-1{padding-left:44px !important}
+.indent-2{padding-left:80px !important}
+/* Line numbers */
+.code-line::before{counter-increment:line;content:counter(line);display:inline-block;width:38px;min-width:38px;text-align:right;padding-right:16px;color:#585B70;font-size:12px;user-select:none;vertical-align:baseline}
+/* Inline code input */
+.code-input{display:inline-block;min-width:44px;height:24px;background:#313244;border:2px solid var(--a);border-radius:4px;color:var(--a);font-family:inherit;font-size:13px;text-align:center;padding:0 6px;outline:none;transition:var(--tr);vertical-align:baseline;margin:0 2px}
+.code-input:focus{border-color:var(--s);background:#45475A;box-shadow:0 0 0 3px rgba(42,157,143,.2);color:#CDD6F4}
+.code-input::placeholder{color:#585B70;font-size:11px;font-style:italic}
+.code-input.ok{border-color:var(--s);background:rgba(42,157,143,.15);color:#A6E3A1}
+.code-input.err{border-color:var(--coral);background:rgba(231,111,81,.15);color:#F38BA8}
+
+.code-acts{margin-top:14px;display:flex;gap:10px;align-items:center}
+.btn-run{padding:9px 24px;background:var(--s);color:#FFF;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;transition:var(--tr);font-family:inherit;display:flex;align-items:center;gap:6px}
+.btn-run:hover{background:#238B7E;transform:translateY(-1px);box-shadow:var(--sh)}
+.btn-hint{padding:9px 18px;background:var(--card);color:var(--s);border:1px solid var(--s);border-radius:var(--rs);font-size:13px;cursor:pointer;font-family:inherit;transition:var(--tr)}
+.btn-hint:hover{background:rgba(42,157,143,.06)}
+
+.result-panel{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:22px;display:flex;flex-direction:column}
+.result-panel h3{font-size:15px;color:var(--p);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.result-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--tx2);gap:10px;font-size:14px}
+.result-empty .re-icon{font-size:42px;opacity:.45}
+.result-content{flex:1;display:none;flex-direction:column;gap:14px}
+.result-content.show{display:flex}
+
+.vote-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#F5F5F5;border-radius:var(--rs);padding:10px 14px;font-size:13px}
+.v-chip{padding:3px 10px;border-radius:16px;font-weight:600;font-size:12px}
+.v-chip.a{background:#E8F4F2;color:var(--s)}
+.v-chip.b{background:#FEF9E7;color:#B8860B}
+.v-chip.c{background:#FDE8E8;color:var(--coral)}
+
+.trace-table{width:100%;border-collapse:collapse;font-size:13px}
+.trace-table th{background:var(--p);color:#FFF;padding:8px 12px;text-align:center;font-weight:500;font-size:12px}
+.trace-table th:first-child{border-radius:var(--rs) 0 0 0}
+.trace-table th:last-child{border-radius:0 var(--rs) 0 0}
+.trace-table td{padding:7px 12px;text-align:center;border-bottom:1px solid var(--bd);font-family:"SF Mono","Consolas",monospace;font-size:13px}
+.trace-table tr:nth-child(even) td{background:#FAFAFA}
+.trace-table tr:last-child td{font-weight:700;background:#E8F4F2;border-bottom:none}
+
+.result-msg{padding:14px 16px;border-radius:var(--rs);font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.result-msg.success{background:#E8F4F2;color:var(--s);border:1px solid rgba(42,157,143,.3)}
+.result-msg.fail{background:#FDE8E8;color:var(--coral);border:1px solid rgba(231,111,81,.3)}
+
+/* Responsive */
+@media(max-width:1000px){
+  .fc-layout{flex-direction:column;height:auto}
+  .fc-info-panel{width:100%;min-width:auto;max-height:none}
+  .fc-logos{flex-direction:row}
+  .fc-logo-item{flex:1;min-width:140px}
+  .fc-palette-bar{flex-direction:column;align-items:stretch}
+  .fc-palette-bar .pal-item{flex:1;min-width:70px;padding:8px 4px;font-size:11px}
+  .fc-canvas-wrap{height:450px}
+  .code-layout{grid-template-columns:1fr}
+}
+.score-board{margin-top:4px;padding:8px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;font-size:12px;line-height:1.55;color:#334155}
+.score-board b{color:#0f766e}
+.score-board .ok{color:#15803d}
+.score-board .miss{color:#b45309}
+.score-board .vs-open{margin-top:8px;width:100%;border:0;background:#2A9D8F;color:#fff;border-radius:8px;padding:7px 8px;cursor:pointer;font-weight:700}
+.vote-sim{position:fixed;inset:0;z-index:400;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.vote-sim[hidden]{display:none !important}
+.vs-card{width:min(920px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px;padding:18px 20px 16px;box-shadow:0 24px 50px rgba(15,23,42,.2)}
+.vs-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+.vs-head h3{margin:0;font-size:18px;color:#1e293b}
+.vs-head p{margin:4px 0 0;font-size:13px;color:#64748b}
+.vs-close{border:0;background:#e2e8f0;border-radius:999px;padding:6px 12px;cursor:pointer;font-weight:700}
+.vs-bars{display:grid;grid-template-columns:1.2fr 1.2fr .9fr;gap:10px}
+.vs-item{border-radius:16px;padding:14px 12px 12px;text-align:center;position:relative;overflow:hidden}
+.vs-item span{display:block;font-size:13px;color:#475569}
+.vs-item b{display:block;font-size:36px;line-height:1.1;margin:4px 0;background:transparent}
+.vs-item small{color:#64748b}
+.vs-mini{display:block;height:10px;margin-top:10px;background:rgba(148,163,184,.35);border-radius:999px;overflow:hidden}
+.vs-mini i{display:block;height:100%;width:0;border-radius:999px;transition:width .2s;background:#94a3b8}
+.vs-item.a{background:#f3e8ff} .vs-item.a b{color:#6d28d9} .vs-item.a .vs-mini i{background:#7c3aed}
+.vs-item.b{background:#ffedd5} .vs-item.b b{color:#c2410c} .vs-item.b .vs-mini i{background:#f97316}
+.vs-item.x{background:#fce7f3} .vs-item.x b{color:#be123c} .vs-item.x .vs-mini i{background:#fb7185}
+.vs-total{display:flex;align-items:center;gap:10px;margin:14px 0}
+.vs-track{flex:1;height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+.vs-track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#f97316)}
+.vs-end{border:0;background:#e11d48;color:#fff;border-radius:10px;padding:7px 12px;cursor:pointer;font-weight:700}
+.vs-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#f8fafc;border-radius:16px;padding:10px}
+.vs-btn{border:0;border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:700;color:#fff}
+.vs-btn.a{background:#2563eb} .vs-btn.b{background:#ea580c}
+.vs-btn.sim{background:#f59e0b} .vs-btn.fill{background:#e11d48} .vs-btn.reset{background:#64748b}
+.vs-manual{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:4px 8px 4px 12px;font-size:13px}
+.vs-manual input{width:48px;border:0;outline:none;text-align:center}
+.vs-manual button{border:0;background:#2563eb;color:#fff;border-radius:999px;padding:6px 10px;cursor:pointer}
+.vs-log{background:#111827;color:#bef264;min-height:92px;max-height:140px;overflow:auto;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.6;margin:12px 0 8px}
+.vs-status{background:#f3e8ff;color:#6d28d9;border-radius:12px;padding:10px;text-align:center;font-weight:700;font-size:13px}
+
+.studio{display:flex;height:100vh;overflow:hidden;background:linear-gradient(180deg,#e8ecf4 0%,#eef1f8 100%)}
+.studio-nav{width:280px;flex-shrink:0;background:linear-gradient(180deg,#fafbfd 0%,#f1f5f9 100%);border-right:1px solid rgba(148,163,184,.35);box-shadow:4px 0 24px rgba(15,23,42,.04);display:flex;flex-direction:column;padding:0 0 12px}
+.studio-title{background:linear-gradient(135deg,#3730a3 0%,#4f46e5 55%,#6366f1 100%);color:#fff;font-size:15px;font-weight:700;padding:14px;line-height:1.45}
+.studio-menu{padding:10px;display:flex;flex-direction:column;gap:6px}
+.studio-item{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;padding:10px 12px;border:1px solid rgba(226,232,240,.9);border-radius:10px;background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);font-size:13px;color:#334155;cursor:pointer;font-family:inherit}
+.studio-item:hover{border-color:rgba(99,102,241,.35)}
+.studio-item.active{border-color:#6366f1;background:linear-gradient(135deg,#eef2ff 0%,#f5f3ff 100%);color:#4338ca;font-weight:600}
+.studio-item.done .done-tag{color:#10b981;font-weight:700;font-size:11px}
+.studio-item.muted{opacity:.55;cursor:default}
+.studio-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.studio-main .header{display:none}
+.studio-main .step-nav{display:none}
+.studio-main .main{flex:1;padding:12px 16px;max-width:none;overflow:hidden}
+.step-panel.active{height:100%}
+
+.ls-split{display:flex;gap:16px;height:100%;min-height:0}
+.ls-left{width:250px;min-width:230px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.ls-right{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.algo-read{align-items:stretch}
+.algo-read .algo-flow{
+  width:42%;
+  min-width:280px;
+  max-width:520px;
+  background:var(--card);
+  border-radius:var(--r);
+  box-shadow:var(--sh);
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  overflow:auto;
+}
+.algo-flow-cap{font-size:13px;color:var(--tx2);line-height:1.6;margin:0 0 10px}
+.algo-flow-img{display:block;width:100%;height:auto;max-height:100%;object-fit:contain;background:#fff;border-radius:10px;border:1px solid #e2e8f0}
+.algo-read .ls-right{overflow-y:auto}
+.model-summary{
+  margin-top:14px;
+  padding:14px 16px;
+  border-radius:12px;
+  background:linear-gradient(135deg,#ecfdf5,#f0fdfa);
+  border:1px solid #a7f3d0;
+  color:#065f46;
+  line-height:1.85;
+  font-size:14px;
+}
+.model-summary b{color:#047857}
+.step-fill{
+  font-size:15px;
+  line-height:2.05;
+  color:#1e293b;
+  margin:0 0 12px;
+  padding:12px 14px;
+  background:#f8fafc;
+  border-radius:12px;
+  border:1px solid #e2e8f0;
+}
+.step-fill .n{display:inline-block;min-width:2.2em;font-weight:800;color:var(--s)}
+.blank-in{
+  display:inline-block;
+  width:76px;
+  border:none;
+  border-bottom:2px solid #2A9D8F;
+  background:transparent;
+  text-align:center;
+  font-size:15px;
+  font-weight:700;
+  color:var(--p);
+  padding:2px 4px;
+  margin:0 3px;
+  font-family:inherit;
+}
+.blank-in.wide{width:92px}
+.blank-in.ok{border-bottom-color:#15803d;color:#15803d}
+.blank-in.bad{border-bottom-color:#b91c1c;color:#b91c1c;background:#fef2f2}
+.scaf-only-c,.scaf-only-a{display:none !important}
+body.tier-c .scaf-only-c{display:block !important}
+body.tier-c .story-card.scaf-only-c{display:grid !important}
+body.tier-c .init-chips.scaf-only-c{display:flex !important}
+.demo-tag{display:none;margin-left:8px;font-size:11px;font-weight:700;color:#0f766e;background:#ecfdf5;border-radius:999px;padding:2px 8px;vertical-align:middle}
+body.tier-c .demo-tag{display:inline-block}
+.blank-in[readonly]{border-bottom-color:#86efac;background:#f0fdf4;color:#15803d}
+.algo-challenge{margin-top:14px;padding:14px;border-radius:12px;background:#f5f3ff;border:1px solid #ddd6fe}
+.algo-challenge h3{margin:0 0 8px;font-size:14px;color:#5b21b6}
+.algo-challenge p{margin:0 0 10px;font-size:13px;line-height:1.7;color:#4c1d95}
+body.tier-a .scaf-only-a{display:block !important}
+body.tier-a .scaf-hide-a,body.tier-c .scaf-hide-c{display:none !important}
+.field-guide{font-size:11px;color:#64748b;margin:4px 0 0;line-height:1.5}
+.init-chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.init-chips button{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer;font-size:12px;font-family:inherit}
+.init-chips button.on{border-color:var(--s);background:#ecfdf5;color:#0f766e;font-weight:700}
+body.embedded-mode:not(.preview-mode) .scaf-badge{display:none !important}
+body.tier-a:not(.show-verify-choices) #verifyChoices{display:none}
+
+html.embedded-mode,
+html.embedded-mode body,
+body.embedded-mode { background: #fff; }
+html.embedded-mode .studio,
+body.embedded-mode .studio{display:block;height:auto;min-height:0;overflow:visible;background:#fff}
+html.embedded-mode .studio-nav,
+html.embedded-mode .header,
+html.embedded-mode .step-nav,
+body.embedded-mode .studio-nav,
+body.embedded-mode .header,
+body.embedded-mode .step-nav { display: none !important; }
+html.embedded-mode .studio-main,
+html.embedded-mode .studio-main .main,
+body.embedded-mode .studio-main,
+body.embedded-mode .studio-main .main { overflow: auto; height: auto; max-height: none; }
+html.embedded-mode .main,
+body.embedded-mode .main { padding: 8px 10px; max-width: none; }
+html.embedded-mode .fc-info-title,
+body.embedded-mode .fc-info-title { display: none !important; }
+html.embedded-mode .fc-layout,
+html.embedded-mode .ls-split,
+body.embedded-mode .fc-layout,
+body.embedded-mode .ls-split { height: calc(100vh - 20px); min-height: 480px; }
+html.embedded-mode .code-layout,
+body.embedded-mode .code-layout { min-height: calc(100vh - 32px); }
+html.embedded-mode .step-panel.active,
+body.embedded-mode .step-panel.active { height: auto; min-height: calc(100vh - 24px); }
+
+/* ===== Lesson cards (act1 / act3) ===== */
+.ls-wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.ls-section{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:20px 22px;border:1px solid var(--bd)}
+.ls-section.locked{opacity:.42;filter:grayscale(.25);pointer-events:none}
+.ls-section.revealed{animation:fadeIn .4s ease}
+.ls-kicker{font-size:12px;font-weight:700;color:var(--s);letter-spacing:.04em}
+.ls-section h2{font-size:20px;color:var(--p);margin:4px 0 6px}
+.ls-lead{font-size:13px;color:var(--tx2);line-height:1.7}
+.ls-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+.ls-mark{width:36px;height:36px;border-radius:10px;background:rgba(42,157,143,.12);color:var(--s);display:flex;align-items:center;justify-content:center;font-weight:800}
+.story-card{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.story-side{border-radius:12px;padding:14px 16px}
+.story-side.manual{background:#fff7ed;border:1px solid #fed7aa}
+.story-side.computer{background:#ecfdf5;border:1px solid #a7f3d0}
+.story-side h3{font-size:15px;margin-bottom:6px}
+.story-side p{font-size:13px;line-height:1.7;color:#444}
+.question-box{margin-top:12px;padding:14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0}
+.question-title{font-size:14px;font-weight:700;color:var(--p);margin-bottom:10px}
+.choice-list,.quiz-options,.rule-grid{display:flex;flex-direction:column;gap:8px}
+.choice,.quiz-option{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;font-size:13px;line-height:1.6}
+.choice:hover,.quiz-option:hover{border-color:var(--s)}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:6px}
+.field input,.ls-section textarea{width:100%;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit}
+.ls-section textarea{min-height:110px;resize:vertical}
+.info-strip{background:#eef6f5;border:1px solid rgba(42,157,143,.25);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;margin-bottom:12px}
+.info-strip.small{font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{border:0;border-radius:10px;padding:8px 16px;cursor:pointer;font-weight:700;font-family:inherit;font-size:13px}
+.btn-primary{background:var(--s);color:#fff}
+.btn-ghost{background:#e2e8f0;color:#334155}
+.btn-small{padding:6px 12px;font-size:12px}
+.feedback{margin-top:10px;font-size:13px;line-height:1.7;white-space:pre-wrap}
+.feedback.success{color:#15803d}
+.feedback.error{color:#b91c1c}
+.feedback.info{color:#334155}
+.unlock-note{margin-top:8px;font-size:12px;color:var(--tx2)}
+.variable-stage{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px}
+.var-def{display:flex;gap:10px;align-items:flex-start;margin:8px 0}
+.var-name{min-width:36px;height:36px;border-radius:8px;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+.variable-boxes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.var-box{border-radius:14px;padding:12px;background:#f3e8ff;text-align:center}
+.var-box.b{background:#ffedd5}
+.var-box-head{display:flex;justify-content:space-between;font-size:12px;color:#64748b}
+.var-number{font-size:40px;font-weight:800;color:var(--p);line-height:1.1}
+.var-number.pulse{animation:toastIn .3s ease}
+.vote-controls{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.vote-btn{border:0;border-radius:999px;padding:8px 14px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer}
+.vote-btn.vote-b{background:#ea580c}
+.vote-log{font-size:13px;color:#475569;min-height:22px}
+.input-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.py-code{background:#1E1E2E;color:#CDD6F4;border-radius:10px;padding:14px 16px;font-family:"SF Mono","Consolas",monospace;font-size:13px;line-height:1.7;overflow:auto}
+.py-code .cm{color:#6C7086}
+.py-code .kw{color:#CBA6F7}
+.py-code .st{color:#A6E3A1}
+.py-code .n{color:#89B4FA}
+.terminal{background:#111827;color:#bef264;min-height:140px;max-height:220px;overflow:auto;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.7;white-space:pre-wrap;margin-top:10px}
+.terminal .prompt{color:#93c5fd}
+.bug-callout{margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;font-size:13px;line-height:1.6}
+.quiz-grid{display:flex;flex-direction:column;gap:12px}
+.quiz-item{border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#fbfdff}
+.quiz-item.correct{border-color:#9ed8bd;background:#f0fbf5}
+.quiz-item.wrong{border-color:#efb5b5;background:#fff7f7}
+.quiz-feedback{margin-top:8px;font-size:12px}
+@media(max-width:900px){
+  .story-card,.grid-3,.grid-2,.variable-stage{grid-template-columns:1fr}
+  .algo-read{flex-direction:column}
+  .algo-read .algo-flow{width:100%;max-width:none;min-width:0;max-height:420px}
+}
+body.embedded-mode .ls-wrap{padding-bottom:20px}
+
+</style>
+</head>
+<body>
+<script type="application/json" id="ls-activity-briefs">
+{
+  "1": {
+    "title": "问题分析与建模",
+    "task": "校徽海选：1000名学生给A、B两个作品各投一票，最后统计得票数。先比较人工统计和计算机统计，再从案例里提取人数、对象、目标，最后用变量盒子观察 tp、a、b 的变化。",
+    "studentDoes": "选择为什么用计算机；填写人数/作品/目标；模拟投票并判断 a、b 初值。",
+    "notThis": "本环节不画流程图、不写程序、不运行代码。"
+  },
+  "2": {
+    "title": "算法设计",
+    "task": "对照课本流程图，把统计校徽投票的五个步骤补完整：初始化、输入、分支判断、循环、输出。",
+    "studentDoes": "看左侧流程图，在右侧挖空处填写变量、结构和数量。",
+    "notThis": "本环节不再自己画流程图；不要改成鸡兔同笼或其他课题。"
+  },
+  "3": {
+    "title": "算法验证与优化",
+    "task": "按课本程序网页模拟运行。先写下猜想，再输入 c，观察 else 会把不是 a 的输入算给 B；然后思考若有 3 个作品，变量、输入、分支和输出要怎么改。",
+    "studentDoes": "在运行区亲手输入 c；提交验证与优化结论；写出三个作品的调整思路。",
+    "notThis": "不要另出一套编程题；趣味投票模拟器只是附带体验，不是本环节主任务。"
+  }
+}
+</script>
+<div class="studio">
+<aside class="studio-nav" id="studioNav">
+  <div class="studio-title">第1课 算法与问题解决</div>
+  <div class="studio-menu">
+    <button type="button" class="studio-item muted">课程介绍</button>
+    <button type="button" class="studio-item active" data-step="1">探究一：问题分析与建模 <span class="done-tag" hidden>✓</span></button>
+    <button type="button" class="studio-item" data-step="2">探究二：算法设计 <span class="done-tag" hidden>✓</span></button>
+    <button type="button" class="studio-item" data-step="3">探究三：算法验证与优化 <span class="done-tag" hidden>✓</span></button>
+    <button type="button" class="studio-item muted">学习评价</button>
+    <button type="button" class="studio-item muted">课堂小测</button>
+  </div>
+</aside>
+<div class="studio-main">
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">🧮</div>
+    <div>
+      <h1>算法与问题解决</h1>
+      <div class="header-sub">探究活动 · 同桌协作</div>
+    </div>
+  </div>
+  <button class="btn-reset" onclick="resetAll()">🔄 全部重置</button>
+</div>
+
+<!-- Step Nav -->
+<div class="step-nav" id="stepNav">
+  <button class="step-tab active" data-step="1">
+    <span class="step-num"><span class="num-txt">1</span><span class="done-icon">✓</span></span>
+    探究一：问题分析与建模
+  </button>
+  <button class="step-tab" data-step="2">
+    <span class="step-num"><span class="num-txt">2</span><span class="done-icon">✓</span></span>
+    探究二：算法设计
+  </button>
+  <button class="step-tab" data-step="3">
+    <span class="step-num"><span class="num-txt">3</span><span class="done-icon">✓</span></span>
+    探究三：算法验证与优化
+  </button>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+<div class="preview-tier" id="levelSwitch">
+  <span>预览支架</span>
+  <button type="button" data-lv="C" onclick="setScaffoldLevel('C')">C</button>
+  <button type="button" data-lv="B" onclick="setScaffoldLevel('B')">B</button>
+  <button type="button" data-lv="A" onclick="setScaffoldLevel('A')">A</button>
+</div>
+
+
+<!-- ==================== STEP 1: 情景导入 + 问题分析 + 抽象建模 ==================== -->
+<div class="step-panel active" id="panel1">
+<div class="ls-split">
+  <aside class="ls-left">
+    <div class="fc-info-title">本环节任务</div>
+    <div class="fc-task-card">
+      <div class="fc-task-desc" id="act1Desc">某校校徽海选：1000 名学生给 <b>A</b>、<b>B</b> 两个作品各投一票，最后统计得票数。</div>
+    </div>
+    <div class="fc-task-steps" id="act1Steps">
+      <div class="fc-step"><span class="fc-step-num">0</span><span class="fc-step-text">比较人工统计和计算机统计</span></div>
+      <div class="fc-step"><span class="fc-step-num">1</span><span class="fc-step-text">从案例里提取人数、对象、目标</span></div>
+      <div class="fc-step"><span class="fc-step-num">2</span><span class="fc-step-text">用变量盒子表示票数变化</span></div>
+    </div>
+    <div class="fc-task-tip" id="act1Tip">先说清楚问题，再把关键数据装进变量。</div>
+  </aside>
+  <div class="ls-right">
+  <section class="ls-section" id="stage0">
+    <div class="ls-head">
+      <div>
+        <div class="ls-kicker">0 · 情景导入</div>
+        <h2>为什么要用算法？</h2>
+        <p class="ls-lead">同样是统计投票，人工统计和计算机统计有什么不同？</p>
+      </div>
+      <div class="ls-mark">0</div>
+    </div>
+    <div class="story-card scaf-hide-a scaf-hide-c">
+      <div class="story-side manual">
+        <h3>人工统计</h3>
+        <p>同学们逐张查看选票，记下每一票，再反复核对总数。人数少时可以完成，人数多时容易慢，也容易漏记或重复。</p>
+      </div>
+      <div class="story-side computer">
+        <h3>计算机统计</h3>
+        <p>把投票规则写成算法，再用程序重复处理每一票。只要规则清楚，计算机就能快速、连续地完成统计。</p>
+      </div>
+    </div>
+    <div class="story-card scaf-only-c">
+      <div class="story-side manual"><h3>人工</h3><p>一张一张数，人多时又慢又容易出错。</p></div>
+      <div class="story-side computer"><h3>计算机</h3><p>把步骤写清楚，让程序重复做每一票。</p></div>
+    </div>
+    <div class="question-box">
+      <div class="question-title">在1000名学生投票时，为什么更适合用计算机程序统计？</div>
+      <div class="choice-list">
+        <label class="choice"><input type="radio" name="introChoice" value="right"><span>因为算法能把“输入、判断、计数、输出”这些步骤交给程序重复执行，提高效率。</span></label>
+        <label class="choice"><input type="radio" name="introChoice" value="wrong"><span>因为计算机不需要先分析问题，随便输入什么都能自动得到正确结果。</span></label>
+        <label class="choice"><input type="radio" name="introChoice" value="wrong"><span>因为只要使用计算机，就不需要检查算法是否有漏洞。</span></label>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" type="button" id="introCheck">检查选择</button></div>
+      <div class="feedback" id="introFeedback"></div>
+    </div>
+  </section>
+
+  <section class="ls-section locked" id="stage1">
+    <div class="ls-head">
+      <div>
+        <div class="ls-kicker">1 · 问题分析</div>
+        <h2>先把问题说清楚</h2>
+        <p class="ls-lead">解决问题之前，要找出已知条件、研究对象和求解目标。</p>
+      </div>
+      <div class="ls-mark">1</div>
+    </div>
+    <div class="info-strip"><strong>案例：</strong>某校进行校徽设计方案评选，确定A作品和B作品为候选方案，全校1000名学生各投一票，最后公布两个作品的得票数。</div>
+    <p style="font-weight:700;margin-bottom:10px">请从案例中提取三个关键信息：</p>
+    <div class="grid-3">
+      <div class="field"><label for="analysisPeople">投票总人数</label><input id="analysisPeople" type="text" placeholder="例如：1000"><p class="field-guide scaf-only-c">到案例里找“有多少人”。</p></div>
+      <div class="field"><label for="analysisWorks">候选作品</label><input id="analysisWorks" type="text" placeholder="例如：A、B"><p class="field-guide scaf-only-c">到案例里找“有哪些对象”。</p></div>
+      <div class="field"><label for="analysisGoal">求解目标</label><input id="analysisGoal" type="text" placeholder="例如：统计得票数"><p class="field-guide scaf-only-c">到案例里找“最后要得到什么”。</p></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" type="button" id="analysisCheck">提交关键信息</button></div>
+    <div class="feedback" id="analysisFeedback"></div>
+    <p class="unlock-note scaf-hide-a">提示：先找“有多少人”“有哪些对象”“最后要得到什么”。</p>
+  </section>
+
+  <section class="ls-section locked" id="stage2">
+    <div class="ls-head">
+      <div>
+        <div class="ls-kicker">2 · 抽象与建模</div>
+        <h2>把现实问题装进变量盒子</h2>
+        <p class="ls-lead">变量像一个有名字的盒子，可以暂时存放会变化的数据。</p>
+      </div>
+      <div class="ls-mark">2</div>
+    </div>
+    <div class="variable-stage">
+      <div>
+        <h3 style="font-size:15px;margin-bottom:8px">认识三个变量</h3>
+        <div class="var-def"><div class="var-name">tp</div><p>表示<strong>这一次输入的投票内容</strong>。它的值可以是“a”或“b”。</p></div>
+        <div class="var-def"><div class="var-name">a</div><p>表示<strong>A作品当前的得票数</strong>。每投一次A，a就增加1。</p></div>
+        <div class="var-def"><div class="var-name">b</div><p>表示<strong>B作品当前的得票数</strong>。每投一次B，b就增加1。</p></div>
+        <div class="info-strip small"><strong>建模思想：</strong>忽略与统计无关的细节，只留下投票内容和两个得票数。</div>
+      </div>
+      <div>
+        <h3 style="font-size:15px;margin-bottom:8px">变量盒子：模拟几次投票</h3>
+        <p class="ls-lead">点击“投给A”或“投给B”，观察两个盒子里的数字如何变化。</p>
+        <div class="variable-boxes">
+          <div class="var-box"><div class="var-box-head"><span>A作品</span><code>a</code></div><div class="var-number" id="aValue">0</div></div>
+          <div class="var-box b"><div class="var-box-head"><span>B作品</span><code>b</code></div><div class="var-number" id="bValue">0</div></div>
+        </div>
+        <div class="vote-controls">
+          <button class="vote-btn" type="button" id="voteA">投给A（tp="a"）</button>
+          <button class="vote-btn vote-b" type="button" id="voteB">投给B（tp="b"）</button>
+        </div>
+        <div class="vote-log" id="voteLog">还没有模拟投票。</div>
+        <p class="field-guide scaf-only-c" id="demoVoteNote" hidden>示范：刚投给 A，盒子 a 变成 1。你再点一次「投给B」看看。</p>
+        <button class="btn btn-ghost btn-small" type="button" id="resetVotes">重置变量盒子</button>
+      </div>
+    </div>
+    <div class="question-box">
+      <div class="question-title">投票统计开始前，变量 a 和 b 的初始值应该是多少？</div>
+      <div class="init-chips scaf-only-c" id="initChips">
+        <button type="button" data-init="0">从 0 开始</button>
+        <button type="button" data-init="1000">从 1000 开始</button>
+      </div>
+      <div class="input-row" style="margin-bottom:10px">
+        <div class="field"><label for="initialA">a的初值</label><input id="initialA" type="text" placeholder="填写数字"></div>
+        <div class="field"><label for="initialB">b的初值</label><input id="initialB" type="text" placeholder="填写数字"></div>
+      </div>
+      <div class="rule-grid">
+        <label class="choice"><input type="radio" name="ruleChoice" value="right"><span>当tp是“a”时，执行 a = a + 1；当tp是“b”时，执行 b = b + 1。</span></label>
+        <label class="choice"><input type="radio" name="ruleChoice" value="wrong"><span>不管tp是什么，都同时让a和b各增加1。</span></label>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" type="button" id="modelCheck">检查建模</button></div>
+      <div class="feedback" id="modelFeedback"></div>
+      <div class="model-summary" id="modelSummary" hidden>
+        <b>同学们，这就是用算法解决问题的前两步：问题分析、抽象建模。</b><br>
+        先把问题说清楚，再找出文中的关键变量，寻找变量中的规则和关系。
+      </div>
+    </div>
+  </section>
+  </div>
+</div>
+</div>
+
+<!-- ==================== STEP 2: 对照课本流程图填空 ==================== -->
+<div class="step-panel" id="panel2">
+<div class="ls-split algo-read">
+  <aside class="algo-flow">
+    <p class="algo-flow-cap" id="scafTaskDesc">对照课本流程图，把右侧五个步骤补完整。</p>
+    <img class="algo-flow-img" src="flowchart.png" alt="校徽投票算法流程图：开始，初始化 a、b、i，循环判断 i&lt;1001，输入 tp，判断是否为 a，计数后 i 加 1，最后输出 a、b">
+  </aside>
+  <div class="ls-right">
+    <section class="ls-section">
+      <div class="ls-head">
+        <div>
+          <div class="ls-kicker">探究二 · 算法设计 <span id="scafBadge" class="scaf-badge scaf-B">提示</span></div>
+          <h2>读懂流程图，补全课本步骤</h2>
+          <p class="ls-lead">左边是课本上的流程图。请结合图中的变量和判断，把右边挖空的步骤填写完整。</p>
+        </div>
+        <div class="ls-mark">2</div>
+      </div>
+      <div id="scafExtra"></div>
+      <div class="step-fill" id="stepFill1">
+        <span class="n">步骤1</span>
+        <span class="demo-tag">已示范</span>
+        A、B作品得票数清零，即将变量
+        <input class="blank-in" id="blankA" maxlength="4" aria-label="变量a"> 与
+        <input class="blank-in" id="blankB" maxlength="4" aria-label="变量b"> 的值初始化赋为
+        <input class="blank-in" id="blankInit" maxlength="4" aria-label="初值">；
+        <p class="field-guide scaf-only-c">这一步已经填好：看图里第一个矩形，a、b 一开始都是 0。下面几步请你对照图来选。</p>
+      </div>
+      <div class="step-fill">
+        <span class="n">步骤2</span>
+        投票者输入投票内容 “a” 或 “b”，并将其赋值给变量
+        <input class="blank-in" id="blankTp" maxlength="4" aria-label="变量tp">；
+        <div class="init-chips scaf-only-c" data-fill="blankTp">
+          <button type="button" data-val="tp">tp</button>
+          <button type="button" data-val="i">i</button>
+          <button type="button" data-val="a">a</button>
+        </div>
+        <p class="field-guide scaf-only-c">看图里平行四边形：输入后，这一票放进哪个变量？</p>
+      </div>
+      <div class="step-fill">
+        <span class="n">步骤3</span>
+        使用
+        <input class="blank-in wide" id="blankBranch" maxlength="6" aria-label="分支结构">
+        结构对投票内容进行判断<span class="scaf-hide-a">，当 tp 为 “a” 时，变量 a 的数值加 1，当 tp 内容为 “b” 时，变量 b 的数值加 1</span>；
+        <div class="init-chips scaf-only-c" data-fill="blankBranch">
+          <button type="button" data-val="分支">分支</button>
+          <button type="button" data-val="循环">循环</button>
+          <button type="button" data-val="顺序">顺序</button>
+        </div>
+        <p class="field-guide scaf-only-c">图中菱形“tp = a？”把路分成两条，这叫什么结构？</p>
+      </div>
+      <div class="step-fill">
+        <span class="n">步骤4</span>
+        使用
+        <input class="blank-in wide" id="blankLoop" maxlength="6" aria-label="循环结构">
+        结构重复步骤2、3，直到
+        <input class="blank-in wide" id="blankN" maxlength="6" aria-label="人数">
+        名学生都完成投票；
+        <div class="init-chips scaf-only-c" data-fill="blankLoop">
+          <button type="button" data-val="循环">循环</button>
+          <button type="button" data-val="分支">分支</button>
+          <button type="button" data-val="顺序">顺序</button>
+        </div>
+        <div class="init-chips scaf-only-c" data-fill="blankN">
+          <button type="button" data-val="1000">1000</button>
+          <button type="button" data-val="1001">1001</button>
+          <button type="button" data-val="1">1</button>
+        </div>
+        <p class="field-guide scaf-only-c">箭头画回去是循环。判断是 i&lt;1001，从 i=1 开始，一共几人？</p>
+      </div>
+      <div class="step-fill">
+        <span class="n">步骤5</span>
+        <input class="blank-in wide" id="blankOut" maxlength="6" aria-label="输出">
+        A、B作品得票数。
+        <div class="init-chips scaf-only-c" data-fill="blankOut">
+          <button type="button" data-val="输出">输出</button>
+          <button type="button" data-val="输入">输入</button>
+          <button type="button" data-val="结束">结束</button>
+        </div>
+        <p class="field-guide scaf-only-c">流程图最后的平行四边形在做什么？</p>
+      </div>
+      <p class="fc-task-tip" id="scafTip">先看左边的图，再把变量名、结构和人数填进去。</p>
+      <div class="btn-row"><button class="btn btn-primary" type="button" id="algoBlankCheck" onclick="checkAlgoBlanks()">检查步骤</button></div>
+      <div class="feedback" id="algoBlankFeedback"></div>
+      <div class="algo-challenge scaf-only-a" id="algoChallenge" hidden>
+        <h3>挑战</h3>
+        <p>图中循环条件是 <code>i &lt; 1001</code>，且 i 从 1 开始每次加 1。这段循环一共会执行几次？</p>
+        <div class="input-row">
+          <div class="field" style="max-width:160px"><label for="blankTimes">执行次数</label><input id="blankTimes" type="text" maxlength="6"></div>
+          <button class="btn btn-primary" type="button" onclick="checkAlgoChallenge()">检查挑战</button>
+        </div>
+        <div class="feedback" id="algoChallengeFeedback"></div>
+      </div>
+    </section>
+  </div>
+</div>
+</div>
+
+
+
+
+<!-- ==================== STEP 3: 验证优化 + 课堂检测 + 拓展 ==================== -->
+<div class="step-panel" id="panel3">
+<div class="ls-split">
+  <aside class="ls-left">
+    <div class="fc-info-title">本环节任务</div>
+    <div class="fc-task-card">
+      <div class="fc-task-desc" id="act3Desc">先按课本程序运行找漏洞，再思考 3 个作品怎么改算法。</div>
+    </div>
+    <div class="fc-task-steps" id="act3Steps">
+      <div class="fc-step"><span class="fc-step-num">4</span><span class="fc-step-text">输入 c，验证 else 漏洞</span></div>
+      <div class="fc-step"><span class="fc-step-num">5</span><span class="fc-step-text">写出三个作品的调整思路</span></div>
+    </div>
+    <pre class="py-code" style="font-size:11px;padding:10px 12px;line-height:1.55"><span class="cm">#用a、b表示A、B作品的得票数，程序初始票数归零</span>
+<span class="n">a</span> = 0
+<span class="n">b</span> = 0
+<span class="cm"># 用变量i控制投票的次数</span>
+<span class="n">i</span> = 1
+<span class="cm"># 有多少个人参与投票就循环多少次</span>
+<span class="kw">while</span> i &lt; 1001:
+    <span class="cm">#提示用户投票的方式，并用tp存储用户输入的投票内容</span>
+    tp = input(<span class="st">"输入a投票给A作品，输入b投票给B作品。"</span>)
+    <span class="cm">#对tp中的内容进行判断，并不断统计A、B作品票数</span>
+    <span class="kw">if</span> tp == <span class="st">"a"</span>:
+        a = a + 1
+    <span class="kw">else</span>:
+        b = b + 1
+    i = i + 1
+<span class="cm"># 输出将A、B作品的票数</span>
+print(<span class="st">"A作品获得票数为："</span>, a, <span class="st">"，"</span>, <span class="st">"B作品获得票数为："</span>, b)</pre>
+    <div class="fc-task-tip" id="act3Tip">想一想：如果输入既不是 a 也不是 b，会走到 else。</div>
+  </aside>
+  <div class="ls-right">
+  <section class="ls-section" id="stage4">
+    <div class="ls-head">
+      <div>
+        <div class="ls-kicker">4 · 算法验证与优化</div>
+        <h2>运行程序，找出算法的小漏洞</h2>
+        <p class="ls-lead">算法写好后不能马上放心使用，要用不同数据测试它。</p>
+      </div>
+      <div class="ls-mark">4</div>
+    </div>
+    <div>
+      <h3 style="font-size:15px;margin-bottom:8px">网页模拟运行</h3>
+      <p class="ls-lead">课堂演示时，把 1000 次循环缩小成你输入的几次。请按课本程序输入 a 或 b，也可以故意输入 c 观察 else 的漏洞。</p>
+      <div class="input-row">
+        <div class="field" style="flex:1"><label for="runInput">输入投票内容</label><input id="runInput" type="text" maxlength="1" placeholder="a / b / c"></div>
+        <button class="btn btn-primary" type="button" id="runProgram">运行一次</button>
+        <button class="btn btn-ghost btn-small" type="button" id="clearTerminal">清空</button>
+      </div>
+      <div class="terminal" id="terminal"><span class="prompt">投票程序已启动</span>
+请输入 a 或 b，开始测试。</div>
+      <div class="bug-callout" id="bugCallout">先做出猜想，再输入 c 验证：如果用户输入的数据不是 a 也不是 b，结果会怎样？</div>
+    </div>
+    <div class="question-box">
+      <div class="question-title">先填写你的猜想：输入 c 后，程序最可能出现什么情况？</div>
+      <textarea id="bugGuess" placeholder="例如：我猜……因为……"></textarea>
+      <div id="verifyChoices">
+      <div class="choice-list" style="margin-top:12px">
+        <label class="choice"><input type="radio" name="bugChoice" value="right"><span>会走到 else，B 作品的票数加 1，统计结果出错。</span></label>
+        <label class="choice"><input type="radio" name="bugChoice" value="wrong"><span>程序会自动忽略这次输入，a、b 都不增加。</span></label>
+        <label class="choice"><input type="radio" name="bugChoice" value="wrong"><span>程序一定会立刻关机，无法继续运行。</span></label>
+      </div>
+      <div class="question-title" style="margin-top:18px">你认为可以怎样优化？</div>
+      <div class="choice-list">
+        <label class="choice"><input type="radio" name="optChoice" value="right"><span>分别判断 a 和 b；如果输入错误，提示重新输入，不要用 else 直接给 B 加票。</span></label>
+        <label class="choice"><input type="radio" name="optChoice" value="wrong"><span>删除所有判断，让每次输入都同时给 a 和 b 加 1。</span></label>
+        <label class="choice"><input type="radio" name="optChoice" value="wrong"><span>不需要优化，只要程序能运行一次就说明算法正确。</span></label>
+      </div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" type="button" id="verifyCheck">提交验证与优化结论</button></div>
+      <div class="feedback" id="verifyFeedback"></div>
+    </div>
+  </section>
+
+  <section class="ls-section locked" id="stage6">
+    <div class="ls-head">
+      <div>
+        <div class="ls-kicker">5 · 拓展任务</div>
+        <h2>如果有 3 个作品，算法要怎么改？</h2>
+        <p class="ls-lead">把今天学到的变量、分支和循环迁移到新的问题中。</p>
+      </div>
+      <div class="ls-mark">5</div>
+    </div>
+    <div class="info-strip"><strong>课本练习：</strong>如果有 3 个作品参与投票，算法须怎样调整？请从变量、输入选项、分支判断和输出结果等方面思考。</div>
+    <textarea id="extensionText" placeholder="我的思考：可以增加……；输入可以是……；分支需要判断……；最后输出……"></textarea>
+    <div class="btn-row"><button class="btn btn-primary" type="button" id="extensionCheck">提交拓展思考</button></div>
+    <div class="feedback" id="extensionFeedback"></div>
+    <p class="unlock-note">提示：想一想 a、b 分别记录两个作品的票数，那么第三个作品需要什么？判断分支又要增加哪一条？</p>
+  </section>
+  </div>
+</div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /studio-main -->
+</div><!-- /studio -->
+
+<script>
+// ==================== GLOBAL STATE ====================
+let currentStep = 1;
+let fcMode = 'move'; // 'move' | 'connect'
+let nodes = [];
+let connections = [];
+let nextId = 1;
+let connectSource = null; // {nodeId, port}
+let dragTarget = null;
+let dragOffset = {x:0, y:0};
+let ghostEl = null;
+/** 加载模板时的画布指纹，用于防止未修改直接提交 */
+let loadedTemplateFingerprint = null;
+let flowchartSubmitCount = 0;
+
+function canvasFingerprint() {
+  const idToKey = {};
+  nodes.forEach((n) => { idToKey[n.id] = `${n.type}:${n.text}`; });
+  return JSON.stringify({
+    nodes: nodes.map((n) => ({ type: n.type, text: n.text }))
+      .sort((a, b) => (a.type + a.text).localeCompare(b.type + b.text)),
+    conn: connections.map((c) => ({
+      from: idToKey[c.fromId] || String(c.fromId),
+      fromPort: normPort(c.fromPort),
+      to: idToKey[c.toId] || String(c.toId),
+      toPort: normPort(c.toPort || 'top'),
+      label: c.label || ''
+    })).sort((a, b) => (a.from + a.to).localeCompare(b.from + b.to))
+  });
+}
+
+function markCanvasEdited() {
+  loadedTemplateFingerprint = null;
+}
+
+// ==================== STEP NAVIGATION ====================
+const urlParams = new URLSearchParams(location.search);
+const IS_EMBEDDED = urlParams.get('embedded') === '1';
+const IS_PREVIEW = urlParams.get('preview') === '1' || localStorage.getItem('role') === 'TEACHER';
+let scaffoldLevel = normalizeScaffold(urlParams.get('scaffold'));
+
+function normalizeScaffold(raw) {
+  const lv = String(raw || '').toUpperCase();
+  return (lv === 'A' || lv === 'B' || lv === 'C') ? lv : 'B';
+}
+
+function symbolSheetHtml() {
+  return '<div class="scaf-card"><b>流程图符号速查</b><div class="scaf-symbols" style="margin-top:6px">'
+    + '<div class="sym sym-term"></div><div>圆角矩形：开始 / 结束</div>'
+    + '<div class="sym sym-proc"></div><div>矩形：处理（初始化、加一票）</div>'
+    + '<div class="sym sym-io"></div><div>平行四边形：输入 / 输出</div>'
+    + '<div class="sym sym-dec"></div><div>菱形：判断 / 分支</div></div></div>';
+}
+
+function variableCardHtml() {
+  return '<div class="scaf-card"><b>变量提示卡</b><div style="margin-top:4px">a、b 初值 = 0（分别统计 A、B 的票）<br>tp 接收当前这一票<br>可用循环判断「还有票要统计吗」</div></div>';
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+function setPlaceholder(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.placeholder = value;
+}
+function resetTerminalForTier() {
+  const terminal = document.getElementById('terminal');
+  if (!terminal) return;
+  if (scaffoldLevel === 'C') {
+    terminal.innerHTML = '<span class="prompt">投票程序已启动</span>\n有人先输入了 c：走到 else，B 的票数加了 1。\n请你自己再输入一次 c，亲眼看结果。';
+    const callout = document.getElementById('bugCallout');
+    if (callout) callout.textContent = '先写下猜想，再亲手输入 c。示范只是提醒你：不是 a 的输入会被 else 算给 B。';
+  } else {
+    terminal.innerHTML = '<span class="prompt">投票程序已启动</span>\n请输入 a 或 b，开始测试。';
+    const callout = document.getElementById('bugCallout');
+    if (callout) callout.textContent = '先做出猜想，再输入 c 验证：如果用户输入的数据不是 a 也不是 b，结果会怎样？';
+  }
+}
+
+function applyAlgoBlankTier() {
+  const demoIds = ['blankA', 'blankB', 'blankInit'];
+  demoIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (scaffoldLevel === 'C') {
+      el.value = id === 'blankInit' ? '0' : (id === 'blankA' ? 'a' : 'b');
+      el.readOnly = true;
+      el.classList.add('ok');
+      el.classList.remove('bad');
+    } else {
+      el.readOnly = false;
+      if (el.value === 'a' || el.value === 'b' || el.value === '0') {
+        /* 预览切档时清掉示范值，避免 A/B 直接拿到答案 */
+        if (!el.dataset.userTyped) el.value = '';
+      }
+      el.classList.remove('ok', 'bad');
+    }
+  });
+  const chal = document.getElementById('algoChallenge');
+  if (chal && scaffoldLevel !== 'A') chal.hidden = true;
+  setPlaceholder('blankTp', scaffoldLevel === 'B' ? '例如 tp' : '');
+  setPlaceholder('blankBranch', scaffoldLevel === 'B' ? '分支 / 循环' : '');
+  setPlaceholder('blankLoop', scaffoldLevel === 'B' ? '分支 / 循环' : '');
+  setPlaceholder('blankN', scaffoldLevel === 'B' ? '人数' : '');
+  setPlaceholder('blankOut', scaffoldLevel === 'B' ? '输出 / 输入' : '');
+}
+
+document.querySelectorAll('.init-chips[data-fill] button').forEach((btn) => {
+  btn.addEventListener('click', function () {
+    const id = btn.parentElement && btn.parentElement.getAttribute('data-fill');
+    const input = id && document.getElementById(id);
+    if (!input || input.readOnly) return;
+    input.value = btn.dataset.val || '';
+    input.dataset.userTyped = '1';
+    btn.parentElement.querySelectorAll('button').forEach((other) => other.classList.toggle('on', other === btn));
+  });
+});
+['blankTp','blankBranch','blankLoop','blankN','blankOut','blankA','blankB','blankInit'].forEach((id) => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => { el.dataset.userTyped = '1'; });
+});
+
+function applyScaffoldUI() {
+  document.body.classList.remove('tier-a', 'tier-b', 'tier-c', 'preview-mode', 'show-verify-choices');
+  document.body.classList.add('tier-' + scaffoldLevel.toLowerCase());
+  if (IS_PREVIEW) document.body.classList.add('preview-mode');
+
+  const badge = document.getElementById('scafBadge');
+  const desc = document.getElementById('scafTaskDesc');
+  const extra = document.getElementById('scafExtra');
+  const tip = document.getElementById('scafTip');
+  if (badge) {
+    badge.className = 'scaf-badge scaf-' + scaffoldLevel;
+    badge.textContent = scaffoldLevel === 'C' ? '填空' : (scaffoldLevel === 'A' ? '挑战' : '提示');
+  }
+  if (desc) {
+    desc.textContent = scaffoldLevel === 'C'
+      ? '左边是课本流程图。步骤1已经示范，请对照图把后面几步选出来。'
+      : (scaffoldLevel === 'A'
+        ? '对照左图，自己找出变量名和结构名称。'
+        : '对照课本流程图，把右侧五个步骤补完整。');
+  }
+  if (extra) {
+    if (scaffoldLevel === 'C') extra.innerHTML = '<div class="scaf-card"><b>怎么看图</b><div style="margin-top:4px">矩形：处理（a、b 初值）<br>平行四边形：输入 / 输出<br>菱形：判断，把路分成两条<br>画回去的箭头：循环</div></div>';
+    else if (scaffoldLevel === 'B') extra.innerHTML = '<div class="scaf-card"><b>对照提示</b><div style="margin-top:4px">菱形表示判断（分支），画回去的箭头表示循环。变量还是探究一的 a、b、tp。</div></div>';
+    else extra.innerHTML = '';
+  }
+  if (tip) {
+    tip.textContent = scaffoldLevel === 'A'
+      ? '少看文字提示，尽量从图里的形状和变量读出步骤。'
+      : (scaffoldLevel === 'C'
+        ? '步骤1已示范。其余空可以点下面的选项，对完图再选。'
+        : '先看左边的图，再把变量名、结构和人数填进去。');
+  }
+  applyAlgoBlankTier();
+
+  if (scaffoldLevel === 'A') {
+    setText('act1Desc', '校徽海选：1000 人给 A、B 投票，最后要得到两个作品的得票数。');
+    setText('act1Tip', '先把问题说清楚，再决定用哪些变量。');
+    setText('act3Desc', '自己测试程序，找出问题，再思考三个作品怎么改。');
+    setText('act3Tip', '先猜想，再输入，再决定怎么改。');
+    setPlaceholder('analysisPeople', '');
+    setPlaceholder('analysisWorks', '');
+    setPlaceholder('analysisGoal', '');
+    setPlaceholder('bugGuess', '用自己的话写下猜想');
+    setPlaceholder('extensionText', '把你的调整想法写下来');
+  } else if (scaffoldLevel === 'C') {
+    setText('act1Desc', '1000 人给 A、B 投票。先找人数、对象、目标，再用盒子记下票数。');
+    setText('act1Tip', '不会填时，先看每个空旁边的小提示。');
+    setText('act3Desc', '先看一条示范，再亲手输入 c，然后完成拓展。');
+    setText('act3Tip', '课本用 else 给 b 加一，不是 a 的输入都会算给 B。');
+    setPlaceholder('analysisPeople', '从案例里找人数');
+    setPlaceholder('analysisWorks', '从案例里找对象');
+    setPlaceholder('analysisGoal', '从案例里找最后要求');
+    setPlaceholder('bugGuess', '我猜输入 c 以后……');
+    setPlaceholder('extensionText', '');
+    const ext = document.getElementById('extensionText');
+    if (ext && !String(ext.value || '').trim()) {
+      ext.value = '1. 第三个作品还要记下什么？\n2. 每次输入还可能是什么？\n3. 判断时要多走哪一条？\n4. 最后要告诉大家什么？';
+    }
+  } else {
+    setText('act1Desc', '某校校徽海选：1000 名学生给 A、B 两个作品各投一票，最后统计得票数。');
+    setText('act1Tip', '先说清楚问题，再把关键数据装进变量。');
+    setText('act3Desc', '先按课本程序运行找漏洞，再思考 3 个作品怎么改算法。');
+    setText('act3Tip', '想一想：如果输入既不是 a 也不是 b，会走到 else。');
+    setPlaceholder('analysisPeople', '例如：1000');
+    setPlaceholder('analysisWorks', '例如：A、B');
+    setPlaceholder('analysisGoal', '例如：统计得票数');
+    setPlaceholder('bugGuess', '例如：我猜……因为……');
+    setPlaceholder('extensionText', '我的思考：可以增加……；输入可以是……；分支需要判断……；最后输出……');
+  }
+  resetTerminalForTier();
+  document.querySelectorAll('#levelSwitch button').forEach((b) => {
+    b.classList.toggle('on', b.dataset.lv === scaffoldLevel);
+  });
+}
+
+function placeTemplateNodes(items, withPartialLinks) {
+  clearCanvas();
+  items.forEach((t) => createNode(t.type, t.x, t.y, t.text));
+  if (withPartialLinks && nodes.length >= 9) {
+    const g = (i) => nodes[i].id;
+    connections = [
+      { fromId: g(0), fromPort: 'bottom', toId: g(1), toPort: 'top', label: '' },
+      { fromId: g(1), fromPort: 'bottom', toId: g(2), toPort: 'top', label: '' },
+      { fromId: g(2), fromPort: 'left', toId: g(3), toPort: 'top', label: '是' },
+      { fromId: g(3), fromPort: 'bottom', toId: g(4), toPort: 'top', label: '' },
+      { fromId: g(4), fromPort: 'left', toId: g(5), toPort: 'top', label: '是' },
+      { fromId: g(4), fromPort: 'right', toId: g(6), toPort: 'top', label: '否' }
+    ];
+  }
+  redrawConnections();
+}
+
+function loadFillTemplateC() {
+  placeTemplateNodes([
+    { type: 'start', x: 440, y: 30, text: '开始' },
+    { type: 'process', x: 440, y: 115, text: 'a=0，b=0（初始化计票）' },
+    { type: 'decision', x: 440, y: 220, text: '（填空：循环判断）' },
+    { type: 'io', x: 440, y: 340, text: '（填空：读入什么？）' },
+    { type: 'decision', x: 440, y: 460, text: '（填空：分支判断）' },
+    { type: 'process', x: 260, y: 590, text: 'a = a + 1' },
+    { type: 'process', x: 620, y: 590, text: '（填空：B 加一票）' },
+    { type: 'io', x: 680, y: 220, text: '（填空：输出结果）' },
+    { type: 'end', x: 680, y: 330, text: '结束' }
+  ], true);
+  loadedTemplateFingerprint = null;
+  showToast('半成品已就绪：请双击填空图块补全文字，并补上缺少的箭头');
+}
+
+function setScaffoldLevel(lv) {
+  scaffoldLevel = normalizeScaffold(lv);
+  applyScaffoldUI();
+}
+
+if (!IS_EMBEDDED) {
+  document.querySelectorAll('.step-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchStep(parseInt(tab.dataset.step, 10)));
+  });
+  document.querySelectorAll('.studio-item[data-step]').forEach(tab => {
+    tab.addEventListener('click', () => switchStep(parseInt(tab.dataset.step, 10)));
+  });
+}
+
+function switchStep(step) {
+  currentStep = step;
+  if (!IS_EMBEDDED) {
+    document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('active'));
+    const tab = document.querySelector(`.step-tab[data-step="${step}"]`);
+    if (tab) tab.classList.add('active');
+    document.querySelectorAll('.studio-item[data-step]').forEach(t => t.classList.toggle('active', Number(t.dataset.step) === step));
+  }
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById(`panel${step}`);
+  if (panel) panel.classList.add('active');
+}
+
+(function applyEmbedStepEarly() {
+  if (!IS_EMBEDDED) return;
+  document.documentElement.classList.add('embedded-mode');
+  document.body.classList.add('embedded-mode');
+  const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+  switchStep(Number.isFinite(step) && step >= 1 && step <= 3 ? step : 1);
+})();
+
+function markStepDone(step) {
+  const tab = document.querySelector(`.step-tab[data-step="${step}"]`);
+  if (tab) tab.classList.add('done');
+  const nav = document.querySelector(`.studio-item[data-step="${step}"]`);
+  if (nav) {
+    nav.classList.add('done');
+    const mark = nav.querySelector('.done-tag');
+    if (mark) mark.hidden = false;
+  }
+}
+
+function notifyLearnSpaceComplete(step, extra) {
+  if (!window.parent || window.parent === window) return;
+  const params = new URLSearchParams(location.search);
+  const idx = parseInt(params.get('activityIndex') || params.get('step') || String(step), 10);
+  window.parent.postMessage({
+    type: 'LEARN_SPACE_SUBMIT',
+    payload: Object.assign({
+      activityIndex: Number.isFinite(idx) ? idx : step,
+      step,
+      stepCompleted: true,
+      source: 'g6-up-lesson1'
+    }, extra || {})
+  }, '*');
+}
+
+// ==================== TOAST ====================
+function showToast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; }, 2000);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ==================== STEP 1: FLOWCHART ENGINE ====================
+function setMode(mode) {
+  if (!document.getElementById('btnMove')) return;
+  fcMode = mode;
+  document.getElementById('btnMove').classList.toggle('active-mode', mode === 'move');
+  document.getElementById('btnConnect').classList.toggle('active-mode', mode === 'connect');
+  const delBtn = document.getElementById('btnDeleteLine');
+  if (delBtn) delBtn.classList.toggle('active-mode', mode === 'delete');
+  const hint = document.getElementById('modeHint');
+  const svg = document.getElementById('connSvg');
+  if (svg) svg.classList.toggle('mode-delete', mode === 'delete');
+  if (mode === 'move') hint.innerHTML = '当前：<span class="mh-move">移动模式</span> — 拖动图块调整位置';
+  else if (mode === 'delete') hint.innerHTML = '当前：<span class="mh-connect">删线模式</span> — 点击连线即可删除';
+  else hint.innerHTML = '当前：<span class="mh-connect">连线模式</span> — 点击起点连接点，再点击终点连接点（菱形左=是，右=否）';
+  connectSource = null;
+  document.querySelectorAll('.port-active').forEach(p => p.classList.remove('port-active'));
+}
+
+function getNodeEl(id) { return document.getElementById('node-' + id); }
+
+function getNodeSize(node) {
+  const map = {
+    start: { w: 125, h: 46 },
+    end: { w: 125, h: 46 },
+    process: { w: 150, h: 52 },
+    io: { w: 150, h: 48 },
+    decision: { w: 120, h: 80 }
+  };
+  return map[node.type] || map.process;
+}
+
+/** 统一端口名：top/right/bottom/left */
+function normPort(port) {
+  if (port === 'in') return 'top';
+  if (port === 'out') return 'bottom';
+  if (port === 'out-yes') return 'left';
+  if (port === 'out-no') return 'right';
+  return port;
+}
+
+function getPortPos(nodeId, portSide) {
+  const n = nodes.find((nd) => nd.id === nodeId);
+  if (!n) return { x: 0, y: 0 };
+  const side = normPort(portSide);
+  const { w, h } = getNodeSize(n);
+  const cx = n.x + w / 2;
+  const cy = n.y + h / 2;
+  switch (side) {
+    case 'top': return { x: cx, y: n.y };
+    case 'bottom': return { x: cx, y: n.y + h };
+    case 'left': return { x: n.x, y: cy };
+    case 'right': return { x: n.x + w, y: cy };
+    default: return { x: cx, y: cy };
+  }
+}
+
+function portOffsetPoint(p, side, dist) {
+  switch (normPort(side)) {
+    case 'top': return { x: p.x, y: p.y - dist };
+    case 'bottom': return { x: p.x, y: p.y + dist };
+    case 'left': return { x: p.x - dist, y: p.y };
+    case 'right': return { x: p.x + dist, y: p.y };
+    default: return p;
+  }
+}
+
+function getConnLabel(fromNodeId, fromPort) {
+  const n = nodes.find((nd) => nd.id === fromNodeId);
+  if (n && n.type === 'decision') {
+    if (normPort(fromPort) === 'left') return '是';
+    if (normPort(fromPort) === 'right') return '否';
+  }
+  return '';
+}
+
+function polylineD(pts) {
+  if (!pts.length) return '';
+  return pts.map((p, i) => (i === 0 ? 'M' : 'L') + ' ' + Math.round(p.x) + ' ' + Math.round(p.y)).join(' ');
+}
+
+function orthoPoints(from, fp, to, tp) {
+  const GAP = 18;
+  const fpN = normPort(fp);
+  const tpN = normPort(tp);
+  const a = portOffsetPoint(from, fpN, GAP);
+  const b = portOffsetPoint(to, tpN, GAP);
+  const pts = [from, a];
+  const loopBack = (to.y + 24 < from.y) && (fpN === 'bottom' || tpN === 'top' || tpN === 'left');
+  if (loopBack) {
+    const sideX = Math.min(from.x, to.x) - 78;
+    pts.push({ x: sideX, y: a.y });
+    pts.push({ x: sideX, y: b.y });
+    pts.push(b);
+    pts.push(to);
+    return pts;
+  }
+  const vFrom = fpN === 'top' || fpN === 'bottom';
+  const vTo = tpN === 'top' || tpN === 'bottom';
+  if (vFrom && vTo) {
+    if (Math.abs(a.x - b.x) < 2) {
+      pts.push(b);
+    } else {
+      const midY = Math.round((a.y + b.y) / 2);
+      pts.push({ x: a.x, y: midY });
+      pts.push({ x: b.x, y: midY });
+      pts.push(b);
+    }
+  } else if (!vFrom && !vTo) {
+    if (Math.abs(a.y - b.y) < 2) {
+      pts.push(b);
+    } else {
+      const midX = Math.round((a.x + b.x) / 2);
+      pts.push({ x: midX, y: a.y });
+      pts.push({ x: midX, y: b.y });
+      pts.push(b);
+    }
+  } else if (vFrom) {
+    pts.push({ x: a.x, y: b.y });
+    pts.push(b);
+  } else {
+    pts.push({ x: b.x, y: a.y });
+    pts.push(b);
+  }
+  pts.push(to);
+  return pts;
+}
+
+function labelPoint(pts) {
+  if (!pts.length) return { x: 0, y: 0 };
+  const i = Math.floor(pts.length / 2);
+  return { x: pts[i].x, y: pts[i].y - 8 };
+}
+
+function ensureCanvasSize() {
+  const inner = document.getElementById('canvasInner');
+  if (!inner) return;
+  let maxX = 1100;
+  let maxY = 920;
+  nodes.forEach((n) => {
+    const { w, h } = getNodeSize(n);
+    maxX = Math.max(maxX, n.x + w + 100);
+    maxY = Math.max(maxY, n.y + h + 100);
+  });
+  inner.style.width = maxX + 'px';
+  inner.style.height = maxY + 'px';
+}
+
+function redrawConnections() {
+  const svg = document.getElementById('connSvg');
+  if (!svg) return;
+  ensureCanvasSize();
+  let html = '<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#264653"/></marker></defs>';
+  connections.forEach((conn, idx) => {
+    const fromPort = normPort(conn.fromPort);
+    const toPort = normPort(conn.toPort || 'top');
+    const from = getPortPos(conn.fromId, fromPort);
+    const to = getPortPos(conn.toId, toPort);
+    const pts = orthoPoints(from, fromPort, to, toPort);
+    const d = polylineD(pts);
+    html += `<path class="conn-hit" data-conn="${idx}" d="${d}"/>`;
+    html += `<path class="conn-line" data-conn="${idx}" d="${d}"/>`;
+    const label = conn.label || getConnLabel(conn.fromId, conn.fromPort);
+    if (label) {
+      const lp = labelPoint(pts);
+      html += `<text x="${lp.x}" y="${lp.y}" text-anchor="middle" font-size="11" fill="#2A9D8F" font-weight="700">${label}</text>`;
+    }
+  });
+  svg.innerHTML = html;
+  svg.classList.toggle('mode-delete', fcMode === 'delete');
+}
+
+function deleteConnectionAt(index) {
+  if (index < 0 || index >= connections.length) return;
+  connections.splice(index, 1);
+  redrawConnections();
+  markCanvasEdited();
+  showToast('已删除这条连线');
+}
+
+function createNode(type, x, y, text) {
+  const id = nextId++;
+  const defaultTexts = {
+    start: '开始',
+    end: '结束',
+    io: '输入/输出',
+    process: '处理步骤',
+    decision: '条件判断？'
+  };
+  const { w, h } = getNodeSize({ type });
+  const node = {
+    id,
+    type,
+    x: Math.max(10, x - w / 2),
+    y: Math.max(10, y - h / 2),
+    text: text || defaultTexts[type] || ''
+  };
+  nodes.push(node);
+  renderNode(node);
+  markCanvasEdited();
+  return node;
+}
+
+function renderNodePorts(node) {
+  const ports = ['top', 'right', 'bottom', 'left'];
+  let html = ports.map((p) =>
+    `<span class="port port-${p}" data-port="${p}" data-nid="${node.id}" title="连接点"></span>`
+  ).join('');
+  if (node.type === 'decision') {
+    html += '<span class="pl-yes">是</span><span class="pl-no">否</span>';
+  }
+  html += `<button class="n-del" data-nid="${node.id}" title="删除">✕</button>`;
+  return html;
+}
+
+function renderNode(node) {
+  const inner = document.getElementById('canvasInner');
+  if (!inner) return;
+  const old = document.getElementById('node-' + node.id);
+  if (old) old.remove();
+
+  const el = document.createElement('div');
+  el.id = 'node-' + node.id;
+  el.className = 'fc-node type-' + node.type;
+  const { w, h } = getNodeSize(node);
+  el.style.left = node.x + 'px';
+  el.style.top = node.y + 'px';
+  el.style.width = w + 'px';
+  el.style.height = h + 'px';
+  el.setAttribute('data-id', node.id);
+  el.setAttribute('data-type', node.type);
+
+  el.innerHTML = `<div class="n-body"><span class="n-text">${escHtml(node.text)}</span></div>${renderNodePorts(node)}`;
+  inner.appendChild(el);
+  ensureCanvasSize();
+
+  el.addEventListener('mousedown', (e) => onNodeMouseDown(e, node));
+  el.addEventListener('dblclick', (e) => { e.stopPropagation(); editNodeText(node); });
+  el.querySelector('.n-del').addEventListener('click', (e) => { e.stopPropagation(); deleteNode(node.id); });
+  el.querySelectorAll('.port').forEach((p) => {
+    p.addEventListener('mousedown', (e) => { e.stopPropagation(); onPortClick(e, node.id, p.dataset.port); });
+  });
+}
+
+function onNodeMouseDown(e, node) {
+  if (fcMode !== 'move') return;
+  if (e.target.classList.contains('port') || e.target.classList.contains('n-del')) return;
+  e.preventDefault();
+  dragTarget = node;
+  const inner = document.getElementById('canvasInner');
+  const ir = inner.getBoundingClientRect();
+  dragOffset.x = e.clientX - ir.left - node.x;
+  dragOffset.y = e.clientY - ir.top - node.y;
+  const el = getNodeEl(node.id);
+  if (el) el.classList.add('dragging');
+}
+
+function onPortClick(e, nodeId, portType) {
+  e.preventDefault();
+  if (fcMode === 'move') return;
+  const side = normPort(portType);
+  if (!connectSource) {
+    connectSource = { nodeId, port: side };
+    document.querySelectorAll('.port-active').forEach((p) => p.classList.remove('port-active'));
+    const portEl = document.querySelector(`.port[data-nid="${nodeId}"][data-port="${side}"]`);
+    if (portEl) portEl.classList.add('port-active');
+    showToast('已选起点，请点击目标图块的任意连接点（上/下/左/右）');
+  } else {
+    if (connectSource.nodeId === nodeId && connectSource.port === side) {
+      showToast('不能连接到同一点！');
+      connectSource = null;
+      document.querySelectorAll('.port-active').forEach((p) => p.classList.remove('port-active'));
+      return;
+    }
+    if (connectSource.nodeId === nodeId) {
+      showToast('不能连接到自身！');
+      connectSource = null;
+      document.querySelectorAll('.port-active').forEach((p) => p.classList.remove('port-active'));
+      return;
+    }
+    connections = connections.filter(
+      (c) => !(c.fromId === connectSource.nodeId && normPort(c.fromPort) === connectSource.port)
+    );
+    const label = getConnLabel(connectSource.nodeId, connectSource.port);
+    connections.push({
+      fromId: connectSource.nodeId,
+      fromPort: connectSource.port,
+      toId: nodeId,
+      toPort: side,
+      label
+    });
+    connectSource = null;
+    document.querySelectorAll('.port-active').forEach((p) => p.classList.remove('port-active'));
+    redrawConnections();
+    markCanvasEdited();
+    showToast('连线成功！');
+  }
+}
+
+function editNodeText(node) {
+  const newText = prompt('修改文字内容：', node.text);
+  if (newText !== null) {
+    node.text = newText.trim() || node.text;
+    if (/^结束$/.test(node.text)) node.type = 'end';
+    else if (/^开始$/.test(node.text)) node.type = 'start';
+    renderNode(node);
+    redrawConnections();
+    markCanvasEdited();
+  }
+}
+
+function deleteNode(id) {
+  nodes = nodes.filter(n => n.id !== id);
+  connections = connections.filter(c => c.fromId !== id && c.toId !== id);
+  const el = getNodeEl(id);
+  if (el) el.remove();
+  redrawConnections();
+  markCanvasEdited();
+}
+
+function clearCanvas() {
+  nodes = [];
+  connections = [];
+  nextId = 1;
+  loadedTemplateFingerprint = null;
+  const inner = document.getElementById('canvasInner');
+  if (inner) inner.innerHTML = '<svg class="fc-conn-svg" id="connSvg"></svg>';
+}
+
+function loadTemplate() {
+  if (scaffoldLevel === 'C') {
+    loadFillTemplateC();
+    return;
+  }
+  placeTemplateNodes([
+    { type: 'start', x: 440, y: 30, text: '开始' },
+    { type: 'process', x: 440, y: 115, text: 'a=0，b=0（初始化计票）' },
+    { type: 'decision', x: 440, y: 220, text: '还有票要统计吗？' },
+    { type: 'io', x: 440, y: 340, text: '读入一张投票' },
+    { type: 'decision', x: 440, y: 460, text: '这票是投 A 吗？' },
+    { type: 'process', x: 260, y: 590, text: 'a = a + 1' },
+    { type: 'process', x: 620, y: 590, text: 'b = b + 1' },
+    { type: 'io', x: 680, y: 220, text: '输出 a 和 b' },
+    { type: 'end', x: 680, y: 330, text: '结束' }
+  ], true);
+  loadedTemplateFingerprint = canvasFingerprint();
+  showToast('参考骨架已加载：请补全循环回连和「否→输出→结束」后再检查');
+}
+
+function normText(s) {
+  return String(s || '').replace(/\s/g, '').toLowerCase();
+}
+
+function hasLoopBack() {
+  const loopNode = nodes.find((n) => n.type === 'decision' && /还有票|1000|统计/.test(n.text));
+  return connections.some((c) => {
+    const from = nodes.find((n) => n.id === c.fromId);
+    const to = nodes.find((n) => n.id === c.toId);
+    if (!from || !to) return false;
+    if (loopNode && to.id === loopNode.id && from.id !== loopNode.id) return true;
+    return to.y < from.y - 20;
+  });
+}
+
+function nodeText(n) {
+  return String((n && n.text) || '');
+}
+function hasNode(type, re) {
+  return nodes.some((n) => (!type || n.type === type) && re.test(nodeText(n)));
+}
+function hasAny(re) {
+  return nodes.some((n) => re.test(nodeText(n)) || re.test(normText(n.text)));
+}
+
+function checkFlowchart() {
+  if (!nodes.length) {
+    showToast('请先拖一些图块再提交');
+    return;
+  }
+  const items = [
+    { label: '开始', pts: 10, ok: nodes.some((n) => n.type === 'start') || hasAny(/^开始$|开始统计|开始计票/) },
+    { label: '初始化 a、b', pts: 12, ok: hasNode('process', /a\s*=\s*0|b\s*=\s*0|初始化|计票|票数|变量/) || hasAny(/a=0|b=0/) },
+    { label: '循环判断', pts: 14, ok: hasNode('decision', /还有|循环|统计|继续|重复|1000|下一张/) || hasAny(/还有票|再读/) },
+    { label: '读入投票', pts: 12, ok: hasNode('io', /读|输入|投票|接收|拿票|选票/) || hasAny(/读入|输入票/) },
+    { label: '是否投 A', pts: 14, ok: hasNode('decision', /投|选择|是否|a还是|是不是a|给谁/i) || hasAny(/投.*a|a还是b/i) },
+    { label: 'A 加一票', pts: 10, ok: hasAny(/a\s*=\s*a\s*\+\s*1|a\+1|a\+\+|a加|给a|a票\+/) },
+    { label: 'B 加一票', pts: 10, ok: hasAny(/b\s*=\s*b\s*\+\s*1|b\+1|b\+\+|b加|给b|b票\+/) },
+    { label: '输出结果', pts: 10, ok: hasAny(/输出|结果|打印|公布|print/) },
+    { label: '结束', pts: 8, ok: nodes.some((n) => n.type === 'end') || hasAny(/^结束$|结束统计/) }
+  ];
+  if (scaffoldLevel === 'C') {
+    const blanks = nodes.filter((n) => /填空|______/.test(n.text || ''));
+    items.push({ label: '填空已补全', pts: 0, ok: blanks.length === 0 });
+  }
+  const score = items.reduce((sum, it) => sum + (it.ok ? it.pts : 0), 0);
+  const passed = score >= 70;
+  const snapshot = {
+    nodes: nodes.map((n) => ({ id: n.id, type: n.type, x: n.x, y: n.y, text: n.text })),
+    connections: connections.map((c) => ({ fromId: c.fromId, fromPort: c.fromPort, toId: c.toId, toPort: c.toPort, label: c.label || '' }))
+  };
+  flowchartSubmitCount += 1;
+  const revision = flowchartSubmitCount > 1;
+  renderScoreBoard(items, score, passed, revision);
+  notifyLearnSpaceComplete(2, {
+    deferNext: true,
+    flowchartScore: score,
+    flowchartPassed: passed,
+    flowchartVersion: flowchartSubmitCount,
+    flowchart: snapshot,
+    flowchartChecks: items,
+    flowchartRevision: revision
+  });
+  markStepDone(2);
+  const btn = document.getElementById('btnSubmitFc');
+  if (btn) btn.textContent = revision ? '再次提交' : '二次提交';
+  showToast(passed ? ('本次 ' + score + ' 分，可以体验模拟投票了') : ('本次 ' + score + ' 分，已记录。听完讲解后可再改一次'));
+  if (passed) openVoteSim();
+}
+
+function renderScoreBoard(items, score, passed, revision) {
+  const box = document.getElementById('scoreBoard');
+  if (!box) return;
+  box.hidden = false;
+  const misses = items.filter((it) => it.pts > 0 && !it.ok);
+  box.innerHTML = '<b>本次得分 ' + score + ' / 100</b>'
+    + (misses.length
+      ? '<div class="miss" style="margin-top:6px">还可以补：' + misses.map((m) => m.label).join('、') + '</div>'
+      : '<div class="ok" style="margin-top:6px">要点都找到了</div>')
+    + '<div style="margin-top:6px;color:#64748b">' + (revision ? '这是修改后的提交。' : '已记录。老师讲完后可以再改一次。') + '</div>'
+    + (passed ? '<button type="button" class="vs-open" onclick="openVoteSim()">打开模拟投票器</button>' : '');
+}
+
+function loadFlowchartSnapshot(data) {
+  if (!data || !Array.isArray(data.nodes)) return;
+  clearCanvas();
+  data.nodes.forEach((n) => {
+    const node = {
+      id: n.id != null ? n.id : nextId++,
+      type: n.type,
+      x: Number(n.x) || 40,
+      y: Number(n.y) || 40,
+      text: n.text || ''
+    };
+    nodes.push(node);
+    renderNode(node);
+  });
+  nextId = nodes.reduce((m, n) => Math.max(m, parseInt(String(n.id).replace(/\D/g, ''), 10) || 0), 0) + 1;
+  connections = (data.connections || []).map((c) => ({
+    fromId: c.fromId, fromPort: c.fromPort, toId: c.toId, toPort: c.toPort, label: c.label || ''
+  }));
+  ensureCanvasSize();
+  redrawConnections();
+}
+
+window.addEventListener('message', (ev) => {
+  const msg = ev && ev.data;
+  if (!msg || msg.type !== 'LEARN_SPACE_RESTORE_FLOWCHART') return;
+  const payload = msg.payload || {};
+  const answers = payload.answers || {};
+  const map = { a: 'blankA', b: 'blankB', init: 'blankInit', tp: 'blankTp', branch: 'blankBranch', loop: 'blankLoop', n: 'blankN', out: 'blankOut' };
+  Object.keys(map).forEach((k) => {
+    if (answers[k] != null && $(map[k])) $(map[k]).value = answers[k];
+  });
+  if (payload.flowchartVersion) flowchartSubmitCount = Number(payload.flowchartVersion) || 0;
+});
+
+const VOTE_LIMIT = 1000;
+let voteState = { a: 0, b: 0, x: 0, ended: false };
+
+function openVoteSim() {
+  const el = document.getElementById('voteSim');
+  if (el) el.hidden = false;
+  renderVoteSim();
+}
+function closeVoteSim() {
+  const el = document.getElementById('voteSim');
+  if (el) el.hidden = true;
+}
+function voteTotal() { return voteState.a + voteState.b + voteState.x; }
+function appendVoteLog(line) {
+  const log = document.getElementById('vsLog');
+  if (!log) return;
+  const lines = (log.textContent || '').trim().split('\n').slice(-6);
+  lines.push('> ' + line);
+  log.textContent = lines.join('\n');
+  log.scrollTop = log.scrollHeight;
+}
+function renderVoteSim() {
+  const t = voteTotal();
+  const max = Math.max(1, t);
+  const setBar = (id, n) => { const el = document.getElementById(id); if (el) el.style.width = Math.round(n * 100 / max) + '%'; };
+  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setTxt('vsA', voteState.a); setTxt('vsB', voteState.b); setTxt('vsX', voteState.x);
+  setBar('vsABar', voteState.a); setBar('vsBBar', voteState.b); setBar('vsXBar', voteState.x);
+  const totalBar = document.getElementById('vsTotalBar');
+  if (totalBar) totalBar.style.width = Math.round(t * 100 / VOTE_LIMIT) + '%';
+  setTxt('vsTotal', t + ' / ' + VOTE_LIMIT);
+  const st = document.getElementById('vsStatus');
+  if (st) {
+    st.textContent = voteState.ended
+      ? ('投票结束：A ' + voteState.a + ' 票，B ' + voteState.b + ' 票，废票 ' + voteState.x)
+      : ('⏳ 已投 ' + t + ' 票，继续投票中... (A:' + voteState.a + ' B:' + voteState.b + ')');
+  }
+}
+function castVote(ch) {
+  if (voteState.ended) return;
+  if (voteTotal() >= VOTE_LIMIT) { endVoteSim(); return; }
+  if (ch === 'a') {
+    voteState.a += 1;
+    appendVoteLog('执行分支：输入 a → A作品+1（当前A:' + voteState.a + ' B:' + voteState.b + ')');
+  } else if (ch === 'b') {
+    voteState.b += 1;
+    appendVoteLog('执行分支：输入 b → B作品+1（当前A:' + voteState.a + ' B:' + voteState.b + ')');
+  } else {
+    voteState.x += 1;
+    appendVoteLog('执行分支：其他输入 → 记为废票（废票:' + voteState.x + ')');
+  }
+  renderVoteSim();
+  if (voteTotal() >= VOTE_LIMIT) endVoteSim();
+}
+function castManual() {
+  const input = document.getElementById('vsInput');
+  const raw = String((input && input.value) || '').trim().toLowerCase();
+  if (!raw) return;
+  if (input) input.value = '';
+  castVote(raw === 'a' || raw === 'b' ? raw : 'x');
+}
+function simVotes(n, fill) {
+  if (voteState.ended) return;
+  const remain = VOTE_LIMIT - voteTotal();
+  const count = fill ? remain : Math.min(n, remain);
+  if (count <= 0) { endVoteSim(); return; }
+  let da = 0, db = 0, dx = 0;
+  for (let i = 0; i < count; i++) {
+    const r = Math.random();
+    if (r < 0.47) da += 1;
+    else if (r < 0.9) db += 1;
+    else dx += 1;
+  }
+  voteState.a += da;
+  voteState.b += db;
+  voteState.x += dx;
+  appendVoteLog('模拟循环执行 ' + count + ' 次：A+' + da + '  B+' + db + '  废票+' + dx);
+  if (voteTotal() >= VOTE_LIMIT) endVoteSim();
+  else renderVoteSim();
+}
+function endVoteSim() {
+  voteState.ended = true;
+  appendVoteLog('循环结束，输出统计结果');
+  renderVoteSim();
+}
+function resetVoteSim() {
+  voteState = { a: 0, b: 0, x: 0, ended: false };
+  const log = document.getElementById('vsLog');
+  if (log) log.textContent = '> 算法就绪，等待输入...（输入 a 或 b 投票，其他字符记为废票）';
+  renderVoteSim();
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// Global mouse events for dragging
+document.addEventListener('mousemove', (e) => {
+  if (!dragTarget) return;
+  const inner = document.getElementById('canvasInner');
+  if (!inner) return;
+  const ir = inner.getBoundingClientRect();
+  dragTarget.x = e.clientX - ir.left - dragOffset.x;
+  dragTarget.y = e.clientY - ir.top - dragOffset.y;
+  const el = getNodeEl(dragTarget.id);
+  if (el) { el.style.left = dragTarget.x + 'px'; el.style.top = dragTarget.y + 'px'; }
+  redrawConnections();
+});
+
+document.addEventListener('mouseup', () => {
+  if (dragTarget) {
+    const el = getNodeEl(dragTarget.id);
+    if (el) el.classList.remove('dragging');
+    dragTarget = null;
+    ensureCanvasSize();
+    redrawConnections();
+  }
+});
+
+// Ghost element for palette drag
+document.querySelectorAll('.pal-item').forEach(item => {
+  item.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', item.dataset.type);
+    e.dataTransfer.effectAllowed = 'copy';
+  });
+});
+
+const canvasWrap = document.getElementById('canvasWrap');
+if (canvasWrap) {
+  canvasWrap.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+  canvasWrap.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const type = e.dataTransfer.getData('text/plain');
+    if (!type) return;
+    const canvas = document.getElementById('canvas');
+    if (!canvas) return;
+    const cr = canvas.getBoundingClientRect();
+    const scrollLeft = canvas.scrollLeft;
+    const scrollTop = canvas.scrollTop;
+    const x = e.clientX - cr.left + scrollLeft;
+    const y = e.clientY - cr.top + scrollTop;
+    createNode(type, x, y);
+    redrawConnections();
+  });
+}
+
+// ==================== ACT1 / ACT3 INTERACTION ====================
+const lessonState = { a: 0, b: 0, voteCount: 0, run: { a: 0, b: 0, count: 0 }, ranInvalid: false };
+
+function $(id) { return document.getElementById(id); }
+function trimVal(value) { return String(value || '').trim().toLowerCase(); }
+function hasAnyWord(value, words) { return words.some((word) => trimVal(value).includes(word)); }
+function selectedValue(name) {
+  const checked = document.querySelector('input[name="' + name + '"]:checked');
+  return checked ? checked.value : '';
+}
+function setFeedback(id, type, text) {
+  const el = $(id);
+  if (!el) return;
+  el.className = 'feedback ' + type;
+  el.textContent = text;
+}
+function revealStage(id) {
+  const section = $(id);
+  if (!section) return;
+  section.classList.remove('locked');
+  section.classList.add('revealed');
+  if (id === 'stage2' && scaffoldLevel === 'C' && lessonState.voteCount === 0) {
+    addModelVote('a');
+    const note = $('demoVoteNote');
+    if (note) note.hidden = false;
+  }
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateVariableBoxes() {
+  if ($('aValue')) $('aValue').textContent = lessonState.a;
+  if ($('bValue')) $('bValue').textContent = lessonState.b;
+  if ($('voteLog')) {
+    $('voteLog').textContent = lessonState.voteCount
+      ? ('已经模拟 ' + lessonState.voteCount + ' 次：A作品 ' + lessonState.a + ' 票，B作品 ' + lessonState.b + ' 票。')
+      : '还没有模拟投票。';
+  }
+}
+function addModelVote(vote) {
+  if (vote === 'a') lessonState.a += 1;
+  if (vote === 'b') lessonState.b += 1;
+  lessonState.voteCount += 1;
+  updateVariableBoxes();
+}
+
+function bindIf(id, event, handler) {
+  const el = $(id);
+  if (el) el.addEventListener(event, handler);
+}
+
+bindIf('introCheck', 'click', function () {
+  if (selectedValue('introChoice') === 'right') {
+    setFeedback('introFeedback', 'success', '✅ 正确！算法把解决问题的步骤说清楚，程序才能按规则重复执行。下一步：分析投票问题。');
+    revealStage('stage1');
+  } else if (scaffoldLevel === 'C') {
+    setFeedback('introFeedback', 'error', '❌ 再想一想：计算机能不能把“输入、判断、计数”这些步骤重复做？');
+  } else if (scaffoldLevel === 'A') {
+    setFeedback('introFeedback', 'error', '❌ 再看题目，选更合适的说法。');
+  } else {
+    setFeedback('introFeedback', 'error', '❌ 再想一想：计算机并不是“什么都能猜对”，它需要人先分析问题、设计规则，再用程序执行。');
+  }
+});
+
+bindIf('analysisCheck', 'click', function () {
+  const peopleOk = trimVal($('analysisPeople').value).includes('1000');
+  const works = trimVal($('analysisWorks').value);
+  const worksOk = (works.includes('a') && works.includes('b')) || (works.includes('甲') && works.includes('乙'));
+  const goalOk = hasAnyWord($('analysisGoal').value, ['得票', '票数', '统计', '结果']);
+  if (peopleOk && worksOk && goalOk) {
+    setFeedback('analysisFeedback', 'success', '✅ 正确！你提取出了 1000 名学生、A 和 B 两个候选作品、最终统计得票数。下一步：把这些要素变成变量。');
+    revealStage('stage2');
+  } else if (scaffoldLevel === 'C') {
+    const miss = [];
+    if (!peopleOk) miss.push('人数');
+    if (!worksOk) miss.push('候选作品');
+    if (!goalOk) miss.push('求解目标');
+    setFeedback('analysisFeedback', 'error', '❌ 再看案例，这几项还要补：' + miss.join('、') + '。');
+  } else if (scaffoldLevel === 'A') {
+    setFeedback('analysisFeedback', 'error', '❌ 再读一遍案例，把三个空都填完整。');
+  } else {
+    setFeedback('analysisFeedback', 'error', '❌ 信息还不完整：请分别检查“有多少人”“有哪些候选作品”“最后要得到什么”。');
+  }
+});
+
+bindIf('voteA', 'click', function () { addModelVote('a'); });
+bindIf('voteB', 'click', function () { addModelVote('b'); });
+bindIf('resetVotes', 'click', function () {
+  lessonState.a = 0; lessonState.b = 0; lessonState.voteCount = 0;
+  updateVariableBoxes();
+  const note = $('demoVoteNote');
+  if (note) note.hidden = true;
+  setFeedback('modelFeedback', 'info', '已重置变量盒子。你可以继续观察每次输入如何改变 a 或 b。');
+});
+document.querySelectorAll('#initChips button').forEach((btn) => {
+  btn.addEventListener('click', function () {
+    const v = btn.dataset.init || '0';
+    document.querySelectorAll('#initChips button').forEach((other) => other.classList.toggle('on', other === btn));
+    if ($('initialA')) $('initialA').value = v;
+    if ($('initialB')) $('initialB').value = v;
+  });
+});
+
+bindIf('modelCheck', 'click', function () {
+  const initA = trimVal($('initialA').value);
+  const initB = trimVal($('initialB').value);
+  const rule = selectedValue('ruleChoice');
+  const summary = $('modelSummary');
+  if (initA === '0' && initB === '0' && rule === 'right') {
+    setFeedback('modelFeedback', 'success', '✅ 正确！开始统计前要把 a、b 清零；tp 决定增加哪一个变量。');
+    if (summary) summary.hidden = false;
+    markStepDone(1);
+    notifyLearnSpaceComplete(1, {
+      userScore: 100,
+      answers: {
+        people: $('analysisPeople').value,
+        works: $('analysisWorks').value,
+        goal: $('analysisGoal').value,
+        initialA: initA,
+        initialB: initB
+      }
+    });
+    showToast('环节1完成：问题分析与建模已提交');
+  } else {
+    if (summary) summary.hidden = true;
+    if (scaffoldLevel === 'C' && (initA === '1000' || initB === '1000')) {
+      setFeedback('modelFeedback', 'error', '❌ 开始统计前还没有人投票，盒子里不应该先放 1000 票。');
+    } else {
+      setFeedback('modelFeedback', 'error', '❌ 提示：统计开始前还没有投票，所以两个得票数应从同一个“没有票”的状态开始；再检查 tp 与 a、b 的对应关系。');
+    }
+  }
+});
+
+function blankVal(id) {
+  return String(($(id) && $(id).value) || '')
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/[“”"'‘’]/g, '')
+    .toLowerCase();
+}
+function markBlank(id, ok) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.toggle('ok', ok);
+  el.classList.toggle('bad', !ok);
+}
+function blankMatch(id, testers) {
+  const v = blankVal(id);
+  const ok = testers.some((t) => (typeof t === 'string' ? v === t : t.test(v)));
+  markBlank(id, ok);
+  return ok;
+}
+
+function checkAlgoBlanks() {
+  const items = [
+    { id: 'blankA', label: '变量 a', ok: blankMatch('blankA', ['a']) },
+    { id: 'blankB', label: '变量 b', ok: blankMatch('blankB', ['b']) },
+    { id: 'blankInit', label: '初值 0', ok: blankMatch('blankInit', ['0', '零']) },
+    { id: 'blankTp', label: '变量 tp', ok: blankMatch('blankTp', ['tp']) },
+    { id: 'blankBranch', label: '分支结构', ok: blankMatch('blankBranch', ['分支', '选择', '判断', /分支结构/, /选择结构/, /判断结构/]) },
+    { id: 'blankLoop', label: '循环结构', ok: blankMatch('blankLoop', ['循环', /循环结构/, /重复/]) },
+    { id: 'blankN', label: '1000人', ok: blankMatch('blankN', ['1000', '一千']) },
+    { id: 'blankOut', label: '输出', ok: blankMatch('blankOut', ['输出', '打印', '公布']) }
+  ];
+  const okCount = items.filter((it) => it.ok).length;
+  const score = Math.round(okCount * 100 / items.length);
+  const passed = okCount === items.length;
+  const answers = {
+    a: $('blankA') && $('blankA').value,
+    b: $('blankB') && $('blankB').value,
+    init: $('blankInit') && $('blankInit').value,
+    tp: $('blankTp') && $('blankTp').value,
+    branch: $('blankBranch') && $('blankBranch').value,
+    loop: $('blankLoop') && $('blankLoop').value,
+    n: $('blankN') && $('blankN').value,
+    out: $('blankOut') && $('blankOut').value
+  };
+  flowchartSubmitCount += 1;
+  notifyLearnSpaceComplete(2, {
+    userScore: score,
+    flowchartScore: score,
+    flowchartPassed: passed,
+    flowchartVersion: flowchartSubmitCount,
+    answers
+  });
+  if (passed) {
+    markStepDone(2);
+    if (scaffoldLevel === 'C') {
+      setFeedback('algoBlankFeedback', 'success', '✅ 选对了！步骤1示范的是初始化；你选的输入、分支、循环、输出，合起来就是课本流程图。');
+    } else if (scaffoldLevel === 'A') {
+      setFeedback('algoBlankFeedback', 'success', '✅ 五步都对。下面还有一个小挑战：循环到底执行几次？');
+      const chal = $('algoChallenge');
+      if (chal) chal.hidden = false;
+    } else {
+      setFeedback('algoBlankFeedback', 'success', '✅ 全部正确！这五步就是课本流程图的自然语言：先清零，再输入，用分支判断给谁加票，用循环统计 1000 人，最后输出结果。');
+    }
+    showToast('环节2完成：算法步骤已提交');
+  } else if (scaffoldLevel === 'C') {
+    const miss = items.filter((it) => !it.ok).map((it) => it.label).join('、');
+    setFeedback('algoBlankFeedback', 'error', '❌ 这几项再对照左图选一次：' + miss + '。菱形是分支，画回去的箭头是循环。');
+  } else if (scaffoldLevel === 'A') {
+    setFeedback('algoBlankFeedback', 'error', '❌ 还有空不对。再看左图里的变量名、菱形和画回去的箭头。');
+  } else {
+    const miss = items.filter((it) => !it.ok).map((it) => it.label).join('、');
+    setFeedback('algoBlankFeedback', 'error', '❌ 还有空没填对：' + miss + '。菱形表示分支，回箭头表示循环。');
+  }
+}
+
+function checkAlgoChallenge() {
+  const ok = blankMatch('blankTimes', ['1000', '一千']);
+  if (ok) {
+    setFeedback('algoChallengeFeedback', 'success', '✅ 对。i 从 1 到 1000，条件是 i<1001，一共执行 1000 次，正好对应 1000 名学生。');
+  } else {
+    setFeedback('algoChallengeFeedback', 'error', '❌ 再数一数：i=1 时进入循环，一直到 i=1000 仍小于 1001。');
+  }
+}
+
+function appendTerminal(text, cls) {
+  const terminal = $('terminal');
+  if (!terminal) return;
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = text;
+  terminal.appendChild(line);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+bindIf('runProgram', 'click', function () {
+  const input = trimVal($('runInput').value);
+  if (!input) {
+    appendTerminal('请输入一个字符后再运行。', 'prompt');
+    return;
+  }
+  lessonState.run.count += 1;
+  appendTerminal('输入a投票给A作品，输入b投票给B作品。' + input, 'prompt');
+  if (input === 'a') {
+    lessonState.run.a += 1;
+    appendTerminal('判断结果：tp 是 a，执行 a = a + 1。');
+  } else {
+    lessonState.run.b += 1;
+    appendTerminal('判断结果：走到 else，执行 b = b + 1。');
+    if (input === 'c') lessonState.ranInvalid = true;
+  }
+  appendTerminal('当前结果：A作品获得票数为： ' + lessonState.run.a + ' ， B作品获得票数为： ' + lessonState.run.b + ' ；已处理 ' + lessonState.run.count + ' 次。');
+  if ($('bugCallout')) {
+    $('bugCallout').textContent = input === 'c'
+      ? '已经复现：输入 c 不是 a，程序走到 else，B 的票数错误加 1。'
+      : '继续试试输入 c，看看既不是 a 也不是 b 时会走到哪一条。';
+  }
+  $('runInput').value = '';
+  if (scaffoldLevel === 'A' && lessonState.ranInvalid && trimVal($('bugGuess').value).length >= 4) {
+    document.body.classList.add('show-verify-choices');
+  }
+});
+bindIf('runInput', 'keydown', function (event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    const btn = $('runProgram');
+    if (btn) btn.click();
+  }
+});
+bindIf('bugGuess', 'input', function () {
+  if (scaffoldLevel === 'A' && lessonState.ranInvalid && trimVal($('bugGuess').value).length >= 4) {
+    document.body.classList.add('show-verify-choices');
+  }
+});
+bindIf('clearTerminal', 'click', function () {
+  lessonState.run = { a: 0, b: 0, count: 0 };
+  lessonState.ranInvalid = false;
+  document.body.classList.remove('show-verify-choices');
+  resetTerminalForTier();
+});
+
+bindIf('verifyCheck', 'click', function () {
+  const guessOk = trimVal($('bugGuess').value).length >= 4;
+  const bug = selectedValue('bugChoice');
+  const opt = selectedValue('optChoice');
+  if (scaffoldLevel === 'A' && (!guessOk || !lessonState.ranInvalid)) {
+    setFeedback('verifyFeedback', 'error', '❌ 请先写下猜想，并在运行区实际输入一次 c。');
+    return;
+  }
+  if (scaffoldLevel === 'A' && !document.body.classList.contains('show-verify-choices')) {
+    document.body.classList.add('show-verify-choices');
+    setFeedback('verifyFeedback', 'info', '根据你的测试，再选择下面的判断和优化方案。');
+    return;
+  }
+  if (guessOk && bug === 'right' && opt === 'right' && lessonState.ranInvalid) {
+    setFeedback('verifyFeedback', 'success', '✅ 验证成功！你发现 else 会把不是 a 的输入错误地算给 B。下一步：思考三个作品怎么改。');
+    revealStage('stage6');
+  } else {
+    setFeedback('verifyFeedback', 'error', '❌ 请完成完整探究：先写下猜想，选择关于“输入 c 会走到 else”的判断，选择合理的优化方案，并在运行区实际输入一次 c。');
+  }
+});
+
+bindIf('extensionCheck', 'click', function () {
+  const textVal = trimVal($('extensionText').value);
+  const hasThird = hasAnyWord(textVal, ['第三', '3个', '三号', 'c']);
+  const hasVariable = hasAnyWord(textVal, ['变量', 'c', '第三个作品']);
+  const hasBranch = hasAnyWord(textVal, ['分支', '判断', '条件']);
+  const hasOutput = hasAnyWord(textVal, ['输出', '票数', '统计']);
+  if (textVal.length >= 18 && hasThird && hasVariable && hasBranch && hasOutput) {
+    setFeedback('extensionFeedback', 'success', '✅ 思考很完整！面对更多候选对象，要增加对应变量和输入选项，扩充分支判断，并输出每个作品的得票数。');
+    markStepDone(3);
+    notifyLearnSpaceComplete(3, {
+      userScore: 100,
+      extensionText: $('extensionText').value
+    });
+    showToast('环节3完成：算法验证与优化已提交');
+  } else {
+    setFeedback('extensionFeedback', 'error', '❌ 提示：至少写到四点——第三个作品的变量、输入选项、分支判断，以及最后要输出的统计结果。');
+  }
+});
+
+// ==================== RESET ALL ====================
+function resetAll() {
+  clearCanvas();
+  lessonState.a = 0; lessonState.b = 0; lessonState.voteCount = 0;
+  lessonState.run = { a: 0, b: 0, count: 0 };
+  lessonState.ranInvalid = false;
+  updateVariableBoxes();
+  ['analysisPeople','analysisWorks','analysisGoal','initialA','initialB','bugGuess','runInput','extensionText','blankA','blankB','blankInit','blankTp','blankBranch','blankLoop','blankN','blankOut','blankTimes'].forEach((id) => {
+    const el = $(id);
+    if (el) { el.value = ''; el.readOnly = false; el.classList.remove('ok', 'bad'); delete el.dataset.userTyped; }
+  });
+  document.querySelectorAll('#panel1 input[type="radio"], #panel3 input[type="radio"]').forEach((el) => { el.checked = false; });
+  document.querySelectorAll('#panel1 .feedback, #panel2 .feedback, #panel3 .feedback').forEach((el) => { el.textContent = ''; el.className = 'feedback'; });
+  document.querySelectorAll('.quiz-item').forEach((el) => el.classList.remove('correct', 'wrong'));
+  document.querySelectorAll('.quiz-feedback').forEach((el) => { el.textContent = ''; });
+  ['stage1','stage2','stage6'].forEach((id) => { const el = $(id); if (el) el.classList.add('locked'); });
+  const note = $('demoVoteNote');
+  if (note) note.hidden = true;
+  const summary = $('modelSummary');
+  if (summary) summary.hidden = true;
+  const chal = $('algoChallenge');
+  if (chal) chal.hidden = true;
+  const chalFb = $('algoChallengeFeedback');
+  if (chalFb) { chalFb.textContent = ''; chalFb.className = 'feedback'; }
+  document.querySelectorAll('.step-tab').forEach((t) => t.classList.remove('done'));
+  applyScaffoldUI();
+  switchStep(1);
+  showToast('已全部重置，可以重新开始！');
+}
+
+// ==================== INIT ====================
+(function initFromQuery() {
+  if (IS_EMBEDDED) {
+    document.body.classList.add('embedded-mode');
+    const step = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || '1', 10);
+    switchStep(Number.isFinite(step) && step >= 1 && step <= 3 ? step : 1);
+  }
+  if (IS_PREVIEW) {
+    const sw = document.getElementById('levelSwitch');
+    if (sw) sw.style.display = 'flex';
+  }
+  applyScaffoldUI();
+  if (IS_EMBEDDED && currentStep === 2 && window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'LEARN_SPACE_REQUEST_RESTORE', payload: { source: 'g6-up-lesson1' } }, '*');
+  }
+})();
+
+const canvasInnerEl = document.getElementById('canvasInner');
+if (canvasInnerEl) {
+  canvasInnerEl.addEventListener('click', (e) => {
+    if (fcMode !== 'delete') return;
+    const hit = e.target.closest('[data-conn]');
+    if (!hit) return;
+    e.preventDefault();
+    e.stopPropagation();
+    deleteConnectionAt(Number(hit.getAttribute('data-conn')));
+  });
+}
+const canvasEl = document.getElementById('canvas');
+if (canvasEl) {
+  canvasEl.addEventListener('scroll', () => {
+    requestAnimationFrame(redrawConnections);
+  });
+}
+
+console.log('✅ 算法与问题解决 — 探究活动互动网页已就绪');
+console.log('  探究一：情景导入 + 问题分析 + 抽象建模');
+console.log('  探究二：对照课本流程图填空');
+console.log('  探究三：算法验证与优化 + 拓展任务');
+</script>
+<div id="voteSim" class="vote-sim" hidden>
+  <div class="vs-card">
+    <header class="vs-head">
+      <div>
+        <h3>🗳️ 趣味投票 · 体验算法三大结构</h3>
+        <p>点击按钮投票，或手动输入 a / b 体验分支判断。试试模拟千人投票，观察循环与有穷性！</p>
+      </div>
+      <button type="button" class="vs-close" onclick="closeVoteSim()">关闭</button>
+    </header>
+    <div class="vs-bars">
+      <div class="vs-item a"><span>作品 A</span><b id="vsA">0</b><small>票</small><span class="vs-mini"><i id="vsABar"></i></span></div>
+      <div class="vs-item b"><span>作品 B</span><b id="vsB">0</b><small>票</small><span class="vs-mini"><i id="vsBBar"></i></span></div>
+      <div class="vs-item x"><span>🚫 废票</span><b id="vsX">0</b><small>张</small><span class="vs-mini"><i id="vsXBar"></i></span></div>
+    </div>
+    <div class="vs-total">
+      <span>总进度</span>
+      <div class="vs-track"><i id="vsTotalBar"></i></div>
+      <em id="vsTotal">0 / 1000</em>
+      <button type="button" class="vs-end" onclick="endVoteSim()">结束投票</button>
+    </div>
+    <div class="vs-actions">
+      <button type="button" class="vs-btn a" onclick="castVote('a')">👍 投 A</button>
+      <button type="button" class="vs-btn b" onclick="castVote('b')">👍 投 B</button>
+      <label class="vs-manual">手动输入 <input id="vsInput" maxlength="4" placeholder="a/b" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();castManual()}"> <button type="button" onclick="castManual()">投票</button></label>
+      <button type="button" class="vs-btn sim" onclick="simVotes(100)">模拟100票</button>
+      <button type="button" class="vs-btn fill" onclick="simVotes(1000, true)">一键投满</button>
+      <button type="button" class="vs-btn reset" onclick="resetVoteSim()">重置</button>
+    </div>
+    <pre class="vs-log" id="vsLog"> &gt; 算法就绪，等待输入...（输入 a 或 b 投票，其他字符记为废票）</pre>
+    <div class="vs-status" id="vsStatus">⏳ 已投 0 票，继续投票中... (A:0 B:0)</div>
+  </div>
+</div>
+</body>
+</html>

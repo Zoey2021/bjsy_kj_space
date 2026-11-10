@@ -20,6 +20,8 @@
     <properties>
         <java.version>1.8</java.version>
         <jjwt.version>0.11.5</jjwt.version>
+        <!-- JDK17+ 编译需要较新 Lombok，否则实体 getter 生成失败 -->
+        <lombok.version>1.18.34</lombok.version>
     </properties>
 
     <dependencies>

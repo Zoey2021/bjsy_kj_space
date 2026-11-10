@@ -5,7 +5,9 @@ import com.itech.learnspace.entity.SysUser;
 import com.itech.learnspace.exception.BusinessException;
 import com.itech.learnspace.repository.SysClassRepository;
 import com.itech.learnspace.repository.SysUserRepository;
+import com.itech.learnspace.security.LoginThrottleService;
 import com.itech.learnspace.security.LoginUser;
+import com.itech.learnspace.security.PasswordPolicy;
 import com.itech.learnspace.util.JwtUtil;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,19 +36,25 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final SchoolManageService schoolManageService;
     private final AccountAccessService accountAccessService;
+    private final PasswordPolicy passwordPolicy;
+    private final LoginThrottleService loginThrottleService;
 
     public AuthService(SysUserRepository userRepository,
                        SysClassRepository classRepository,
                        PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil,
                        SchoolManageService schoolManageService,
-                       AccountAccessService accountAccessService) {
+                       AccountAccessService accountAccessService,
+                       PasswordPolicy passwordPolicy,
+                       LoginThrottleService loginThrottleService) {
         this.userRepository = userRepository;
         this.classRepository = classRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.schoolManageService = schoolManageService;
         this.accountAccessService = accountAccessService;
+        this.passwordPolicy = passwordPolicy;
+        this.loginThrottleService = loginThrottleService;
     }
 
     /**
@@ -54,27 +62,33 @@ public class AuthService {
      * 前端根据 role 字段自动跳转到学生/教师/管理员页面
      */
     public Map<String, Object> login(String username, String password) {
-        SysUser user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BusinessException("账号不存在"));
+        loginThrottleService.assertAllowed(username);
+        SysUser user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) {
+            loginThrottleService.onFailure(username);
+            throw new BusinessException("账号不存在");
+        }
 
         if (user.getStatus() != 1) {
+            loginThrottleService.onFailure(username);
             throw new BusinessException("账号已被禁用");
         }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
+            loginThrottleService.onFailure(username);
             throw new BusinessException("密码错误");
         }
 
+        loginThrottleService.onSuccess(username);
         Map<String, Object> result = buildLoginResult(user);
-        if (needsFirstPasswordChange(user)) {
+        if (needsPasswordChange(user)) {
             result.put("mustChangePassword", true);
         }
         return result;
     }
 
     /**
-     * 学生第一次用账号密码登录后，把自己的新密码记下来。
-     * 只有 2021级6班 会记下明文，方便教师在名单里查看。
+     * 登录后改自己的密码。2021级6班仍会记下明文供教师查看；其余账号只存哈希。
      */
     @Transactional
     public Map<String, Object> changeOwnPassword(String oldPassword, String newPassword) {
@@ -85,16 +99,16 @@ public class AuthService {
             throw new BusinessException("原密码不正确");
         }
         String next = newPassword == null ? "" : newPassword.trim();
-        if (next.length() < 4 || next.length() > 20) {
-            throw new BusinessException("新密码请设置 4 到 20 位");
-        }
+        passwordPolicy.validateNewPassword(user.getRole(), next);
         if (passwordEncoder.matches(next, user.getPassword())) {
             throw new BusinessException("新密码不能和原来的一样");
         }
         user.setPassword(passwordEncoder.encode(next));
+        user.setPasswordChangedAt(LocalDateTime.now());
         if (inFirstPasswordClass(user)) {
             user.setPasswordNote(next);
-            user.setPasswordChangedAt(LocalDateTime.now());
+        } else {
+            user.setPasswordNote(null);
         }
         userRepository.save(user);
         Map<String, Object> out = new HashMap<String, Object>();
@@ -102,8 +116,22 @@ public class AuthService {
         return out;
     }
 
+    /** 兼容旧调用名 */
     public boolean needsFirstPasswordChange(SysUser user) {
-        if (user == null || !"STUDENT".equals(user.getRole())) {
+        return needsPasswordChange(user);
+    }
+
+    /**
+     * 仍使用公开弱口令，或 2021级6班尚未完成首次改密时，强制改密。
+     */
+    public boolean needsPasswordChange(SysUser user) {
+        if (user == null) {
+            return false;
+        }
+        if (passwordPolicy.matchesWeakPassword(user)) {
+            return true;
+        }
+        if (!"STUDENT".equals(user.getRole())) {
             return false;
         }
         if (user.getPasswordChangedAt() != null) {
@@ -302,7 +330,7 @@ public class AuthService {
         info.put("accountScope", accountAccessService.scope(user));
         putClassName(info, user);
         SysUser fresh = userRepository.findById(user.getId()).orElse(user);
-        if (needsFirstPasswordChange(fresh)) {
+        if (needsPasswordChange(fresh)) {
             info.put("mustChangePassword", true);
         }
         return info;

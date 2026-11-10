@@ -13,15 +13,15 @@ import java.util.Map;
 
 /**
  * 创建科创启航教师账号。已存在则不改密码。
- * 初始密码 123456，与校内演示账号相同。
+ * 新建账号使用临时弱口令，登录后会被强制改密。
  */
 @Component
 @Order(24)
 public class KechuangTeacherSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(KechuangTeacherSeeder.class);
-    /** BCrypt of 123456 */
-    private static final String PASSWORD_123456 =
+    /** BCrypt of 123456 — 仅作首次建号占位，平台会强制改密 */
+    private static final String PASSWORD_PLACEHOLDER =
             "$2b$10$W/PCZrjdz.jTDLRRklWBzumK7tDUmpuk/pseBDLVylqyvSfyb7HOK";
 
     private final JdbcTemplate jdbcTemplate;
@@ -42,8 +42,8 @@ public class KechuangTeacherSeeder implements ApplicationRunner {
         if (rows.isEmpty()) {
             jdbcTemplate.update(
                     "INSERT INTO sys_user (username, password, real_name, role, class_id, status) VALUES (?,?,?,?,NULL,1)",
-                    username, PASSWORD_123456, realName, "TEACHER");
-            log.info("已创建科创教师账号：{} / {}", realName, username);
+                    username, PASSWORD_PLACEHOLDER, realName, "TEACHER");
+            log.info("已创建科创教师账号：{} / {}（请登录后立即修改密码）", realName, username);
             return;
         }
         Map<String, Object> row = rows.get(0);

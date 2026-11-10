@@ -106,7 +106,7 @@ export const TEACHER_MODULES = [
         path: '/teacher/ai-evaluation',
         title: '智能评价',
         icon: 'MagicStick',
-        desc: '自动批改、评级与分析报告'
+        desc: '学生过程档案与综合等级'
       }
     ]
   }

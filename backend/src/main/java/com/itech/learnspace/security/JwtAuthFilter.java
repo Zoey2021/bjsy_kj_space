@@ -2,7 +2,9 @@ package com.itech.learnspace.security;
 
 import com.itech.learnspace.entity.SysUser;
 import com.itech.learnspace.repository.SysUserRepository;
+import com.itech.learnspace.service.AuthService;
 import com.itech.learnspace.util.JwtUtil;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -19,16 +21,21 @@ import java.io.IOException;
 /**
  * JWT 鉴权过滤器：每个请求进来时检查是否携带有效 Token
  * 流程：从请求头取 Token → 解析 → 查到用户 → 放入 Security 上下文 → 放行
+ * 仍使用弱口令/未完成强制改密的账号，只能访问改密与个人资料接口。
  */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final SysUserRepository userRepository;
+    private final AuthService authService;
 
-    public JwtAuthFilter(JwtUtil jwtUtil, SysUserRepository userRepository) {
+    public JwtAuthFilter(JwtUtil jwtUtil,
+                         SysUserRepository userRepository,
+                         @Lazy AuthService authService) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.authService = authService;
     }
 
     @Override
@@ -46,10 +53,28 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(loginUser, null, loginUser.getAuthorities());
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
+
+                if (authService.needsPasswordChange(user) && !allowedWhileMustChange(request)) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write(
+                            "{\"code\":403,\"message\":\"请先修改密码后再使用平台\",\"mustChangePassword\":true}");
+                    return;
+                }
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean allowedWhileMustChange(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri == null) {
+            return false;
+        }
+        return "/api/auth/change-password".equals(uri)
+                || "/api/auth/me".equals(uri)
+                || "/api/auth/login".equals(uri);
     }
 
     /** 从 Authorization 头或 URL 参数中取 Token（SSE 用参数传） */

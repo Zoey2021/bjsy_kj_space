@@ -1,6 +1,11 @@
 <template>
   <div class="hall-page" v-loading="loading">
-    <header class="bar">
+    <!-- 聊天页：紧凑顶栏，避免与 iframe 内标题重复抢视线 -->
+    <header v-if="activeAssistant && activeAssistant.chatPage" class="bar bar-compact">
+      <button type="button" class="back" @click="onBack">← 返回本馆</button>
+      <span class="compact-title">{{ activeAssistant.name }}</span>
+    </header>
+    <header v-else class="bar">
       <button type="button" class="back" @click="onBack">← {{ activeAssistant || activeApp ? '返回本馆' : '返回实验室' }}</button>
       <div v-if="!activeAssistant && !activeApp">
         <h1>{{ displayName }}</h1>
@@ -359,12 +364,24 @@ onBeforeUnmount(destroyClient)
   overflow: hidden;
 }
 .hall-page:has(.chat-page-stage) {
-  gap: 8px;
+  gap: 6px;
 }
 .bar {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.bar-compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  min-height: 28px;
+}
+.compact-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.02em;
 }
 .back {
   align-self: flex-start;
@@ -375,6 +392,9 @@ onBeforeUnmount(destroyClient)
   cursor: pointer;
   padding: 0;
   font-size: 13px;
+}
+.bar-compact .back {
+  align-self: center;
 }
 .bar h1 {
   margin: 0 0 4px;
@@ -669,7 +689,10 @@ onBeforeUnmount(destroyClient)
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border-radius: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.06);
+  background: #e8eef5;
 }
 .chat-page-stage .embed {
   flex: 1 1 auto;
@@ -677,8 +700,8 @@ onBeforeUnmount(destroyClient)
   height: 100%;
   min-height: 0;
   border: 0;
-  border-radius: 16px;
-  background: #f7f9ff;
+  border-radius: 18px;
+  background: transparent;
 }
 
 @media (max-width: 900px) {

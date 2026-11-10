@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第07课 数据计算 · 互动探究</title>
+<script>
+(function () {
+  try {
+    var p = new URLSearchParams(location.search);
+    if (p.get('embedded') === '1' || p.get('embed') === '1') {
+      document.documentElement.classList.add('embedded-mode');
+    }
+  } catch (e) {}
+})();
+</script>
+<style>
+  :root{
+    --bg:#eef4fd; --card:#fff; --ink:#1b2a41; --muted:#6b7f99;
+    --primary:#2f6bf6; --primary-d:#1f4fd0; --primary-soft:#e8f0ff;
+    --accent:#ff8a3d; --ok:#16a34a; --ok-soft:#e2f8ea; --no:#d94a4a; --no-soft:#fff1f1;
+    --xl:#217346; --line:#dbe6f6; --shadow:0 10px 30px rgba(31,66,135,.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    background:
+      radial-gradient(1200px 500px at 8% -8%, #dbe9ff 0%, rgba(219,233,255,0) 62%),
+      radial-gradient(900px 460px at 100% 0%, #ffeee2 0%, rgba(255,238,226,0) 55%),
+      var(--bg);
+    color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1120px;margin:0 auto;padding:16px 20px 70px;}
+
+  /* 顶栏 */
+  header.top{
+    position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
+    background:rgba(255,255,255,.85);border:1px solid rgba(219,230,246,.9);
+    border-radius:16px;padding:11px 18px;display:flex;align-items:center;gap:16px;
+    box-shadow:0 6px 20px rgba(31,66,135,.07);margin-bottom:14px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;min-width:0;}
+  .logo{width:38px;height:38px;border-radius:11px;flex:0 0 auto;background:linear-gradient(140deg,#2f6bf6,#5aa2ff);color:#fff;display:grid;place-items:center;font-weight:800;font-size:16px;box-shadow:0 6px 14px rgba(47,107,246,.35);}
+  .brand h1{font-size:15.5px;margin:0;line-height:1.25;white-space:nowrap;}
+  .brand p{margin:1px 0 0;font-size:11.5px;color:var(--muted);}
+  .starwrap{margin-left:auto;display:flex;align-items:center;gap:12px;}
+  .stars{display:flex;gap:3px;font-size:18px;line-height:1;}
+  .stars i{opacity:.2;font-style:normal;transition:.3s;}
+  .stars i.on{opacity:1;transform:scale(1.12);filter:drop-shadow(0 2px 4px rgba(255,138,61,.45));}
+  .reset{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:9px;padding:6px 11px;font-size:12px;cursor:pointer;font-family:inherit;}
+  .reset:hover{color:var(--primary);border-color:#b9cffb;}
+
+  /* 步骤条 */
+  nav.steps{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap;}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;font-size:12.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;transition:.18s;font-family:inherit;}
+  .chip b{width:17px;height:17px;border-radius:50%;background:#eef3fb;color:#8ea3bf;font-size:10.5px;display:grid;place-items:center;font-weight:700;}
+  .chip:hover{border-color:#b9cffb;color:var(--primary);}
+  .chip.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 7px 16px rgba(47,107,246,.28);}
+  .chip.active b{background:rgba(255,255,255,.25);color:#fff;}
+  .chip.done b{background:var(--ok-soft);color:var(--ok);}
+
+  /* 面板 */
+  .panel{display:none;}
+  .panel.active{display:block;animation:rise .3s ease both;}
+  @keyframes rise{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 26px;box-shadow:var(--shadow);}
+  .p-head{display:flex;align-items:center;gap:11px;margin-bottom:4px;flex-wrap:wrap;}
+  .badge{background:var(--primary-soft);color:var(--primary);font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:999px;letter-spacing:.4px;}
+  .badge.warm{background:#fff1e6;color:#e2691a;}
+  .badge.green{background:#e6f6ec;color:#166534;}
+  .p-head h2{margin:0;font-size:21px;letter-spacing:.2px;}
+  .lead{color:var(--muted);font-size:14px;line-height:1.8;margin:8px 0 0;}
+  .lead b{color:var(--primary-d);}
+
+  .cols{display:grid;grid-template-columns:minmax(300px,.95fr) minmax(360px,1.05fr);gap:24px;align-items:start;margin-top:18px;}
+  @media(max-width:920px){.cols{grid-template-columns:1fr;gap:16px;}}
+  .left,.right{min-width:0;}
+
+  .note{background:#f7faff;border:1px dashed #c9dcfb;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.8;color:#3d5680;margin-top:14px;}
+  .note b{color:var(--primary);}
+  .note.warm{background:#fffaf4;border-color:#ffd9b8;color:#8a5a2c;}
+  .note.warm b{color:#e2691a;}
+  .taskbox{background:linear-gradient(180deg,#f2f7ff,#fbfdff);border:1px solid #d9e6fb;border-radius:14px;padding:14px 16px;margin-top:14px;}
+  .taskbox h3{margin:0 0 8px;font-size:13.5px;color:var(--primary-d);display:flex;align-items:center;gap:6px;}
+  .taskbox ul{margin:0;padding-left:19px;font-size:13px;line-height:1.95;color:#42577a;}
+  .taskbox ul li::marker{color:var(--primary);}
+  kbd{background:#eef3fc;border:1px solid #d5e2f6;border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--primary-d);}
+  code{background:#eef4fd;border-radius:4px;padding:1px 5px;color:#1f4fd0;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;}
+
+  .btn{border:none;border-radius:11px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:.18s;}
+  .btn.primary{background:linear-gradient(140deg,#2f6bf6,#4a8bff);color:#fff;box-shadow:0 9px 20px rgba(47,107,246,.30);}
+  .btn.primary:hover{transform:translateY(-1px);box-shadow:0 13px 24px rgba(47,107,246,.36);}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:#42577a;}
+  .btn.ghost:hover{border-color:#b9cffb;color:var(--primary);}
+  .btn.tiny{font-size:12px;padding:6px 12px;border-radius:8px;}
+  .btnrow{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px;align-items:center;}
+
+  /* 情境 */
+  .device-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-top:16px;}
+  @media(max-width:640px){.device-grid{grid-template-columns:repeat(2,1fr);}}
+  .dev{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 10px;text-align:center;transition:.25s;}
+  .dev:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(31,66,135,.10);}
+  .dev .ico{font-size:24px;line-height:1;}
+  .dev .nm{font-size:12.5px;color:var(--muted);margin-top:7px;}
+  .dev .t{font-size:22px;font-weight:800;color:var(--primary-d);margin-top:1px;letter-spacing:-.5px;}
+  .dev .t small{font-size:11.5px;font-weight:600;color:var(--muted);margin-left:2px;}
+  .guess{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:18px;}
+  .guess input{width:126px;padding:10px 13px;border:1px solid var(--line);border-radius:11px;font-size:14.5px;font-family:inherit;outline:none;color:var(--ink);background:#fbfdff;}
+  .guess input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(47,107,246,.13);}
+  .guess span{font-size:13.5px;color:var(--muted);}
+  .echo{margin-top:12px;font-size:13.5px;color:var(--primary-d);background:var(--primary-soft);border-radius:11px;padding:11px 14px;display:none;line-height:1.8;}
+  .echo.show{display:block;animation:rise .3s both;}
+
+  /* 选择网格 */
+  .gridwrap{border:1px solid #cfdff5;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 8px 22px rgba(31,66,135,.09);}
+  .gridwrap .cap{background:#217346;color:#eaf6ef;font-size:12px;padding:8px 12px;}
+  table.gpick{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed;font-size:12.5px;}
+  table.gpick th,table.gpick td{border-right:1px solid #e6eefa;border-bottom:1px solid #e6eefa;height:33px;padding:0 6px;text-align:center;}
+  table.gpick thead th{background:#eef4ff;color:#5c7292;font-weight:700;font-size:11.5px;height:27px;}
+  table.gpick th.rowhead{background:#eef4ff;color:#5c7292;font-weight:700;font-size:11.5px;}
+  table.gpick td{background:#fff;cursor:pointer;transition:.12s;user-select:none;}
+  table.gpick td:hover{background:#f4f8ff;}
+  table.gpick td.banner{background:#f4f9ff;font-weight:800;color:#1b6b3a;font-size:12px;cursor:default;}
+  table.gpick td.hd{background:#f7fafd;font-weight:700;color:#4a6080;cursor:default;}
+  table.gpick td.picked{background:#dbe9ff;box-shadow:inset 0 0 0 2px #2f6bf6;color:#1f4fd0;font-weight:700;}
+
+  /* 题目 */
+  .q{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#fff;margin-top:14px;}
+  .qt{font-size:13.5px;font-weight:700;color:#2b3f61;line-height:1.6;display:flex;gap:8px;align-items:flex-start;}
+  .qt .qn{flex:0 0 auto;background:var(--primary-soft);color:var(--primary);border-radius:6px;font-size:11px;padding:2px 7px;margin-top:1px;}
+  .opts{display:flex;flex-direction:column;gap:7px;margin-top:10px;}
+  .opts.row{flex-direction:row;flex-wrap:wrap;}
+  .opts button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 12px;font-size:12.8px;color:#42577a;cursor:pointer;font-family:inherit;text-align:left;transition:.16s;line-height:1.5;}
+  .opts button:hover{border-color:#b9cffb;background:#fbfdff;}
+  .opts button.ok{border-color:#b7ebc9;background:var(--ok-soft);color:#106b39;font-weight:700;}
+  .opts button.no{border-color:#f5c9c9;background:var(--no-soft);color:#a33;}
+  .fb{font-size:12.5px;line-height:1.75;margin-top:9px;color:#42577a;display:none;}
+  .fb.show{display:block;animation:rise .25s both;}
+  .fb.ok{color:#106b39;}
+  .fb.no{color:#9a5a20;}
+  .fb code{font-size:12px;}
+
+  /* 三种方法 */
+  .methods3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+  @media(max-width:640px){.methods3{grid-template-columns:1fr;}}
+  .meth{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;cursor:pointer;transition:.18s;text-align:center;}
+  .meth:hover{border-color:#b9cffb;transform:translateY(-2px);}
+  .meth.on{border-color:#8fb6fb;background:#f5f9ff;box-shadow:0 8px 18px rgba(47,107,246,.12);}
+  .meth .mh{font-size:12px;color:var(--muted);}
+  .meth .mb{font-size:13px;font-weight:700;color:#2b3f61;margin-top:6px;font-family:ui-monospace,Menlo,monospace;word-break:break-all;}
+  .meth .mv{font-size:17px;font-weight:800;color:var(--primary-d);margin-top:8px;}
+  .meth .mv small{font-size:11px;color:var(--muted);font-weight:600;}
+  .methmsg{margin-top:10px;font-size:12.8px;color:#3d5680;background:#f7faff;border-radius:10px;padding:9px 12px;line-height:1.7;min-height:22px;}
+
+  /* 公式积木 */
+  .builder{margin-top:12px;}
+  .bslot{min-height:46px;border:2px dashed #c9dcfb;border-radius:11px;background:#fbfdff;display:flex;align-items:center;gap:6px;padding:8px 10px;flex-wrap:wrap;font-family:ui-monospace,Menlo,monospace;font-size:14px;}
+  .bslot .ph{color:#b3c4db;font-family:inherit;font-size:12.5px;}
+  .bslot .tok{border:1px solid #c7dbfa;background:#eaf2ff;border-radius:7px;padding:3px 9px;color:#1f4fd0;font-size:13px;}
+  .bpool{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .bchip{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;font-family:ui-monospace,Menlo,monospace;font-size:13px;color:#2b3f61;cursor:pointer;transition:.15s;}
+  .bchip:hover{border-color:#b9cffb;background:#fbfdff;transform:translateY(-1px);}
+  .bchip:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+
+  /* 填充动画 */
+  .filldemo{border:1px solid #cfdff5;border-radius:12px;overflow:hidden;margin-top:12px;}
+  .frow{display:grid;grid-template-columns:44px 1fr 60px;align-items:center;gap:8px;padding:7px 11px;border-bottom:1px solid #eef4fd;font-size:12.5px;opacity:.18;transition:.4s;background:#fff;}
+  .frow:last-child{border-bottom:none;}
+  .frow.on{opacity:1;background:#fbfdff;}
+  .frow b{color:#2b3f61;font-family:ui-monospace,Menlo,monospace;font-weight:700;}
+  .frow code{font-size:12px;background:#f2f6fd;border-radius:5px;padding:1px 5px;}
+  .frow span{text-align:right;font-weight:800;color:var(--primary-d);font-variant-numeric:tabular-nums;}
+  .frow.last{background:#fff8ef;}
+
+  /* 上传 */
+  .up{border:2px dashed #c9dcfb;border-radius:16px;background:linear-gradient(180deg,#fbfdff,#f6faff);padding:26px 18px;text-align:center;cursor:pointer;transition:.2s;margin-top:12px;}
+  .up:hover,.up.over{border-color:var(--primary);background:#f2f7ff;}
+  .up .ic{font-size:30px;line-height:1;}
+  .up .t{font-size:14px;font-weight:700;color:#2b3f61;margin-top:9px;}
+  .up .s{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.7;}
+  .upfile{display:none;align-items:center;gap:10px;border:1px solid #b7ebc9;background:var(--ok-soft);border-radius:11px;padding:10px 13px;margin-top:12px;font-size:12.5px;color:#106b39;}
+  .upfile.show{display:flex;}
+  .upfile .nm{font-weight:700;word-break:break-all;}
+  .uploading{display:none;margin-top:12px;font-size:13px;color:var(--primary-d);}
+  .uploading.show{display:block;}
+
+  /* 评分报告 */
+  .report{display:none;margin-top:20px;}
+  .report.show{display:block;animation:rise .35s both;}
+  .score-head{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;border:1px solid var(--line);border-radius:16px;padding:18px 20px;background:linear-gradient(120deg,#f7fbff,#fff);}
+  .score-num{font-size:46px;font-weight:800;letter-spacing:-2px;color:var(--primary-d);line-height:1;}
+  .score-num small{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0;}
+  .score-info .h{font-size:15px;font-weight:700;color:#2b3f61;}
+  .score-info .d{font-size:12.8px;color:var(--muted);margin-top:6px;line-height:1.7;}
+  .badge-stars{font-size:17px;letter-spacing:2px;margin-top:6px;}
+  .bars{margin-top:16px;display:flex;flex-direction:column;gap:11px;}
+  .bar{display:grid;grid-template-columns:96px 1fr 66px;align-items:center;gap:10px;font-size:12.5px;color:#42577a;}
+  .bar .track{height:9px;border-radius:99px;background:#eef3fb;overflow:hidden;}
+  .bar .fillb{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#2f6bf6,#5aa2ff);transition:width .8s cubic-bezier(.22,.9,.3,1);}
+  .bar.b2 .fillb{background:linear-gradient(90deg,#ff9a4d,#ffb37a);}
+  .bar.b3 .fillb{background:linear-gradient(90deg,#16a34a,#4ade80);}
+  .bar .v{text-align:right;font-weight:700;color:#2b3f61;}
+  .checks{margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .cgroup{padding:12px 14px;border-bottom:1px solid #eef4fd;}
+  .cgroup:last-child{border-bottom:none;}
+  .cgroup .gt{font-size:12.5px;font-weight:700;color:#2b3f61;margin-bottom:8px;display:flex;align-items:center;gap:7px;}
+  .cgroup .gt i{font-style:normal;font-size:11px;color:var(--muted);font-weight:400;}
+  .clist{display:flex;flex-wrap:wrap;gap:7px;}
+  .ctag{font-size:11.8px;border-radius:8px;padding:5px 9px;border:1px solid var(--line);background:#fbfdff;color:#5b7291;font-family:ui-monospace,Menlo,monospace;}
+  .ctag.ok{background:var(--ok-soft);border-color:#b7ebc9;color:#106b39;}
+  .ctag.no{background:var(--no-soft);border-color:#f5c9c9;color:#a33;}
+  .ctag em{font-style:normal;font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:11px;opacity:.8;margin-left:4px;}
+  .tips{margin-top:14px;border:1px solid #ffd9b8;background:#fffaf4;border-radius:14px;padding:14px 16px;}
+  .tips h4{margin:0 0 8px;font-size:13px;color:#b45309;}
+  .tips ul{margin:0;padding-left:18px;font-size:12.8px;line-height:1.95;color:#8a5a2c;}
+  .tips li::marker{color:#e2691a;}
+  .tips.good{border-color:#b7ebc9;background:var(--ok-soft);}
+  .tips.good h4{color:#106b39;}
+  .tips.good ul{color:#166534;}
+
+  /* 小结 */
+  .summary-map{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:11px;margin-top:16px;}
+  .sm{border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:#fbfdff;}
+  .sm .t{font-size:12.5px;font-weight:700;color:var(--primary-d);}
+  .sm .d{font-size:12px;color:var(--muted);line-height:1.85;margin-top:5px;font-family:ui-monospace,Menlo,monospace;}
+  .result{display:grid;grid-template-columns:1fr 1.15fr;gap:13px;margin-top:18px;}
+  @media(max-width:640px){.result{grid-template-columns:1fr;}}
+  .rcard{border:1px solid var(--line);border-radius:14px;padding:16px;background:#fff;}
+  .rcard .k{font-size:12px;color:var(--muted);line-height:1.7;}
+  .rcard .v{font-size:28px;font-weight:800;color:var(--primary-d);letter-spacing:-1px;margin-top:3px;}
+  .rcard .v small{font-size:12.5px;font-weight:600;color:var(--muted);}
+  .rcard.warn{border-color:#ffdcbe;background:#fffaf4;}
+  .rcard.warn .v{color:#e2691a;}
+
+  .toast{position:fixed;left:50%;bottom:32px;transform:translate(-50%,18px);background:#1b2a41;color:#fff;padding:11px 20px;border-radius:11px;font-size:13.5px;opacity:0;pointer-events:none;transition:.28s;z-index:200;box-shadow:0 12px 28px rgba(27,42,65,.3);max-width:80vw;text-align:center;}
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+  .hint-small{font-size:12px;color:#9bb0cc;margin-top:9px;line-height:1.7;}
+  @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(255,138,61,.5);}70%{box-shadow:0 0 0 10px rgba(255,138,61,0);}100%{box-shadow:0 0 0 0 rgba(255,138,61,0);}}
+  .pulse{animation:pulseRing 1.05s ease-out 3;}
+
+  /* 嵌入学习空间：隐藏页内顶栏与步骤条，侧栏切换探究 */
+  html.embedded-mode,
+  body.embedded-mode{background:#fff}
+  html.embedded-mode header.top,
+  body.embedded-mode header.top,
+  html.embedded-mode nav.steps,
+  body.embedded-mode nav.steps{display:none!important}
+  html.embedded-mode .app,
+  body.embedded-mode .app{max-width:none;padding:8px 10px 28px}
+  html.embedded-mode .starwrap .reset{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">07</div>
+      <div>
+        <h1>数据计算 · 互动探究</h1>
+        <p>四年级上册 · 浙江教育出版社</p>
+      </div>
+    </div>
+    <div class="starwrap">
+      <div class="stars" id="stars"><i>★</i><i>★</i><i>★</i><i>★</i><i>★</i></div>
+      <button class="reset" id="resetBtn">重新开始</button>
+    </div>
+  </header>
+
+  <nav class="steps" id="stepNav">
+    <button class="chip" data-go="1"><b>1</b>情境导入</button>
+    <button class="chip" data-go="2"><b>2</b>探究一 找格子</button>
+    <button class="chip" data-go="3"><b>3</b>探究二 会计算</button>
+    <button class="chip" data-go="4"><b>4</b>探究三 交作品</button>
+    <button class="chip" data-go="5"><b>5</b>学习小结</button>
+  </nav>
+
+  <!-- ==================== 1 情境 ==================== -->
+  <section class="panel" data-step="1">
+    <div class="card">
+      <div class="p-head"><span class="badge">情境导入</span><h2>我们每天花了多少时间在屏幕上？</h2></div>
+      <p class="lead">四年级 12 位同学记录了自己周末使用数字设备的时间。先猜一猜：<b>平均每人每天用多少分钟？</b></p>
+
+      <div class="device-grid">
+        <div class="dev"><div class="ico">📱</div><div class="nm">手机</div><div class="t">371<small>分</small></div></div>
+        <div class="dev"><div class="ico">💻</div><div class="nm">平板</div><div class="t">280<small>分</small></div></div>
+        <div class="dev"><div class="ico">📺</div><div class="nm">电视</div><div class="t">593<small>分</small></div></div>
+        <div class="dev"><div class="ico">🎮</div><div class="nm">游戏机</div><div class="t">230<small>分</small></div></div>
+      </div>
+
+      <div class="guess">
+        <span>我猜平均每人每天用了</span>
+        <input id="guessInput" type="number" min="1" placeholder="分钟">
+        <span>分钟</span>
+        <button class="btn primary" id="guessBtn">看看对不对</button>
+      </div>
+      <div class="echo" id="guessEcho"></div>
+
+      <div class="note" style="margin-top:18px">
+        这些数字要一格一格算？12 个人、4 台设备，一共 <b>48 个数字</b>。<br>
+        好在表格软件（WPS 表格、Excel）会帮我们算——今天我们就学 <b>怎么让表格自动算</b>。
+      </div>
+
+      <div class="btnrow"><button class="btn primary next" data-next="2">开始探究一 →</button></div>
+    </div>
+  </section>
+
+  <!-- ==================== 2 探究一 ==================== -->
+  <section class="panel" data-step="2">
+    <div class="card">
+      <div class="p-head"><span class="badge">探究一</span><h2>每个格子都有自己的名字</h2></div>
+      <p class="lead">表格里每一格叫一个<b>单元格</b>。列用字母、行用数字，合起来就是它的<b>地址</b>：<b>B3</b> 表示第 B 列第 3 行。</p>
+
+      <div class="cols">
+        <div class="left">
+          <div class="q" data-ans="b">
+            <div class="qt"><span class="qn">题 1</span>哪个写法是<b>对的</b>单元格地址？</div>
+            <div class="opts row">
+              <button data-v="a">3B</button>
+              <button data-v="b">B3</button>
+              <button data-v="c">B-3</button>
+              <button data-v="d">第3行B列</button>
+            </div>
+            <div class="fb"></div>
+          </div>
+
+          <div class="q" data-ans="b">
+            <div class="qt"><span class="qn">题 2</span>写法 <code>B3:E3</code> 表示什么？</div>
+            <div class="opts">
+              <button data-v="a">只有 B3 和 E3 两个格子</button>
+              <button data-v="b">从 B3 到 E3 的 4 个格子连成的一片区域</button>
+              <button data-v="c">第 3 行第 3 列的一个格子</button>
+            </div>
+            <div class="fb"></div>
+          </div>
+
+          <div class="taskbox" id="pickTask">
+            <h3><span class="qn" style="display:inline-block;margin-right:6px;background:var(--primary-soft);color:var(--primary);border-radius:6px;font-size:11px;padding:2px 7px;vertical-align:middle">题 3</span>🖱️ 动手找一找</h3>
+            <p style="font-size:13px;color:#42577a;line-height:1.8;margin:0 0 4px">
+              在右边的表格里，点出<b>小明</b>的语文、数学、英语、科学四格。
+            </p>
+            <div class="hint-small">点错了再点一下可以取消。</div>
+          </div>
+          <div class="note" id="pickFb">还没有选中任何格子。</div>
+        </div>
+
+        <div class="right">
+          <div class="gridwrap">
+            <div class="cap">501班第一小组成绩表</div>
+            <table class="gpick" id="gpick">
+              <thead><tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th></tr></thead>
+              <tbody>
+                <tr><th class="rowhead">1</th><td class="banner" colspan="5">501班第一小组成绩表</td></tr>
+                <tr><th class="rowhead">2</th><td class="hd">姓名</td><td class="hd">语文</td><td class="hd">数学</td><td class="hd">英语</td><td class="hd">科学</td></tr>
+                <tr><th class="rowhead">3</th><td class="hd">小明</td><td data-ref="B3">89</td><td data-ref="C3">97</td><td data-ref="D3">94</td><td data-ref="E3">87</td></tr>
+                <tr><th class="rowhead">4</th><td class="hd">小红</td><td data-ref="B4">96</td><td data-ref="C4">100</td><td data-ref="D4">96</td><td data-ref="E4">89</td></tr>
+                <tr><th class="rowhead">5</th><td class="hd">小芳</td><td data-ref="B5">85</td><td data-ref="C5">95</td><td data-ref="D5">92</td><td data-ref="E5">93</td></tr>
+                <tr><th class="rowhead">6</th><td class="hd">小薇</td><td data-ref="B6">86</td><td data-ref="C6">93</td><td data-ref="D6">86</td><td data-ref="E6">92</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="hint-small">提示：表格左上角没有名字的格子，是整张表的“全选”按钮。</div>
+          <div class="btnrow"><button class="btn primary next" data-next="3" hidden>进入探究二 →</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 3 探究二 ==================== -->
+  <section class="panel" data-step="3">
+    <div class="card">
+      <div class="p-head"><span class="badge">探究二</span><h2>让表格自己算</h2></div>
+      <p class="lead">求和有三种办法，平均分也有固定算法。看完、点过，你就记住了。</p>
+
+      <div class="cols">
+        <div class="left">
+          <div class="taskbox">
+            <h3>🧮 求和的三种办法</h3>
+            <div class="methods3" id="methods3">
+              <div class="meth" data-k="1"><div class="mh">点 Σ 按钮</div><div class="mb">Σ</div><div class="mv">367<small> 分</small></div></div>
+              <div class="meth" data-k="2"><div class="mh">SUM 函数</div><div class="mb">=SUM(B3:E3)</div><div class="mv">367<small> 分</small></div></div>
+              <div class="meth" data-k="3"><div class="mh">加法公式</div><div class="mb">=B3+C3+D3+E3</div><div class="mv">367<small> 分</small></div></div>
+            </div>
+            <div class="methmsg" id="methMsg">点一个办法，看看它怎么算。</div>
+          </div>
+
+          <div class="q" data-ans="d">
+            <div class="qt"><span class="qn">题 3</span>这三种办法算出来的结果……</div>
+            <div class="opts row">
+              <button data-v="a">Σ 最准</button>
+              <button data-v="b">SUM 最准</button>
+              <button data-v="c">加法公式最准</button>
+              <button data-v="d">完全一样，只是写法不同</button>
+            </div>
+            <div class="fb"></div>
+          </div>
+
+          <div class="q" data-ans="b">
+            <div class="qt"><span class="qn">题 4</span>把小明的总成绩 <code>F3</code> 用填充柄往下拖到小红那一行，<code>F4</code> 里的公式会变成？</div>
+            <div class="opts">
+              <button data-v="a">还是 =SUM(B3:E3)</button>
+              <button data-v="b">变成 =SUM(B4:E4)</button>
+              <button data-v="c">变成 =SUM(B5:E5)</button>
+            </div>
+            <div class="fb"></div>
+          </div>
+        </div>
+
+        <div class="right">
+          <div class="taskbox">
+            <h3>🧩 拼一个 SUM 函数</h3>
+            <p style="font-size:12.8px;color:#42577a;line-height:1.7;margin:0 0 6px">
+              把下面的积木按顺序点一遍，拼出<b>小明的总成绩</b>公式。
+            </p>
+            <div class="builder">
+              <div class="bslot" id="bslot"><span class="ph">点下面的积木，拼在这里…</span></div>
+              <div class="bpool" id="bpool"></div>
+              <div class="fb" id="bFb"></div>
+              <div class="btnrow" style="margin-top:10px">
+                <button class="btn ghost tiny" id="bUndo">删掉一块</button>
+                <button class="btn ghost tiny" id="bReset">重来</button>
+                <button class="btn primary tiny" id="bCheck">检查</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="taskbox">
+            <h3>🖐️ 填充柄：一次算完一列</h3>
+            <div class="filldemo" id="fillDemo">
+              <div class="frow" data-i="0"><b>F3</b><code>=SUM(B3:E3)</code><span>367</span></div>
+              <div class="frow" data-i="1"><b>F4</b><code>=SUM(B4:E4)</code><span>381</span></div>
+              <div class="frow" data-i="2"><b>F5</b><code>=SUM(B5:E5)</code><span>365</span></div>
+              <div class="frow" data-i="3"><b>F6</b><code>=SUM(B6:E6)</code><span>357</span></div>
+              <div class="frow" data-i="4"><b>F7</b><code>=SUM(B7:E7)</code><span>344</span></div>
+              <div class="frow last" data-i="5"><b>F8</b><code>=SUM(B8:E8)</code><span>332</span></div>
+            </div>
+            <div class="btnrow" style="margin-top:10px">
+              <button class="btn primary tiny" id="fillPlay">▶ 拖一下填充柄</button>
+              <span class="hint-small" style="margin:0" id="fillMsg">按住 F3 右下角的小方块，往下拖。</span>
+            </div>
+          </div>
+
+          <div class="q" data-ans="b">
+            <div class="qt"><span class="qn">题 5</span>语文的平均分放在 <code>B10</code>，语文总分在 <code>B9</code>，6 位同学。公式应该怎么写？</div>
+            <div class="opts row">
+              <button data-v="a">=B9*6</button>
+              <button data-v="b">=B9/6</button>
+              <button data-v="c">=B9+6</button>
+            </div>
+            <div class="fb"></div>
+          </div>
+
+          <div class="q" data-ans="b">
+            <div class="qt"><span class="qn">题 6</span>平均分算出来是 <code>89.8333…</code>，想显示成 <code>89.8</code>，该怎么做？</div>
+            <div class="opts">
+              <button data-v="a">把字加粗、变大</button>
+              <button data-v="b">选中格子，把小数位数调成 1 位</button>
+              <button data-v="c">把 89.8333 删掉，重新输入 89.8</button>
+            </div>
+            <div class="fb"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btnrow"><button class="btn primary next" data-next="4" hidden>进入探究三 →</button></div>
+    </div>
+  </section>
+
+  <!-- ==================== 4 探究三 ==================== -->
+  <section class="panel" data-step="4">
+    <div class="card">
+      <div class="p-head"><span class="badge green">探究三</span><h2>在 WPS 里做，做完交上来</h2></div>
+      <p class="lead">打开练习文件，把表格算完，保存后上传。网页会帮你检查算得对不对、方法好不好。</p>
+
+      <div class="cols">
+        <div class="left">
+          <div class="taskbox">
+            <h3>📋 三步完成</h3>
+            <ul>
+              <li><b>① 打开文件</b>：用 WPS 表格打开《期中考试成绩.xlsx》，切到「小组成绩表」</li>
+              <li><b>② 算三类数</b>：
+                <div style="margin-top:4px">
+                  <code>F3:F8</code> 每人总成绩（Σ 或 =SUM，再用填充柄）<br>
+                  <code>B9:E9</code> 各科总分<br>
+                  <code>B10:E10</code> 各科平均分，保留 <b>1 位小数</b>
+                </div>
+              </li>
+              <li><b>③ 保存上传</b>：保存文件，在下边把文件交上来</li>
+            </ul>
+          </div>
+
+          <div class="btnrow" style="margin-top:12px">
+            <button class="btn ghost" id="dlBtn">⬇ 下载练习文件</button>
+            <span class="hint-small" style="margin:0">没拿到文件的同学，点这里下载</span>
+          </div>
+
+          <div class="note warm" style="margin-top:14px">
+            <b>保存小贴士：</b>WPS 默认格式是 <code>.et</code>，请在「文件 → 另存为」里选 <b>Excel 文件（*.xlsx）</b>，网页才能读出来。
+          </div>
+        </div>
+
+        <div class="right">
+          <div class="up" id="drop">
+            <div class="ic">📄</div>
+            <div class="t">把做好的文件拖到这里</div>
+            <div class="s">或者点一下选择文件　·　支持 .xlsx</div>
+          </div>
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.et,.csv" hidden>
+          <div class="upfile" id="upFile"><span>✅</span><span class="nm" id="upName"></span><button class="btn ghost tiny" id="upAgain" style="margin-left:auto">换一个</button></div>
+          <div class="uploading" id="uploading">正在读取文件，请稍等…</div>
+          <div class="note" id="upErr" style="display:none"></div>
+        </div>
+      </div>
+
+      <div class="report" id="report">
+        <div class="score-head">
+          <div class="score-num" id="scoreNum">0<small> / 100</small></div>
+          <div class="score-info">
+            <div class="h" id="scoreHead">—</div>
+            <div class="d" id="scoreDesc">—</div>
+            <div class="badge-stars" id="scoreStars"></div>
+          </div>
+        </div>
+
+        <div class="bars">
+          <div class="bar"><span>完成度</span><div class="track"><div class="fillb" id="bar1"></div></div><span class="v" id="val1">0 / 60</span></div>
+          <div class="bar b2"><span>方法</span><div class="track"><div class="fillb" id="bar2"></div></div><span class="v" id="val2">0 / 25</span></div>
+          <div class="bar b3"><span>格式</span><div class="track"><div class="fillb" id="bar3"></div></div><span class="v" id="val3">0 / 15</span></div>
+        </div>
+
+        <div class="checks" id="reportChecks"></div>
+        <div class="tips" id="reportTips"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 5 小结 ==================== -->
+  <section class="panel" data-step="5">
+    <div class="card">
+      <div class="p-head"><span class="badge">学习小结</span><h2>今天我们学会的“计算四件套”</h2></div>
+      <p class="lead">数据整理好之后，还要会算，数字才会变成有用的信息。</p>
+
+      <div class="summary-map">
+        <div class="sm"><div class="t">① 单元格地址</div><div class="d">列字母 + 行数字<br>B3、B3:E3</div></div>
+        <div class="sm"><div class="t">② 求和</div><div class="d">Σ / =SUM(B3:E3)<br>=B3+C3+D3+E3</div></div>
+        <div class="sm"><div class="t">③ 平均数</div><div class="d">=B9/6<br>总分 ÷ 人数</div></div>
+        <div class="sm"><div class="t">④ 填充与格式</div><div class="d">拖填充柄<br>小数位数</div></div>
+      </div>
+
+      <div class="result">
+        <div class="rcard">
+          <div class="k">你在本课获得的星星</div>
+          <div class="v" id="finalStars">0 <small>/ 5</small></div>
+        </div>
+        <div class="rcard warn">
+          <div class="k">12 位同学平均每人每天使用数字设备</div>
+          <div class="v">122.8 <small>分钟</small></div>
+          <div class="k" style="margin-top:7px">≈ 2 小时 3 分，是国家建议上限（1 小时）的 2 倍多。<br>数据算出来，不只是数字——它提醒我们该调整了。</div>
+        </div>
+      </div>
+
+      <div class="note" style="margin-top:20px">
+        <b>想一想：</b>如果不做数据计算，我们只看到一堆数字；算完才发现“原来每天多用了 1 个多小时”。
+        这正是课件里的那句话——<b>数据计算有助于人们更好地理解和分析数据，从而做出更好的决策。</b>
+      </div>
+
+      <div class="btnrow"><button class="btn ghost" id="againBtn">再练一次</button></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var urlParams = new URLSearchParams(location.search);
+  var IS_EMBEDDED = urlParams.get('embedded') === '1' || urlParams.get('embed') === '1';
+  try {
+    if (!IS_EMBEDDED && window.parent && window.parent !== window) IS_EMBEDDED = true;
+  } catch (e) {}
+  if (IS_EMBEDDED) {
+    document.documentElement.classList.add('embedded-mode');
+    document.body.classList.add('embedded-mode');
+  }
+  var notifiedSteps = {};
+  function notifyLearnSpace(step, extra) {
+    if (!window.parent || window.parent === window) return;
+    if (notifiedSteps[step]) return;
+    notifiedSteps[step] = true;
+    var idx = parseInt(urlParams.get('activityIndex') || urlParams.get('step') || String(step), 10);
+    var payload = {
+      activityIndex: isFinite(idx) ? idx : step,
+      step: step,
+      stepCompleted: true,
+      source: 'g4-up-lesson7'
+    };
+    if (extra && typeof extra === 'object') {
+      for (var k in extra) {
+        if (Object.prototype.hasOwnProperty.call(extra, k)) payload[k] = extra[k];
+      }
+    }
+    window.parent.postMessage({ type: 'LEARN_SPACE_SUBMIT', payload: payload }, '*');
+  }
+  /* workspace 的 step 直接对应页内面板号：2=探究一，3=探究二，4=探究三 */
+  function panelFromUrl() {
+    var raw = parseInt(urlParams.get('step') || urlParams.get('activityIndex') || (IS_EMBEDDED ? '2' : '1'), 10);
+    if (!isFinite(raw) || raw < 1) raw = IS_EMBEDDED ? 2 : 1;
+    if (raw > 5) raw = 1;
+    return raw;
+  }
+
+  /* =========================================================
+     步骤与星星
+     ========================================================= */
+  var state = { step:1, stars:0, done:{} };
+  var panels = {};
+  document.querySelectorAll('.panel').forEach(function(p){ panels[p.dataset.step] = p; });
+  var chips = document.querySelectorAll('.chip');
+
+  function updateStars(){
+    var s = document.getElementById('stars').children;
+    for (var i = 0; i < 5; i++) s[i].classList.toggle('on', i < state.stars);
+    var fs = document.getElementById('finalStars');
+    if (fs) fs.innerHTML = state.stars + ' <small>/ 5</small>';
+  }
+  function addStar(key, count){
+    if (state.done[key]) return;
+    state.done[key] = true;
+    state.stars = Math.min(5, state.stars + (count || 1));
+    updateStars();
+    toast('⭐ 获得 ' + (count || 1) + ' 颗星！');
+  }
+  function showStep(n){
+    n = String(n);
+    if (!panels[n]) return;
+    state.step = parseInt(n, 10);
+    Object.keys(panels).forEach(function(k){ panels[k].classList.toggle('active', k === n); });
+    chips.forEach(function(c){
+      c.classList.toggle('active', c.dataset.go === n);
+      c.classList.toggle('done', !!state.done[c.dataset.go]);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  document.addEventListener('click', function(e){
+    var go = e.target.closest('[data-go]');
+    if (go){
+      if (IS_EMBEDDED) return;
+      showStep(go.dataset.go);
+      return;
+    }
+    var nx = e.target.closest('[data-next]');
+    if (nx){
+      if (IS_EMBEDDED) {
+        /* 嵌入时由左侧导航切换探究，下一步按钮仅提示完成 */
+        var next = parseInt(nx.dataset.next, 10);
+        if (next === 3) notifyLearnSpace(1);
+        else if (next === 4) notifyLearnSpace(2);
+        else if (next === 5) notifyLearnSpace(3);
+        toast('本探究已完成，请从左侧进入下一活动');
+        return;
+      }
+      showStep(nx.dataset.next);
+      return;
+    }
+  });
+
+  var toastEl = document.createElement('div');
+  toastEl.className = 'toast';
+  document.body.appendChild(toastEl);
+  var toastTimer = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 1900);
+  }
+
+  /* =========================================================
+     情境：猜一猜
+     ========================================================= */
+  document.getElementById('guessBtn').addEventListener('click', function(){
+    var v = parseFloat(document.getElementById('guessInput').value);
+    var echo = document.getElementById('guessEcho');
+    if (isNaN(v) || v <= 0){ toast('先输入一个数字吧'); return; }
+    var real = 160, tip;
+    if (Math.abs(v - real) <= 5) tip = '非常接近！实际是 160 分钟。';
+    else if (v > real) tip = '比实际多了一些，实际是 160 分钟。';
+    else tip = '比实际少了一些，实际是 160 分钟。';
+    echo.classList.add('show');
+    echo.innerHTML = '你猜的是 <b>' + v + '</b> 分钟。' + tip +
+      '<br>不过——如果数据有 60 条、600 条呢？靠心算就不行了，得让表格帮我们算。';
+  });
+
+  /* =========================================================
+     探究一：点选区域 + 选择题
+     ========================================================= */
+  var TARGET = ['B3','C3','D3','E3'];   /* 小明四门成绩 */
+  var picked = new Set();
+
+  var gp = document.getElementById('gpick');
+
+  gp.addEventListener('click', function(e){
+    var td = e.target.closest('td[data-ref]');
+    if (!td) return;
+    var ref = td.dataset.ref;
+    if (picked.has(ref)) picked.delete(ref); else picked.add(ref);
+    td.classList.toggle('picked', picked.has(ref));
+    checkPick();
+  });
+
+  function checkPick(){
+    var fb = document.getElementById('pickFb');
+    var arr = Array.from(picked);
+    if (arr.length === 0){
+      fb.className = 'note';
+      fb.textContent = '还没有选中任何格子。';
+      return;
+    }
+    var ok = arr.length === 4 && TARGET.every(function(r){ return picked.has(r); });
+    if (ok){
+      fb.className = 'note';
+      fb.style.background = 'var(--ok-soft)';
+      fb.style.borderColor = '#b7ebc9';
+      fb.style.color = '#106b39';
+      fb.innerHTML = '✅ 就是这四格！它们的地址是 <b>B3 C3 D3 E3</b>，可以写成一片区域 <b>B3:E3</b>。<br>冒号的意思是“从这里到那里”。';
+      quizDone.pick = true;
+      maybeFinishStep2();
+    } else {
+      fb.className = 'note';
+      fb.style.background = '';
+      fb.style.borderColor = '';
+      fb.style.color = '';
+      fb.innerHTML = '你选中了 <b>' + arr.join(' ') + '</b>（' + arr.length + ' 个）。' +
+        (arr.length > 4 ? '多了几个格子，再想想小明那一行有几个成绩。' : '还不够，小明的四门成绩都要选中。');
+    }
+  }
+
+  /* 选择题通用 */
+  var quizDone = {};
+  document.querySelectorAll('.q[data-ans]').forEach(function(q, idx){
+    q.dataset.qid = 'q' + (idx + 1);
+    q.querySelectorAll('[data-v]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var ok = btn.dataset.v === q.dataset.ans;
+        q.querySelectorAll('[data-v]').forEach(function(b){ b.classList.remove('ok', 'no'); });
+        btn.classList.add(ok ? 'ok' : 'no');
+        var fb = q.querySelector('.fb');
+        fb.className = 'fb show ' + (ok ? 'ok' : 'no');
+        fb.innerHTML = ok ? (q.dataset.right || '✅ 答对了！') : (q.dataset.wrong || '再想想，看看上面的说明。');
+        if (ok){
+          quizDone[q.dataset.qid] = true;
+          if (q.closest('[data-step="2"]')) maybeFinishStep2();
+          if (q.closest('[data-step="3"]')) maybeFinishStep3();
+        }
+      });
+    });
+  });
+
+  function maybeFinishStep2(){
+    var all = TARGET.length && quizDone.pick && quizDone.q1 && quizDone.q2;
+    if (all){
+      var btn = document.querySelector('[data-step="2"] [data-next="3"]');
+      if (btn && btn.hidden){
+        btn.removeAttribute('hidden');
+        toast(IS_EMBEDDED ? '探究一完成！可从左侧进入探究二' : '探究一完成，可以进入探究二了');
+      }
+      addStar('s2');
+      notifyLearnSpace(1);
+    }
+  }
+  function maybeFinishStep3(){
+    var need = ['q3','q4','q5','q6'];
+    var builderOk = document.getElementById('bCheck').dataset.ok === '1';
+    var fillOk = document.getElementById('fillPlay').dataset.ok === '1';
+    var all = need.every(function(k){ return quizDone[k]; }) && builderOk && fillOk;
+    if (all){
+      var btn = document.querySelector('[data-step="3"] [data-next="4"]');
+      if (btn && btn.hidden){
+        btn.removeAttribute('hidden');
+        toast(IS_EMBEDDED ? '探究二完成！可从左侧进入探究三' : '探究二完成，可以去交作品了');
+      }
+      addStar('s3');
+      notifyLearnSpace(2);
+    }
+  }
+
+  /* =========================================================
+     探究二：三种方法
+     ========================================================= */
+  var METH_MSG = {
+    '1': '点一下工具条上的 <b>Σ</b>，表格会猜出“这一行有 4 个数字”，自动写出 <code>=SUM(B3:E3)</code>。最快，但有时会猜错区域。',
+    '2': '函数就是“有名字的计算”：<code>=SUM(区域)</code> 表示把区域里的数全部加起来。区域用冒号连接，比如 <b>B3:E3</b>。',
+    '3': '最直白的写法：<code>=B3+C3+D3+E3</code>。格子少时好用，格子一多容易漏、容易错。'
+  };
+  document.getElementById('methods3').addEventListener('click', function(e){
+    var m = e.target.closest('.meth');
+    if (!m) return;
+    this.querySelectorAll('.meth').forEach(function(x){ x.classList.toggle('on', x === m); });
+    document.getElementById('methMsg').innerHTML = METH_MSG[m.dataset.k];
+  });
+
+  /* =========================================================
+     探究二：公式积木
+     ========================================================= */
+  var target = '=SUM(B3:E3)';
+  var chips2 = ['=SUM(', 'B3:E3', ')', 'AVERAGE(', 'B3+E3', 'B3:E4'];
+  var seq = [];
+  var bpool = document.getElementById('bpool');
+  chips2.forEach(function(t){
+    var b = document.createElement('button');
+    b.className = 'bchip';
+    b.textContent = t;
+    b.addEventListener('click', function(){ seq.push(t); paintBuilder(); });
+    bpool.appendChild(b);
+  });
+  function paintBuilder(){
+    var slot = document.getElementById('bslot');
+    slot.innerHTML = '';
+    if (!seq.length){
+      var ph = document.createElement('span');
+      ph.className = 'ph';
+      ph.textContent = '点下面的积木，拼在这里…';
+      slot.appendChild(ph);
+    } else {
+      seq.forEach(function(t){
+        var s = document.createElement('span');
+        s.className = 'tok';
+        s.textContent = t;
+        slot.appendChild(s);
+      });
+    }
+    document.getElementById('bFb').className = 'fb';
+  }
+  document.getElementById('bUndo').addEventListener('click', function(){ seq.pop(); paintBuilder(); });
+  document.getElementById('bReset').addEventListener('click', function(){ seq = []; paintBuilder(); });
+  document.getElementById('bCheck').addEventListener('click', function(){
+    var got = seq.join('');
+    var fb = document.getElementById('bFb');
+    var ok = got === target;
+    fb.className = 'fb show ' + (ok ? 'ok' : 'no');
+    fb.innerHTML = ok
+      ? '✅ 拼对了！<code>=SUM(B3:E3)</code> 就是“把 B3 到 E3 加起来”。'
+      : '现在是 <code>' + (got || '空') + '</code>，还不对。提示：先用 <code>=SUM(</code> 开头，中间放区域，最后补一个 <code>)</code>。';
+    if (ok){
+      document.getElementById('bCheck').dataset.ok = '1';
+      maybeFinishStep3();
+    }
+  });
+  paintBuilder();
+
+  /* =========================================================
+     探究二：填充柄动画
+     ========================================================= */
+  var fillRows = document.querySelectorAll('#fillDemo .frow');
+  var fillTimer = null;
+  document.getElementById('fillPlay').addEventListener('click', function(){
+    var btn = this;
+    clearTimeout(fillTimer);
+    fillRows.forEach(function(r){ r.classList.remove('on'); });
+    var i = 0;
+    (function step(){
+      if (i >= fillRows.length){
+        document.getElementById('fillMsg').innerHTML = '✅ 公式里的行号自动变成 4、5、6…，这就是<b>相对引用</b>。';
+        btn.textContent = '↺ 再看一次';
+        btn.dataset.ok = '1';
+        maybeFinishStep3();
+        return;
+      }
+      fillRows[i].classList.add('on');
+      i++;
+      fillTimer = setTimeout(step, 260);
+    })();
+  });
+
+  /* =========================================================
+     XLSX 解析（纯前端，离线可用）
+     ========================================================= */
+  var LBASE = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+  var LEXT  = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+  var DBASE = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+  var DEXT  = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+
+  function inflateRawJS(data){
+    var pos = 0, bitbuf = 0, bitcnt = 0, out = [];
+    function bits(n){
+      while (bitcnt < n){ bitbuf |= data[pos++] << bitcnt; bitcnt += 8; }
+      var v = bitbuf & ((1 << n) - 1);
+      bitbuf >>>= n; bitcnt -= n;
+      return v;
+    }
+    function buildMap(lens){
+      var maxBits = 0, i, b;
+      for (i = 0; i < lens.length; i++) if (lens[i] > maxBits) maxBits = lens[i];
+      var blCount = new Array(maxBits + 1); for (i = 0; i <= maxBits; i++) blCount[i] = 0;
+      for (i = 0; i < lens.length; i++) blCount[lens[i]]++;
+      blCount[0] = 0;
+      var code = 0, nextCode = new Array(maxBits + 1);
+      for (b = 0; b <= maxBits; b++) nextCode[b] = 0;
+      for (b = 1; b <= maxBits; b++){ code = (code + blCount[b - 1]) << 1; nextCode[b] = code; }
+      var map = Object.create(null);
+      for (i = 0; i < lens.length; i++){
+        var l = lens[i];
+        if (l) map[l + '_' + nextCode[l]++] = i;
+      }
+      return { map: map, maxBits: maxBits };
+    }
+    function decode(h){
+      var code = 0;
+      for (var len = 1; len <= h.maxBits; len++){
+        code = (code << 1) | bits(1);
+        var sym = h.map[len + '_' + code];
+        if (sym !== undefined) return sym;
+      }
+      throw new Error('数据损坏');
+    }
+    var FIXED_L = [], FIXED_D = [], i;
+    for (i = 0; i < 288; i++) FIXED_L.push(i < 144 ? 8 : i < 256 ? 9 : i < 280 ? 7 : 8);
+    for (i = 0; i < 30; i++) FIXED_D.push(5);
+    var fixedL = buildMap(FIXED_L), fixedD = buildMap(FIXED_D);
+
+    function huffBlock(hl, hd){
+      for (;;){
+        var sym = decode(hl);
+        if (sym < 256) out.push(sym);
+        else if (sym === 256) return;
+        else {
+          var li = sym - 257;
+          var length = LBASE[li] + bits(LEXT[li]);
+          var ds = decode(hd);
+          var dist = DBASE[ds] + bits(DEXT[ds]);
+          var start = out.length - dist;
+          for (var q = 0; q < length; q++) out.push(out[start + q]);
+        }
+      }
+    }
+
+    var last = false;
+    while (!last){
+      last = !!bits(1);
+      var type = bits(2);
+      if (type === 0){
+        bitbuf = 0; bitcnt = 0;
+        var len = data[pos] | (data[pos + 1] << 8); pos += 4;
+        for (var k = 0; k < len; k++) out.push(data[pos++]);
+      } else if (type === 1){
+        huffBlock(fixedL, fixedD);
+      } else if (type === 2){
+        var hlit = bits(5) + 257, hdist = bits(5) + 1, hclen = bits(4) + 4;
+        var order = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+        var clLens = new Array(19); for (var z = 0; z < 19; z++) clLens[z] = 0;
+        for (var j = 0; j < hclen; j++) clLens[order[j]] = bits(3);
+        var clMap = buildMap(clLens);
+        var lens = [], prev, rep, r1, r2;
+        while (lens.length < hlit + hdist){
+          var s2 = decode(clMap);
+          if (s2 < 16) lens.push(s2);
+          else if (s2 === 16){ rep = 3 + bits(2); prev = lens[lens.length - 1]; while (rep--) lens.push(prev); }
+          else if (s2 === 17){ r1 = 3 + bits(3); while (r1--) lens.push(0); }
+          else { r2 = 11 + bits(7); while (r2--) lens.push(0); }
+        }
+        huffBlock(buildMap(lens.slice(0, hlit)), buildMap(lens.slice(hlit)));
+      } else {
+        throw new Error('数据损坏');
+      }
+    }
+    return new Uint8Array(out);
+  }
+
+  function utf8Decode(bytes){
+    if (typeof TextDecoder !== 'undefined') return new TextDecoder('utf-8').decode(bytes);
+    var s = '';
+    for (var i = 0; i < bytes.length; i++) s += '%' + ('0' + bytes[i].toString(16)).slice(-2);
+    try { return decodeURIComponent(s); } catch (e){ return s; }
+  }
+
+  function zipEntries(buf){
+    var dv = new DataView(buf), u8 = new Uint8Array(buf);
+    var eocd = -1, min = Math.max(0, u8.length - 66000);
+    for (var i = u8.length - 22; i >= min; i--){
+      if (dv.getUint32(i, true) === 0x06054b50){ eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error('这不是 xlsx 文件');
+    var count = dv.getUint16(eocd + 10, true);
+    var p = dv.getUint32(eocd + 16, true);
+    var list = {};
+    for (var k = 0; k < count; k++){
+      if (dv.getUint32(p, true) !== 0x02014b50) break;
+      var method = dv.getUint16(p + 10, true);
+      var csize = dv.getUint32(p + 20, true);
+      var nameLen = dv.getUint16(p + 28, true);
+      var extraLen = dv.getUint16(p + 30, true);
+      var cmtLen = dv.getUint16(p + 32, true);
+      var lho = dv.getUint32(p + 42, true);
+      var name = utf8Decode(u8.subarray(p + 46, p + 46 + nameLen));
+      list[name] = { method: method, csize: csize, lho: lho };
+      p += 46 + nameLen + extraLen + cmtLen;
+    }
+    return { dv: dv, u8: u8, list: list };
+  }
+
+  function zipData(zip, name){
+    var e = zip.list[name];
+    if (!e) return null;
+    var dv = zip.dv;
+    var nameLen = dv.getUint16(e.lho + 26, true);
+    var extraLen = dv.getUint16(e.lho + 28, true);
+    var start = e.lho + 30 + nameLen + extraLen;
+    return { bytes: zip.u8.subarray(start, start + e.csize), method: e.method };
+  }
+
+  function extractText(zip, name){
+    var d = zipData(zip, name);
+    if (!d) return null;
+    if (d.method === 0) return utf8Decode(d.bytes);
+    /* 统一走纯 JS 解压：不依赖浏览器的流式 API，连续多次上传也稳定 */
+    return utf8Decode(inflateRawJS(d.bytes));
+  }
+
+  function colIdx(ref){
+    var m = /^([A-Z]+)(\d+)$/.exec(ref);
+    if (!m) return null;
+    var c = 0, s = m[1];
+    for (var i = 0; i < s.length; i++) c = c * 26 + (s.charCodeAt(i) - 64);
+    return { c: c, r: parseInt(m[2], 10) };
+  }
+  function colNm(n){
+    var s = '';
+    while (n > 0){ var m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); }
+    return s;
+  }
+  function unesc(s){
+    return s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+            .replace(/&apos;/g, "'").replace(/&#(\d+);/g, function(m, d){ return String.fromCharCode(+d); })
+            .replace(/&amp;/g, '&');
+  }
+
+  function numOf(ref, cells){
+    var c = cells[ref];
+    if (!c) return null;
+    if (typeof c.v === 'number') return c.v;
+    if (c.f) return evalFormula(c.f, cells);
+    return null;
+  }
+  function rangeVals(a, b, cells){
+    var p1 = colIdx(a), p2 = colIdx(b), out = [];
+    if (!p1 || !p2) return out;
+    for (var c = Math.min(p1.c, p2.c); c <= Math.max(p1.c, p2.c); c++){
+      for (var r = Math.min(p1.r, p2.r); r <= Math.max(p1.r, p2.r); r++){
+        var n = numOf(colNm(c) + r, cells);
+        if (n !== null) out.push(n);
+      }
+    }
+    return out;
+  }
+  function evalFormula(f, cells){
+    try {
+      var expr = String(f).replace(/^=/, '').toUpperCase().replace(/\s+/g, '');
+      var guard = 0;
+      while (/(SUM|AVERAGE)\(/.test(expr) && guard++ < 20){
+        var before = expr;
+        expr = expr.replace(/(SUM|AVERAGE)\(([^()]*)\)/, function(m, fn, inner){
+          var vals = [];
+          inner.split(',').forEach(function(part){
+            if (!part) return;
+            if (part.indexOf(':') > -1){
+              var seg = part.split(':');
+              vals = vals.concat(rangeVals(seg[0], seg[1], cells));
+            } else {
+              var n = numOf(part, cells);
+              if (n !== null) vals.push(n);
+            }
+          });
+          var sum = vals.reduce(function(a, b){ return a + b; }, 0);
+          return String(fn === 'SUM' ? sum : (vals.length ? sum / vals.length : 0));
+        });
+        if (before === expr) break;
+      }
+      expr = expr.replace(/[A-Z]+\d+/g, function(ref){
+        var n = numOf(ref, cells);
+        return n === null ? '0' : String(n);
+      });
+      if (!/^[-+*/().\d]+$/.test(expr)) return null;
+      var v = Function('return (' + expr + ');')();
+      return typeof v === 'number' && isFinite(v) ? v : null;
+    } catch (e){ return null; }
+  }
+
+  async function parseXlsx(buf){
+    var zip = zipEntries(buf);
+
+    var ss = [];
+    var ssXml = await extractText(zip, 'xl/sharedStrings.xml');
+    if (ssXml){
+      (ssXml.match(/<si\b[\s\S]*?<\/si>|<si\b[^>]*\/>/g) || []).forEach(function(si){
+        var ts = si.match(/<t\b[^>]*>([\s\S]*?)<\/t>/g) || [];
+        ss.push(ts.map(function(t){ return unesc(t.replace(/<[^>]+>/g, '')); }).join(''));
+      });
+    }
+
+    var styleDec = [];
+    var stXml = await extractText(zip, 'xl/styles.xml');
+    if (stXml){
+      var custom = {};
+      (stXml.match(/<numFmt\b[^>]*\/>/g) || []).forEach(function(x){
+        var id = /numFmtId="(\d+)"/.exec(x), code = /formatCode="([^"]*)"/.exec(x);
+        if (id && code) custom[id[1]] = unesc(code[1]);
+      });
+      var cxs = /<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/.exec(stXml);
+      if (cxs){
+        (cxs[1].match(/<xf\b[^>]*?(?:\/>|>[\s\S]*?<\/xf>)/g) || []).forEach(function(x){
+          var idm = /numFmtId="(\d+)"/.exec(x);
+          var id = idm ? idm[1] : '0';
+          var code = custom[id];
+          if (code === undefined){
+            code = id === '2' ? '0.00' : id === '1' ? '0' : id === '9' ? '0%' : id === '10' ? '0.00%' : 'General';
+          }
+          var m = /\.(0+)/.exec(code);
+          styleDec.push({ code: code, dec: m ? m[1].length : 0 });
+        });
+      }
+    }
+
+    var wbXml = await extractText(zip, 'xl/workbook.xml');
+    var sheetNames = [];
+    if (wbXml){
+      (wbXml.match(/<sheet\b[^>]*\/>/g) || []).forEach(function(s){
+        var n = /name="([^"]*)"/.exec(s);
+        sheetNames.push(n ? unesc(n[1]) : '');
+      });
+    }
+
+    var targets = Object.keys(zip.list).filter(function(n){ return /^xl\/worksheets\/sheet\d+\.xml$/.test(n); });
+    targets.sort(function(a, b){
+      return parseInt(/(\d+)/.exec(a)[1], 10) - parseInt(/(\d+)/.exec(b)[1], 10);
+    });
+
+    var sheets = [];
+    for (var i = 0; i < targets.length; i++){
+      var xml = await extractText(zip, targets[i]);
+      if (!xml) continue;
+      var cells = {};
+      var rowRe = /<row\b[^>]*>([\s\S]*?)<\/row>/g, rowM;
+      while ((rowM = rowRe.exec(xml))){
+        var cellRe = /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g, cm;
+        while ((cm = cellRe.exec(rowM[1]))){
+          var attrs = cm[1], inner = cm[2] || '';
+          var refM = /r="([A-Z]+\d+)"/.exec(attrs);
+          if (!refM) continue;
+          var ref = refM[1];
+          var tM = /\bt="([^"]+)"/.exec(attrs);
+          var sM = /\bs="(\d+)"/.exec(attrs);
+          var vM = /<v\b[^>]*>([\s\S]*?)<\/v>/.exec(inner);
+          var fM = /<f\b[^>]*>([\s\S]*?)<\/f>/.exec(inner);
+          var raw = vM ? unesc(vM[1]) : '';
+          var type = tM ? tM[1] : 'n';
+          var val;
+          if (type === 's'){ val = ss[parseInt(raw, 10)] || ''; }
+          else if (type === 'inlineStr'){
+            var it = /<t\b[^>]*>([\s\S]*?)<\/t>/.exec(inner);
+            val = it ? unesc(it[1].replace(/<[^>]+>/g, '')) : '';
+          }
+          else if (type === 'str'){ val = unesc(raw); }
+          else if (type === 'b'){ val = raw === '1'; }
+          else { val = raw === '' ? '' : parseFloat(raw); }
+          cells[ref] = { ref: ref, v: val, f: fM ? unesc(fM[1]) : '', style: sM ? parseInt(sM[1], 10) : 0 };
+        }
+      }
+      sheets.push({
+        name: sheetNames[i] || ('Sheet' + (i + 1)),
+        cells: cells,
+        get: function(ref){ return this.cells[ref] || null; },
+        num: function(ref){ return numOf(ref, this.cells); },
+        dec: function(ref){
+          var c = this.cells[ref];
+          if (!c) return null;
+          var st = styleDec[c.style];
+          return st ? st.dec : 0;
+        },
+        fmt: function(ref){
+          var c = this.cells[ref];
+          if (!c) return null;
+          var st = styleDec[c.style];
+          return st ? st.code : 'General';
+        }
+      });
+    }
+    return { sheets: sheets };
+  }
+
+  /* =========================================================
+     评分
+     ========================================================= */
+  var PER = { 3:367, 4:381, 5:365, 6:357, 7:344, 8:332 };
+  var NAMES = { 3:'小明', 4:'小红', 5:'小芳', 6:'小薇', 7:'小刚', 8:'小强' };
+  var TTL = { B:539, C:547, D:555, E:523 };
+  var SUBJ = { B:'语文', C:'数学', D:'英语', E:'科学' };
+
+  /* 判断一页是不是"小组成绩表"：第 2 行是科目表头，第 3 行开始是人名 */
+  function looksLikeSheet(sh){
+    var b2 = sh.get('B2'), a3 = sh.get('A3');
+    return !!(b2 && String(b2.v).indexOf('语文') > -1 && a3 && String(a3.v).indexOf('小明') > -1);
+  }
+
+  function pickSheet(wb){
+    /* 1) 先找结构对得上的（最稳，避免同名工作表干扰） */
+    var byShape = wb.sheets.filter(looksLikeSheet);
+    if (byShape.length){
+      var named = byShape.filter(function(s){ return /小组/.test(s.name); });
+      return named.length ? named[0] : byShape[0];
+    }
+    /* 2) 退一步按名字找 */
+    var byName = wb.sheets.filter(function(s){ return /小组/.test(s.name); });
+    if (byName.length) return byName[0];
+    /* 3) 再退：取单元格最多的一页 */
+    var sorted = wb.sheets.slice().sort(function(a, b){
+      return Object.keys(b.cells).length - Object.keys(a.cells).length;
+    });
+    return sorted[0];
+  }
+
+  function gradeSheet(sh){
+    var per = [], ttl = [], avg = [];
+    var perScore = 0, ttlScore = 0, avgScore = 0;
+    var perF = 0, ttlF = 0, avgF = 0, fmtOk = 0;
+
+    Object.keys(PER).forEach(function(r){
+      var ref = 'F' + r, want = PER[r];
+      var got = sh.num(ref), c = sh.get(ref);
+      var ok = got !== null && Math.abs(got - want) < 0.01;
+      if (ok) perScore += 4;
+      if (c && c.f) perF++;
+      per.push({ ref: ref, want: want, got: got, ok: ok, hasF: !!(c && c.f), label: NAMES[r] });
+    });
+
+    Object.keys(TTL).forEach(function(col){
+      var ref = col + '9', want = TTL[col];
+      var got = sh.num(ref), c = sh.get(ref);
+      var ok = got !== null && Math.abs(got - want) < 0.01;
+      if (ok) ttlScore += 5;
+      if (c && c.f) ttlF++;
+      ttl.push({ ref: ref, want: want, got: got, ok: ok, hasF: !!(c && c.f), label: SUBJ[col] });
+
+      var ref2 = col + '10', want2 = TTL[col] / 6;
+      var got2 = sh.num(ref2), c2 = sh.get(ref2);
+      var ok2 = got2 !== null && Math.abs(got2 - want2) < 0.05;
+      if (ok2) avgScore += 4;
+      if (c2 && c2.f) avgF++;
+      var dec = sh.dec(ref2);
+      var fOk = dec === 1;
+      if (fOk) fmtOk++;
+      avg.push({ ref: ref2, want: want2, got: got2, ok: ok2, hasF: !!(c2 && c2.f), dec: dec, fmtOk: fOk, label: SUBJ[col] });
+    });
+
+    var methodScore = Math.min(25, Math.round(perF * 2 + ttlF * 2 + avgF * 1.25));
+    var fmtScore = Math.round(fmtOk * 3.75);
+    var total = perScore + ttlScore + avgScore + methodScore + fmtScore;
+
+    return {
+      per: per, ttl: ttl, avg: avg,
+      perScore: perScore, ttlScore: ttlScore, avgScore: avgScore,
+      methodScore: methodScore, fmtScore: fmtScore, total: total,
+      doneScore: perScore + ttlScore + avgScore
+    };
+  }
+
+  function renderReport(r, fileName, sheetName){
+    var total = r.total;
+    var stars = total >= 90 ? 5 : total >= 75 ? 4 : total >= 60 ? 3 : total >= 40 ? 2 : 1;
+    var head = total >= 90 ? '算得又快又准，方法也很规范！'
+             : total >= 75 ? '完成得不错，再补几个小细节就完美了。'
+             : total >= 60 ? '基本算对了，还有几格需要检查。'
+             : '别急，先对照下面的清单把没算的补上。';
+
+    document.getElementById('scoreNum').innerHTML = total + '<small> / 100</small>';
+    document.getElementById('scoreHead').textContent = head;
+    document.getElementById('scoreDesc').textContent = '文件：' + fileName + '　·　工作表：' + sheetName;
+    document.getElementById('scoreStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(5 - stars);
+
+    function setBar(id, valId, val, max){
+      document.getElementById(valId).textContent = val + ' / ' + max;
+      setTimeout(function(){
+        document.getElementById(id).style.width = Math.round(val / max * 100) + '%';
+      }, 60);
+    }
+    setBar('bar1', 'val1', r.doneScore, 60);
+    setBar('bar2', 'val2', r.methodScore, 25);
+    setBar('bar3', 'val3', r.fmtScore, 15);
+
+    /* 明细 */
+    var html = '';
+    function group(title, note, arr, unit){
+      html += '<div class="cgroup"><div class="gt">' + title + ' <i>' + note + '</i></div><div class="clist">';
+      arr.forEach(function(it){
+        var cls = it.ok ? 'ctag ok' : 'ctag no';
+        var mark = it.ok ? '✓' : '✗';
+        html += '<span class="' + cls + '">' + mark + ' ' + it.ref + ' <em>' + it.label + '</em></span>';
+      });
+      html += '</div></div>';
+    }
+    group('每人总成绩 F3:F8', '用 Σ 或 SUM 算出四科之和', r.per);
+    group('各科总分 B9:E9', '6 位同学同一科相加', r.ttl);
+    group('各科平均分 B10:E10', '总分 ÷ 6，保留 1 位小数', r.avg);
+    document.getElementById('reportChecks').innerHTML = html;
+
+    /* 建议 */
+    var tips = [];
+    var missPer = r.per.filter(function(x){ return !x.ok; });
+    var missTtl = r.ttl.filter(function(x){ return !x.ok; });
+    var missAvg = r.avg.filter(function(x){ return !x.ok; });
+
+    if (missPer.length){
+      var ex = missPer[0];
+      tips.push('总成绩还有 <b>' + missPer.length + '</b> 格没算对。比如 <b>' + ex.ref + '</b>（' + ex.label + '）应该是 <b>' + ex.want + '</b>' +
+        (ex.got === null || ex.got === '' ? '，这格还是空的。' : '，你的是 ' + Math.round(ex.got * 100) / 100 + '。'));
+    }
+    if (missTtl.length){
+      var e2 = missTtl[0];
+      tips.push('总分还有 <b>' + missTtl.length + '</b> 格要检查。比如 <b>' + e2.ref + '</b> 应是 6 位同学' + e2.label + '成绩之和 <b>' + e2.want + '</b>。');
+    }
+    if (missAvg.length){
+      tips.push('平均分还有 <b>' + missAvg.length + '</b> 格不对：平均分 = 总分 ÷ 6。');
+    }
+    var noFormula = r.per.concat(r.ttl, r.avg).filter(function(x){ return x.ok && !x.hasF; });
+    if (noFormula.length >= 3){
+      tips.push('👀 有 ' + noFormula.length + ' 格是<b>直接输入数字</b>的。用公式（=SUM / =B9/6）算，原始数据一改，结果会自动更新。');
+    }
+    var fmtBad = r.avg.filter(function(x){ return x.ok && !x.fmtOk; });
+    if (fmtBad.length){
+      var f = fmtBad[0];
+      tips.push('小数位还没设好：选中 <b>B10:E10</b>，把小数位数设为 <b>1 位</b>（' + f.ref + ' 现在显示 ' +
+        (f.dec ? f.dec + ' 位小数' : '未设置') + '）。');
+    }
+    if (!tips.length){
+      tips.push('全部正确，而且用了公式、设好了小数位——这份表格可以直接拿去用了！');
+    }
+
+    var tipBox = document.getElementById('reportTips');
+    tipBox.className = 'tips' + (tips.length === 1 && r.total >= 90 ? ' good' : '');
+    tipBox.innerHTML = '<h4>' + (r.total >= 90 ? '✅ 做得很好' : '💡 下一步怎么改') + '</h4><ul>' +
+      tips.map(function(t){ return '<li>' + t + '</li>'; }).join('') + '</ul>';
+
+    document.getElementById('report').classList.add('show');
+
+    /* 星星：探究三最多 3 颗 */
+    var got = total >= 85 ? 3 : total >= 60 ? 2 : total > 0 ? 1 : 0;
+    if (got) addStar('upload', got);
+    notifyLearnSpace(3, { score: total, fileName: fileName || '' });
+    document.getElementById('report').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* =========================================================
+     上传
+     ========================================================= */
+  var drop = document.getElementById('drop');
+  var fileInput = document.getElementById('fileInput');
+  var upFile = document.getElementById('upFile');
+  var upName = document.getElementById('upName');
+  var upErr = document.getElementById('upErr');
+  var uploading = document.getElementById('uploading');
+
+  drop.addEventListener('click', function(){ fileInput.click(); });
+  document.getElementById('upAgain').addEventListener('click', function(e){ e.stopPropagation(); fileInput.click(); });
+
+  ['dragenter', 'dragover'].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('over'); });
+  });
+  ['dragleave', 'drop'].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('over'); });
+  });
+  drop.addEventListener('drop', function(e){
+    var f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  fileInput.addEventListener('change', function(){
+    if (fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  function showErr(msg, warm){
+    upErr.style.display = 'block';
+    upErr.className = 'note' + (warm ? ' warm' : '');
+    upErr.innerHTML = msg;
+    document.getElementById('report').classList.remove('show');
+  }
+
+  async function handleFile(file){
+    var name = file.name || '';
+    upErr.style.display = 'none';
+    document.getElementById('report').classList.remove('show');
+
+    if (/\.(et|ett)$/i.test(name)){
+      showErr('这是 WPS 的 <b>.et</b> 格式，网页读不了。<br>请在 WPS 里点「<b>文件 → 另存为 → Excel 文件（*.xlsx）</b>」，再把新的文件传上来。', true);
+      return;
+    }
+    if (/\.(xls)$/i.test(name)){
+      showErr('这是旧版 Excel（.xls）格式。请另存为 <b>.xlsx</b> 再上传。', true);
+      return;
+    }
+    if (/\.csv$/i.test(name)){
+      showErr('CSV 只能存数字，公式和小数格式都会丢。请用 <b>.xlsx</b> 保存后再上传。', true);
+      return;
+    }
+    if (!/\.xlsx$/i.test(name)){
+      showErr('请上传 <b>.xlsx</b> 文件（WPS 表格做完后另存为 Excel 文件）。', true);
+      return;
+    }
+
+    uploading.classList.add('show');
+    upFile.classList.remove('show');
+
+    try {
+      var buf = await file.arrayBuffer();
+      var wb = await parseXlsx(buf);
+      if (!wb.sheets.length) throw new Error('文件里没有工作表');
+
+      var sh = pickSheet(wb);
+      var looksRight = looksLikeSheet(sh);
+      if (!looksRight){
+        showErr('这个文件里没找到「姓名 / 语文 / 数学 / 英语 / 科学」的成绩表。<br>请确认上传的是老师发的《期中考试成绩.xlsx》，并且做在「<b>小组成绩表</b>」这一页。', true);
+        return;
+      }
+
+      var r = gradeSheet(sh);
+      upName.textContent = name + '（' + Math.max(1, Math.round(file.size / 1024)) + ' KB）';
+      upFile.classList.add('show');
+      renderReport(r, name, sh.name);
+    } catch (err){
+      showErr('文件打不开：' + (err && err.message ? err.message : '未知错误') + '<br>试试在 WPS 里重新另存为 .xlsx 再上传。', true);
+    } finally {
+      uploading.classList.remove('show');
+      fileInput.value = '';
+    }
+  }
+
+  /* =========================================================
+     下载练习文件
+     ========================================================= */
+  var XLSX_B64 = "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";
+  document.getElementById('dlBtn').addEventListener('click', function(){
+    try {
+      var bin = atob(XLSX_B64), arr = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      var blob = new Blob([arr], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '期中考试成绩.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+      toast('练习文件已开始下载');
+    } catch (e){
+      toast('下载失败，请向老师要文件');
+    }
+  });
+
+  /* =========================================================
+     重置
+     ========================================================= */
+  document.getElementById('resetBtn').addEventListener('click', resetAll);
+  document.getElementById('againBtn').addEventListener('click', resetAll);
+
+  function resetAll(){
+    picked.clear();
+    document.querySelectorAll('#gpick td.picked').forEach(function(td){ td.classList.remove('picked'); });
+    var fb = document.getElementById('pickFb');
+    fb.className = 'note'; fb.style.background = ''; fb.style.borderColor = ''; fb.style.color = '';
+    fb.textContent = '还没有选中任何格子。';
+    document.querySelectorAll('.q').forEach(function(q){
+      q.querySelectorAll('[data-v]').forEach(function(b){ b.classList.remove('ok', 'no'); });
+      var f = q.querySelector('.fb'); if (f) f.className = 'fb';
+    });
+    quizDone = {};
+    seq = []; paintBuilder();
+    document.getElementById('bCheck').removeAttribute('data-ok');
+    document.querySelectorAll('#fillDemo .frow').forEach(function(r){ r.classList.remove('on'); });
+    document.getElementById('fillPlay').textContent = '▶ 拖一下填充柄';
+    document.getElementById('fillPlay').removeAttribute('data-ok');
+    document.getElementById('fillMsg').textContent = '按住 F3 右下角的小方块，往下拖。';
+    document.getElementById('methMsg').textContent = '点一个办法，看看它怎么算。';
+    document.querySelectorAll('#methods3 .meth').forEach(function(m){ m.classList.remove('on'); });
+
+    document.querySelectorAll('[data-next]').forEach(function(b){ b.setAttribute('hidden', ''); });
+    document.getElementById('report').classList.remove('show');
+    upFile.classList.remove('show');
+    upErr.style.display = 'none';
+
+    state.stars = 0; state.done = {};
+    updateStars();
+    showStep(1);
+    toast('已重新开始');
+  }
+
+  updateStars();
+  showStep(panelFromUrl());
+})();
+</script>
+</body>
+</html>

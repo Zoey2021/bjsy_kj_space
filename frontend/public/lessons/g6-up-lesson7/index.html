@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第7课 用人工智能辅助算法实现 · 互动教学</title>
+<style>
+  :root{
+    --bg:#f3f2fd;
+    --card:#ffffff;
+    --ink:#232040;
+    --muted:#73719b;
+    --primary:#6b4df6;
+    --primary-d:#4d32d4;
+    --primary-soft:#ede9ff;
+    --accent:#00b8a9;
+    --accent-soft:#e0f7f4;
+    --warn:#ff8a3d;
+    --warn-soft:#fff1e6;
+    --ok:#16a34a;
+    --ok-soft:#e2f8ea;
+    --no:#d64545;
+    --no-soft:#fdeaea;
+    --line:#e2dff5;
+    --code-bg:#1e2235;
+    --shadow:0 10px 30px rgba(77,50,212,.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    background:
+      radial-gradient(1100px 480px at 6% -8%, #e4dcff 0%, rgba(228,220,255,0) 60%),
+      radial-gradient(900px 460px at 100% 0%, #d9f5f1 0%, rgba(217,245,241,0) 55%),
+      var(--bg);
+    color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1160px;margin:0 auto;padding:16px 20px 70px;}
+
+  /* ======== 顶栏 ======== */
+  header.top{
+    position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
+    background:rgba(255,255,255,.86);border:1px solid rgba(226,223,245,.9);
+    border-radius:16px;padding:11px 18px;display:flex;align-items:center;gap:14px;
+    box-shadow:0 6px 20px rgba(77,50,212,.08);margin-bottom:14px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:10px;min-width:0;}
+  .logo{
+    width:38px;height:38px;border-radius:11px;flex:0 0 auto;
+    background:linear-gradient(140deg,#6b4df6,#9a7bff);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:16px;
+    box-shadow:0 6px 14px rgba(107,77,246,.35);
+  }
+  .brand h1{font-size:15.5px;margin:0;line-height:1.25;}
+  .brand p{margin:1px 0 0;font-size:11.5px;color:var(--muted);}
+  .prog{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+  .pg{
+    display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);
+    background:#f6f5fd;border:1px solid var(--line);border-radius:999px;padding:5px 11px;
+  }
+  .pg .dot{width:16px;height:16px;border-radius:50%;border:2px solid #cfc9f0;display:grid;place-items:center;font-size:9.5px;color:#b6aee6;font-weight:800;}
+  .pg.on{color:var(--primary-d);border-color:#c4b8fa;background:var(--primary-soft);}
+  .pg.on .dot{background:var(--primary);border-color:var(--primary);color:#fff;}
+
+  /* ======== 探究切换 ======== */
+  nav.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .chip{
+    border:1px solid var(--line);background:#fff;border-radius:999px;
+    padding:8px 16px;font-size:13.5px;color:var(--muted);cursor:pointer;
+    display:flex;align-items:center;gap:7px;transition:.18s;font-family:inherit;
+  }
+  .chip b{width:19px;height:19px;border-radius:50%;background:#efedfb;color:#a49cd8;font-size:11px;display:grid;place-items:center;font-weight:800;}
+  .chip:hover{border-color:#c4b8fa;color:var(--primary);}
+  .chip.active{background:linear-gradient(135deg,#6b4df6,#8a6bff);border-color:transparent;color:#fff;box-shadow:0 7px 16px rgba(107,77,246,.30);}
+  .chip.active b{background:rgba(255,255,255,.25);color:#fff;}
+  .chip.done b{background:var(--ok-soft);color:var(--ok);}
+
+  /* ======== 面板 ======== */
+  .panel{display:none;}
+  .panel.active{display:block;animation:rise .3s ease both;}
+  @keyframes rise{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 26px;box-shadow:var(--shadow);}
+  .p-head{display:flex;align-items:center;gap:11px;margin-bottom:4px;flex-wrap:wrap;}
+  .badge{background:var(--primary-soft);color:var(--primary-d);font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:999px;letter-spacing:.4px;}
+  .badge.teal{background:var(--accent-soft);color:#0b7d72;}
+  .p-head h2{margin:0;font-size:21px;}
+  .lead{color:var(--muted);font-size:14px;line-height:1.8;margin:8px 0 0;}
+
+  .cols{display:grid;grid-template-columns:minmax(300px,1fr) minmax(340px,1fr);gap:22px;align-items:start;margin-top:18px;}
+  .cols-3{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;align-items:start;margin-top:18px;}
+  @media(max-width:920px){.cols,.cols-3{grid-template-columns:1fr;gap:16px;}}
+
+  .note{background:#f8f7ff;border:1px dashed #cfc9f0;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.8;color:#4c4878;margin-top:14px;}
+  .note b{color:var(--primary-d);}
+  .note.teal{background:#f2fbfa;border-color:#b8e8e2;color:#14655d;}
+  .note.teal b{color:#0b7d72;}
+
+  .taskbox{background:linear-gradient(180deg,#f4f2ff,#fbfaff);border:1px solid #ddd6fa;border-radius:14px;padding:14px 16px;margin-top:14px;}
+  .taskbox h3{margin:0 0 8px;font-size:13.5px;color:var(--primary-d);display:flex;align-items:center;gap:6px;}
+  .taskbox ul{margin:0;padding-left:19px;font-size:13px;line-height:1.95;color:#4c4878;}
+  .taskbox ul li::marker{color:var(--primary);}
+
+  .btn{border:none;border-radius:11px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:.18s;}
+  .btn.primary{background:linear-gradient(135deg,#6b4df6,#8a6bff);color:#fff;box-shadow:0 9px 20px rgba(107,77,246,.30);}
+  .btn.primary:hover{transform:translateY(-1px);}
+  .btn.teal{background:linear-gradient(135deg,#00b8a9,#2fd0c1);color:#fff;box-shadow:0 9px 20px rgba(0,184,169,.28);}
+  .btn.teal:hover{transform:translateY(-1px);}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:#4c4878;}
+  .btn.ghost:hover{border-color:#c4b8fa;color:var(--primary);}
+  .btnrow{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px;align-items:center;}
+
+  .status{margin-top:12px;border-radius:12px;padding:11px 14px;font-size:13px;line-height:1.8;background:#f8f7ff;border:1px solid var(--line);color:#4c4878;transition:.2s;}
+  .status.ok{background:var(--ok-soft);border-color:#b7ebc9;color:#106b39;}
+  .status.warn{background:var(--warn-soft);border-color:#ffdcbe;color:#9a5a20;}
+  .status b{font-weight:700;}
+
+  /* ======== 探究一：游戏 ======== */
+  .game{
+    background:linear-gradient(150deg,#241f4d 0%,#3b2d80 60%,#4d32d4 100%);
+    border-radius:18px;padding:22px;color:#fff;box-shadow:0 14px 30px rgba(59,45,128,.35);
+  }
+  .game h3{margin:0 0 4px;font-size:17px;}
+  .game .sub{font-size:12.5px;opacity:.75;margin-bottom:14px;}
+  .g-row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;}
+  .g-row input{
+    width:130px;padding:11px 14px;border:none;border-radius:11px;font-size:17px;
+    text-align:center;font-family:inherit;outline:none;color:#241f4d;font-weight:700;
+  }
+  .g-row .btn{background:#fff;color:#3b2d80;font-weight:800;}
+  .g-msg{
+    margin-top:14px;background:rgba(255,255,255,.13);border-radius:12px;
+    padding:12px 14px;font-size:14px;line-height:1.8;min-height:58px;
+  }
+  .g-msg b{color:#ffd76a;}
+  .g-count{margin-top:10px;font-size:12.5px;opacity:.85;}
+  .g-win{text-align:center;padding:14px 6px;}
+  .g-win .big{font-size:34px;}
+  .g-win .t{font-size:17px;font-weight:800;margin-top:6px;}
+  .g-win .s{font-size:13px;opacity:.85;margin-top:4px;line-height:1.8;}
+
+  /* ======== 排序 ======== */
+  .pool,.ans{display:flex;flex-direction:column;gap:8px;}
+  .pool .step,.ans .step{
+    border:1px solid var(--line);border-radius:12px;padding:10px 13px;font-size:13px;
+    background:#fff;cursor:pointer;line-height:1.6;transition:.15s;text-align:left;font-family:inherit;color:var(--ink);
+  }
+  .pool .step:hover{border-color:#c4b8fa;background:#fbfaff;transform:translateY(-1px);}
+  .ans .step{cursor:pointer;background:#f6f5fd;}
+  .ans .step i{font-style:normal;color:var(--primary);font-weight:800;margin-right:7px;}
+  .empty-tip{font-size:12.5px;color:var(--muted);border:1px dashed var(--line);border-radius:12px;padding:16px;text-align:center;}
+
+  /* ======== 探究二：代码 ======== */
+  pre.code{
+    background:var(--code-bg);color:#e8e7f7;border-radius:14px;padding:16px 18px;
+    font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace;font-size:12.8px;line-height:1.75;
+    overflow-x:auto;margin:0;white-space:pre;
+  }
+  .tok-k{color:#c4a7ff;font-weight:600;}
+  .tok-s{color:#ffb86c;}
+  .tok-c{color:#7a82a8;font-style:italic;}
+  .tok-n{color:#7ee7f5;}
+  .tok-f{color:#7ce8c8;}
+  .cap{font-size:12px;color:var(--muted);margin-top:8px;text-align:right;}
+
+  .know{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  @media(max-width:640px){.know{grid-template-columns:1fr;}}
+  .kn{border:1px solid var(--line);border-radius:13px;padding:12px 14px;background:#fbfaff;transition:.2s;}
+  .kn:hover{border-color:#c4b8fa;box-shadow:0 8px 18px rgba(107,77,246,.10);transform:translateY(-2px);}
+  .kn .t{font-size:13px;font-weight:800;color:var(--primary-d);font-family:"SF Mono",Menlo,monospace;}
+  .kn .d{font-size:12.5px;color:var(--muted);line-height:1.75;margin-top:5px;}
+  .kn .d b{color:#4c4878;}
+
+  .fill-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13.5px;flex-wrap:wrap;}
+  .fill-row code{font-family:"SF Mono",Menlo,monospace;background:#f4f2ff;border-radius:5px;padding:1px 6px;font-size:12.5px;color:#4d32d4;}
+  .fill-row select{
+    font-family:"SF Mono",Menlo,monospace;font-size:12.5px;padding:4px 8px;border-radius:8px;
+    border:1.5px solid var(--line);background:#fff;color:var(--ink);outline:none;cursor:pointer;
+  }
+  .fill-row select.good{border-color:var(--ok);background:var(--ok-soft);}
+  .fill-row select.bad{border-color:var(--no);background:var(--no-soft);}
+
+  .quiz{border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin-top:11px;background:#fbfaff;}
+  .quiz .q{font-size:13.5px;line-height:1.75;}
+  .quiz .q code{font-family:"SF Mono",Menlo,monospace;background:#f4f2ff;border-radius:4px;padding:1px 5px;font-size:12px;color:#4d32d4;}
+  .quiz .opts{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;}
+  .quiz .opts button{
+    border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:6px 13px;
+    font-size:12.5px;cursor:pointer;font-family:inherit;color:var(--ink);transition:.15s;
+  }
+  .quiz .opts button:hover{border-color:#c4b8fa;}
+  .quiz .opts button.right{background:var(--ok-soft);border-color:var(--ok);color:#106b39;font-weight:700;}
+  .quiz .opts button.wrong{background:var(--no-soft);border-color:var(--no);color:#a33;}
+  .quiz .fb{margin-top:9px;font-size:12.5px;line-height:1.75;color:var(--muted);display:none;}
+  .quiz .fb.show{display:block;}
+
+  /* ======== 探究三 ======== */
+  .upload{
+    border:2px dashed #c4b8fa;border-radius:16px;padding:26px 18px;text-align:center;
+    background:#fbfaff;cursor:pointer;transition:.2s;
+  }
+  .upload:hover,.upload.drag{border-color:var(--primary);background:var(--primary-soft);}
+  .upload .ico{font-size:34px;}
+  .upload .t{font-size:14.5px;font-weight:700;margin-top:8px;}
+  .upload .s{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.7;}
+  textarea.code-input{
+    width:100%;min-height:190px;border:1px solid var(--line);border-radius:13px;
+    font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.8px;line-height:1.7;
+    padding:13px 15px;outline:none;resize:vertical;background:#fff;color:var(--ink);
+  }
+  textarea.code-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(107,77,246,.13);}
+  textarea.prompt-input{
+    width:100%;min-height:88px;border:1px solid var(--line);border-radius:13px;
+    font-family:inherit;font-size:13.5px;line-height:1.75;padding:12px 14px;outline:none;resize:vertical;background:#fff;color:var(--ink);
+  }
+  textarea.prompt-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(107,77,246,.13);}
+
+  .scorebar{margin-top:12px;}
+  .sb-row{display:flex;align-items:center;gap:11px;margin-bottom:11px;}
+  .sb-name{width:132px;flex:0 0 auto;font-size:13px;font-weight:700;color:#4c4878;}
+  .sb-track{flex:1;height:14px;background:#efedfa;border-radius:999px;overflow:hidden;}
+  .sb-fill{height:100%;border-radius:999px;width:0;transition:width .9s cubic-bezier(.2,.8,.2,1);}
+  .sb-val{width:64px;flex:0 0 auto;font-size:13px;font-weight:800;color:var(--primary-d);text-align:right;font-variant-numeric:tabular-nums;}
+
+  .total{
+    display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#241f4d,#4d32d4);
+    border-radius:16px;padding:16px 20px;color:#fff;margin-top:6px;
+  }
+  .total .num{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1;}
+  .total .num small{font-size:15px;font-weight:600;opacity:.75;}
+  .total .txt{font-size:13px;line-height:1.8;opacity:.95;}
+
+  .hl-list{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  @media(max-width:640px){.hl-list{grid-template-columns:1fr;}}
+  .hl-box{border:1px solid var(--line);border-radius:13px;padding:13px 15px;background:#fbfaff;}
+  .hl-box h4{margin:0 0 8px;font-size:13px;display:flex;align-items:center;gap:6px;}
+  .hl-box.good h4{color:#106b39;}
+  .hl-box.todo h4{color:#9a5a20;}
+  .hl-box ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.9;color:#4c4878;}
+  .hl-box.good ul li::marker{color:var(--ok);}
+  .hl-box.todo ul li::marker{color:var(--warn);}
+
+  .diag{margin-top:12px;border:1px solid #ffd0b0;background:#fff8f2;border-radius:13px;padding:13px 15px;display:none;}
+  .diag.show{display:block;}
+  .diag h4{margin:0 0 8px;font-size:13px;color:#c05a12;display:flex;align-items:center;gap:6px;}
+  .diag .it{font-size:12.5px;line-height:1.85;color:#7a4a1f;padding:5px 0;border-top:1px dashed #f3d9bd;}
+  .diag .it b{color:#c05a12;font-family:"SF Mono",Menlo,monospace;}
+
+  details.ref{margin-top:14px;border:1px solid var(--line);border-radius:13px;background:#fbfaff;overflow:hidden;}
+  details.ref summary{cursor:pointer;padding:11px 15px;font-size:13px;font-weight:700;color:var(--primary-d);list-style:none;}
+  details.ref summary::before{content:"▸ ";color:var(--muted);}
+  details.ref[open] summary::before{content:"▾ ";}
+  details.ref .inner{padding:0 15px 14px;}
+
+  .kw-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
+  .kw{font-size:12px;border-radius:999px;padding:4px 11px;border:1.5px solid var(--line);color:var(--muted);background:#fff;transition:.2s;}
+  .kw.hit{border-color:var(--ok);background:var(--ok-soft);color:#106b39;font-weight:700;}
+
+  /* ======== 分享交流 ======== */
+  .vote{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+  @media(max-width:640px){.vote{grid-template-columns:1fr;}}
+  .vote button{
+    border:1.5px solid var(--line);background:#fff;border-radius:13px;padding:13px 15px;
+    font-size:13px;line-height:1.7;cursor:pointer;font-family:inherit;color:var(--ink);text-align:left;transition:.15s;
+  }
+  .vote button:hover{border-color:#c4b8fa;}
+  .vote button.sel{border-color:var(--primary);background:var(--primary-soft);font-weight:700;}
+  .flow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:stretch;}
+  .fstep{flex:1;min-width:150px;background:#fbfaff;border:1px solid var(--line);border-radius:13px;padding:13px 14px;}
+  .fstep .n{width:24px;height:24px;border-radius:50%;background:var(--primary-soft);color:var(--primary-d);font-size:12px;font-weight:800;display:grid;place-items:center;}
+  .fstep .t{font-size:13.5px;font-weight:800;margin-top:7px;}
+  .fstep .d{font-size:12px;color:var(--muted);line-height:1.7;margin-top:3px;}
+
+  .toast{
+    position:fixed;left:50%;bottom:32px;transform:translate(-50%,18px);
+    background:#241f4d;color:#fff;padding:11px 20px;border-radius:11px;font-size:13.5px;
+    opacity:0;pointer-events:none;transition:.28s;z-index:200;box-shadow:0 12px 28px rgba(36,31,77,.32);
+    max-width:82vw;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+  .hint-small{font-size:12px;color:#a49cd8;margin-top:9px;}
+  .center{text-align:center;}
+
+  .submit-card{margin-top:16px;border:1.5px solid #ddd6fa;background:linear-gradient(180deg,#f8f7ff,#fff);border-radius:14px;padding:14px 16px}
+  .submit-hint{margin:0 0 10px;font-size:13px;color:var(--muted);line-height:1.6}
+  .submit-ok{margin-top:10px;color:var(--ok);font-weight:700;font-size:13.5px;display:none}
+  .ai-open{
+    display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+    margin-top:12px;padding:14px 16px;border-radius:14px;
+    background:linear-gradient(135deg,#241f4d,#4d32d4);color:#fff;
+  }
+  .ai-open .t{font-size:14px;font-weight:800}
+  .ai-open .s{font-size:12.5px;opacity:.88;line-height:1.7;margin-top:3px;max-width:520px}
+  .ai-open .btn{background:#fff;color:#3b2d80;font-weight:800}
+  .vote-bar-preview{margin-top:14px}
+  .vb-row{display:grid;grid-template-columns:28px 1fr 48px;gap:8px;align-items:center;margin:8px 0}
+  .vb-track{height:12px;background:#efedfa;border-radius:999px;overflow:hidden}
+  .vb-fill{height:100%;width:0;background:linear-gradient(90deg,#6b4df6,#8a6bff);border-radius:999px;transition:width .5s}
+  /* 嵌入学习空间时：去掉页内顶栏/探究切换，只保留左侧平台导航 */
+  body.embedded{background:#f7f6fc;}
+  body.embedded .app{max-width:none;padding:8px 10px 28px;}
+  body.embedded header.top,
+  body.embedded nav.tabs{display:none !important;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top" id="lessonTopNav">
+    <div class="brand">
+      <div class="logo">07</div>
+      <div>
+        <h1>用人工智能辅助算法实现 · 猜数字游戏</h1>
+        <p>六年级上册 第一单元 · 浙江教育出版社</p>
+      </div>
+    </div>
+    <div class="prog">
+      <span class="pg" id="pg1"><span class="dot">1</span>游戏体验</span>
+      <span class="pg" id="pg2"><span class="dot">2</span>读懂代码</span>
+      <span class="pg" id="pg3"><span class="dot">3</span>AI 辅助实现</span>
+      <span class="pg" id="pg4"><span class="dot">4</span>观点投票</span>
+    </div>
+  </header>
+
+  <nav class="tabs" id="lessonTabNav">
+    <button class="chip active" data-go="1"><b>1</b>探究一 · 玩游戏，析规则</button>
+    <button class="chip" data-go="2"><b>2</b>探究二 · 读代码，懂判断</button>
+    <button class="chip" data-go="3"><b>3</b>探究三 · 上传代码，自动评分</button>
+    <button class="chip" data-go="4"><b>4</b>探究四 · 观点投票</button>
+  </nav>
+
+  <!-- ==================== 探究一 ==================== -->
+  <section class="panel active" data-step="1">
+    <div class="card">
+      <div class="p-head"><span class="badge">探究一</span><h2>先玩一把：这个游戏藏着什么算法？</h2></div>
+      <p class="lead">计算机心里想了一个 <b>1~100</b> 之间的整数，你来把它猜出来。它会告诉你“大了”还是“小了”。玩过之后，想一想：计算机是怎么做到的？</p>
+
+      <div class="cols">
+        <div class="left">
+          <div class="game" id="gameBox">
+            <h3>🎯 猜数字挑战</h3>
+            <div class="sub">范围：1 ~ 100 · 猜中即胜利</div>
+            <div class="g-row">
+              <input id="gInput" type="number" min="1" max="100" placeholder="输入你猜的数">
+              <button class="btn" id="gBtn">猜！</button>
+            </div>
+            <div class="g-msg" id="gMsg">我想好一个数了，开始猜吧！</div>
+            <div class="g-count" id="gCount">已猜 0 次</div>
+          </div>
+          <div class="note" id="gAfterNote" style="display:none">
+            <b>揭秘：</b>你每输入一个数，程序就把它和答案<b>比一比</b>；不对就<b>再来一次</b>，对了就<b>结束</b>。
+            “比一比”用的是<b>条件判断</b>，“再来一次”用的是<b>循环</b>——这就是下一关要读懂的代码。
+          </div>
+        </div>
+
+        <div class="right">
+          <div class="taskbox">
+            <h3>🧩 挑战：把游戏步骤排排队</h3>
+            <ul>
+              <li>点左边卡片的<b>正确顺序</b>，把它们加到右边</li>
+              <li>点右边卡片可以放回，排好序后点“检查顺序”</li>
+            </ul>
+          </div>
+          <div style="margin-top:12px">
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:7px">步骤卡片（打乱中）：</div>
+            <div class="pool" id="poolSteps"></div>
+          </div>
+          <div style="margin-top:14px">
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:7px">你的程序步骤：</div>
+            <div class="ans" id="ansSteps"><div class="empty-tip">点击左边的卡片，按顺序加到这里</div></div>
+          </div>
+          <div class="btnrow">
+            <button class="btn teal" id="checkOrderBtn">检查顺序</button>
+          </div>
+          <div class="status" id="status1">两个小任务都完成，才能点亮第 1 颗星。</div>
+        </div>
+      </div>
+
+      <div class="submit-card">
+        <p class="submit-hint">请先完成「猜数字游戏」和「步骤排序」，再点「提交任务」完成本探究。</p>
+        <button type="button" class="btn primary" id="submit-act1">提交任务</button>
+        <div class="submit-ok" id="submit-ok-1">✅ 探究一已提交</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== 探究二 ==================== -->
+  <section class="panel" data-step="2">
+    <div class="card">
+      <div class="p-head"><span class="badge">探究二</span><h2>读懂 AI 写的程序：循环与条件判断</h2></div>
+      <p class="lead">这是 AI 根据流程图生成的猜数字程序。先看知识点卡片，再把它<b>补完整</b>。</p>
+
+      <div class="cols">
+        <div class="left">
+          <pre class="code" id="demoCode"></pre>
+          <div class="cap">▲ AI 辅助生成的参考程序（有 6 个词被“猫叼走”了 →）</div>
+
+          <div class="know">
+            <div class="kn"><div class="t">input()</div><div class="d">让玩家在键盘上输入。<b>注意：得到的是文字</b>，不能直接比较大小。</div></div>
+            <div class="kn"><div class="t">int()</div><div class="d">把文字变成整数。<b>int("30")</b> 才能参加数学比较。</div></div>
+            <div class="kn"><div class="t">import random</div><div class="d">导入随机模块；<b>randint(1,100)</b> 让计算机从 1~100 里“抽签”。</div></div>
+            <div class="kn"><div class="t">if / else</div><div class="d"><b>双分支条件语句</b>：满足条件做一件事，不满足做另一件事。</div></div>
+            <div class="kn"><div class="t">while</div><div class="d"><b>循环</b>：条件成立就一直重复，猜不对就“再来一次”。</div></div>
+            <div class="kn"><div class="t"># 注释</div><div class="d">井号后面的内容是<b>写给人看的说明</b>，计算机不执行。</div></div>
+          </div>
+        </div>
+
+        <div class="right">
+          <div class="taskbox">
+            <h3>✏️ 练习 1：把代码补完整（每个空选一个词）</h3>
+          </div>
+          <div id="fillArea" style="margin-top:10px"></div>
+          <div class="status" id="statusFill">6 个空全部选对，练习 1 才算完成。</div>
+
+          <div class="taskbox" style="margin-top:16px">
+            <h3>🔮 练习 2：预测程序的输出</h3>
+          </div>
+          <div id="quizArea" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <div class="submit-card">
+        <p class="submit-hint">请先完成代码填空和预测练习，再点「提交任务」。</p>
+        <button type="button" class="btn primary" id="submit-act2">提交任务</button>
+        <div class="submit-ok" id="submit-ok-2">✅ 探究二已提交</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== 探究三 ==================== -->
+  <section class="panel" data-step="3">
+    <div class="card">
+      <div class="p-head"><span class="badge">探究三</span><h2>让 AI 帮你写程序，再给它打个分</h2></div>
+      <p class="lead">三步走：<b>① 写好提示词</b> → <b>② 打开「算法小助手」生成并调试代码</b> → <b>③ 把代码粘贴回来评分</b>。</p>
+
+      <div class="cols-3">
+        <div class="left">
+          <div class="taskbox">
+            <h3>💬 第 1 步：写下你的提示词</h3>
+            <ul>
+              <li>目标：让 AI 生成一个“随机 1~100 猜数字游戏”程序</li>
+              <li>记住课件里的话：<b>提示词要清晰明确</b></li>
+            </ul>
+          </div>
+          <textarea class="prompt-input" id="promptInput" placeholder="例如：请帮我用 Python 写一个……"></textarea>
+          <div class="kw-list" id="kwList"></div>
+          <div class="status" id="statusPrompt">提示词里要包含几个关键信息，写了之后自动检查。</div>
+          <div class="btnrow">
+            <button class="btn ghost" id="copyPromptBtn">复制提示词</button>
+          </div>
+
+          <div class="ai-open" id="aiOpenBox">
+            <div>
+              <div class="t">🤖 算法小助手（人工智能实验室）</div>
+              <div class="s">复制提示词后，点右侧按钮打开小派老师。生成代码并在本地跑通后，再粘贴回本页评分。</div>
+            </div>
+            <button type="button" class="btn" id="openAlgoAssistantBtn">打开算法小助手</button>
+          </div>
+
+          <div class="taskbox" style="margin-top:18px">
+            <h3>⬆️ 第 2 步：粘贴 / 上传你的 Python 代码</h3>
+            <ul>
+              <li>用算法小助手生成代码后，在 IDLE 或实验平台运行成功</li>
+              <li>把 .py 文件上传，或直接<b>粘贴</b>到下面的框里</li>
+            </ul>
+          </div>
+          <div class="upload" id="uploadBox" style="margin-top:10px">
+            <div class="ico">🐍</div>
+            <div class="t">点击选择 .py 文件，或把文件拖到这里</div>
+            <div class="s">支持 .py / .txt，文件不会离开你的电脑</div>
+            <input type="file" id="pyFile" accept=".py,.txt" style="display:none">
+          </div>
+          <div class="hint-small" id="fileInfo"></div>
+          <textarea class="code-input" id="codeInput" placeholder="上传后会自动填到这里，也可以直接粘贴代码……"></textarea>
+          <div class="btnrow">
+            <button class="btn teal" id="gradeBtn">🧮 分析并评分</button>
+            <button class="btn ghost" id="clearCodeBtn">清空</button>
+          </div>
+        </div>
+
+        <div class="right">
+          <div class="taskbox" style="margin-top:0">
+            <h3>🧮 第 3 步：自动评分报告</h3>
+            <ul style="line-height:1.8">
+              <li>✅ <b>正确性</b>（60 分）：游戏要素是否齐全</li>
+              <li>🛡️ <b>准确性与健壮性</b>（20 分）：出错怎么办</li>
+              <li>🎉 <b>趣味性与创新性</b>（20 分）：有没有自己的点子</li>
+            </ul>
+          </div>
+
+          <div id="report" style="display:none">
+            <div class="scorebar">
+              <div class="sb-row"><span class="sb-name">✅ 正确性</span><div class="sb-track"><div class="sb-fill" id="barC" style="background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div><span class="sb-val" id="valC">0 / 60</span></div>
+              <div class="sb-row"><span class="sb-name">🛡️ 健壮性</span><div class="sb-track"><div class="sb-fill" id="barR" style="background:linear-gradient(90deg,#2f6bf6,#5aa2ff)"></div></div><span class="sb-val" id="valR">0 / 20</span></div>
+              <div class="sb-row"><span class="sb-name">🎉 趣味创新</span><div class="sb-track"><div class="sb-fill" id="barF" style="background:linear-gradient(90deg,#ff8a3d,#ffb26b)"></div></div><span class="sb-val" id="valF">0 / 20</span></div>
+            </div>
+            <div class="total">
+              <div class="num" id="totalNum">0<small> 分</small></div>
+              <div class="txt" id="totalTxt"></div>
+            </div>
+            <div class="hl-list">
+              <div class="hl-box good"><h4>✨ 亮点</h4><ul id="goodList"></ul></div>
+              <div class="hl-box todo"><h4>🔧 改进建议</h4><ul id="todoList"></ul></div>
+            </div>
+            <div class="diag" id="diagBox">
+              <h4>🩺 小侦探：这两个问题最常见</h4>
+              <div id="diagList"></div>
+            </div>
+            <div class="hint-small">评分基于代码结构自动分析，最终成绩以实际运行结果为准，可以再请老师看看。</div>
+          </div>
+          <div class="status" id="status3" style="display:none"></div>
+
+          <details class="ref">
+            <summary>对照参考：一份“满分思路”的代码长什么样</summary>
+            <div class="inner">
+              <pre class="code" id="refCode"></pre>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <div class="submit-card">
+        <p class="submit-hint">请先完成提示词、打开算法小助手生成代码，并完成评分，再提交本探究。</p>
+        <button type="button" class="btn primary" id="submit-act3">提交任务</button>
+        <div class="submit-ok" id="submit-ok-3">✅ 探究三已提交</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== 探究四 ==================== -->
+  <section class="panel" data-step="4">
+    <div class="card">
+      <div class="p-head"><span class="badge">探究四</span><h2>AI 会写程序了，我们还要学编程吗？</h2></div>
+      <p class="lead">小明说：“人工智能直接可以写程序了，我就不用学编程了！”你同意吗？选择 A/B/C/D 后提交，全班观点会汇总成条形图给老师看。</p>
+
+      <div class="vote" id="voteBox">
+        <button data-v="A" data-label="同意！以后让 AI 写就行了">A. 🤖 同意！以后让 AI 写就行了</button>
+        <button data-v="B" data-label="不同意。AI 只是工具，人要会提需求、看得懂、改得了">B. 🧠 不同意。AI 只是工具，人要会提需求、看得懂、改得了</button>
+        <button data-v="C" data-label="看情况：简单程序交给 AI，关键的思路和检查还得靠自己">C. ⚖️ 看情况：简单程序交给 AI，关键的思路和检查还得靠自己</button>
+        <button data-v="D" data-label="我还没想清楚，想听听大家的意见">D. 🤔 我还没想清楚，想听听大家的意见</button>
+      </div>
+      <div class="note teal" id="voteEcho" style="display:none"></div>
+      <div class="submit-card">
+        <p class="submit-hint">选定观点后点「提交观点」，老师端会统计各选项人数并显示条形图。</p>
+        <button type="button" class="btn primary" id="submit-act4" disabled>提交观点</button>
+        <div class="submit-ok" id="submit-ok-4">✅ 观点已提交，等待老师汇总全班结果</div>
+      </div>
+
+      <div class="p-head" style="margin-top:26px"><span class="badge teal">课程总结</span><h2>AI 辅助算法实现的四步法</h2></div>
+      <div class="flow">
+        <div class="fstep"><div class="n">1</div><div class="t">问题分析</div><div class="d">游戏规则是什么？需要哪些数据？</div></div>
+        <div class="fstep"><div class="n">2</div><div class="t">写提示词</div><div class="d">清晰明确地告诉 AI 你要什么</div></div>
+        <div class="fstep"><div class="n">3</div><div class="t">多轮修改</div><div class="d">改规则、改范围，和 AI 反复对话</div></div>
+        <div class="fstep"><div class="n">4</div><div class="t">测试验证</div><div class="d">多次运行，看结果是否符合预期</div></div>
+      </div>
+
+      <div class="note" style="margin-top:22px">
+        <b>今天你收获了：</b>玩会了猜数字 → 读懂了 input()、if/else、while → 学会写清晰的提示词 → 还给自己的代码做了体检。<br>
+        <b>一句话：</b>AI 负责打字快，<b>你负责想得对</b>。
+      </div>
+      <div class="btnrow">
+        <button class="btn ghost" id="restartBtn">重新开始探究</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* =============== 通用 =============== */
+  function $(s){ return document.querySelector(s); }
+  function $all(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); }
+  function toast(msg){
+    var t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._t);
+    t._t = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+  var state = { step:1, played:false, orderDone:false, fillDone:false, quizDone:false, promptDone:false, graded:false, voted:false, voteChoice:'', voteLabel:'', openedAssistant:false };
+  var learnSpaceNotifiedSteps = {};
+  function activityIndexFromUrl(fallback){
+    try {
+      var params = new URLSearchParams(location.search);
+      var idx = parseInt(params.get('activityIndex') || params.get('step') || String(fallback), 10);
+      return Number.isFinite(idx) ? idx : fallback;
+    } catch (e) { return fallback; }
+  }
+  function notifyLearnSpaceComplete(step, extra){
+    if (!window.parent || window.parent === window) return;
+    if (learnSpaceNotifiedSteps[step]) return;
+    learnSpaceNotifiedSteps[step] = true;
+    var payload = {
+      activityIndex: activityIndexFromUrl(step),
+      step: step,
+      stepCompleted: true,
+      source: 'g6-up-lesson7'
+    };
+    if (extra) {
+      for (var k in extra) {
+        if (Object.prototype.hasOwnProperty.call(extra, k)) payload[k] = extra[k];
+      }
+    }
+    window.parent.postMessage({ type: 'LEARN_SPACE_SUBMIT', payload: payload }, '*');
+  }
+  function markSubmitted(step){
+    var ok = document.getElementById('submit-ok-' + step);
+    var btn = document.getElementById('submit-act' + step);
+    if (ok) ok.style.display = 'block';
+    if (btn) { btn.disabled = true; btn.textContent = step === 4 ? '已提交观点' : '已提交'; }
+  }
+  function trySubmitActivity(step){
+    if (step === 1) {
+      if (!(state.played && state.orderDone)) { toast('请先完成游戏体验和步骤排序'); return; }
+    } else if (step === 2) {
+      if (!(state.fillDone && state.quizDone)) { toast('请先完成填空和预测练习'); return; }
+    } else if (step === 3) {
+      if (!state.promptDone) { toast('请先写好提示词'); return; }
+      if (!state.openedAssistant) { toast('请先打开算法小助手生成代码'); return; }
+      if (!state.graded) { toast('请先粘贴代码并完成评分'); return; }
+    } else if (step === 4) {
+      if (!state.voteChoice) { toast('请先选择一个观点'); return; }
+      markSubmitted(4);
+      markDone(4);
+      notifyLearnSpaceComplete(4, {
+        voteChoice: state.voteChoice,
+        voteLabel: state.voteLabel,
+        surveyTheme: state.voteChoice + ' · ' + state.voteLabel
+      });
+      toast('观点已提交');
+      return;
+    }
+    markSubmitted(step);
+    notifyLearnSpaceComplete(step);
+    toast('探究' + step + '已提交');
+  }
+
+
+  function isEmbedded(){
+    try {
+      var params = new URLSearchParams(location.search);
+      if (params.get('embedded') === '1' || params.get('embed') === '1') return true;
+    } catch (e) {}
+    try { return !!(window.parent && window.parent !== window); } catch (e2) { return false; }
+  }
+  function applyEmbeddedChrome(){
+    if (!isEmbedded()) return;
+    document.body.classList.add('embedded');
+  }
+  function setPanel(n){
+    state.step = n;
+    $all('.panel').forEach(function(p){ p.classList.toggle('active', p.dataset.step === String(n)); });
+    $all('.chip').forEach(function(c){
+      c.classList.toggle('active', c.dataset.go === String(n));
+    });
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  document.addEventListener('click', function(e){
+    if (document.body.classList.contains('embedded')) return;
+    var go = e.target.closest('[data-go]');
+    if (go) setPanel(parseInt(go.dataset.go, 10));
+  });
+
+  function markDone(n){
+    var pg = $('#pg' + n);
+    if (pg.classList.contains('on')) return;
+    pg.classList.add('on');
+    pg.querySelector('.dot').textContent = '✓';
+    $all('.chip').forEach(function(c){
+      if (c.dataset.go === String(n)) c.classList.add('done');
+    });
+  }
+
+  /* =============== 代码高亮 =============== */
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(code){
+    var KW = 'import|from|as|while|if|elif|else|for|in|not|and|or|break|continue|True|False|None|try|except|def|return|pass';
+    var FN = 'randint|input|print|int|str|float|random|range|len';
+    var re = new RegExp('(#.*$)|("(?:[^"\\\\\\n]|\\\\.)*"|\'(?:[^\'\\\\\\n]|\\\\.)*\')|\\b(' + KW + ')\\b|\\b(' + FN + ')\\b|\\b(\\d+)\\b', 'gm');
+    return esc(code).replace(re, function(m, c, s, k, f, n){
+      if (c) return '<span class="tok-c">' + c + '</span>';
+      if (s) return '<span class="tok-s">' + s + '</span>';
+      if (k) return '<span class="tok-k">' + k + '</span>';
+      if (f) return '<span class="tok-f">' + f + '</span>';
+      if (n) return '<span class="tok-n">' + n + '</span>';
+      return m;
+    });
+  }
+
+  /* =============== 探究一：猜数字游戏 =============== */
+  var secret = 0, guesses = 0, gameOver = false;
+  function newGame(){
+    secret = Math.floor(Math.random() * 100) + 1;
+    guesses = 0;
+    gameOver = false;
+    $('#gMsg').textContent = '我想好一个数了，开始猜吧！';
+    $('#gCount').textContent = '已猜 0 次';
+    $('#gInput').value = '';
+    $('#gInput').focus();
+  }
+  function gameMsg(html){
+    $('#gMsg').innerHTML = html;
+  }
+  $('#gBtn').addEventListener('click', function(){
+    if (gameOver){ newGame(); return; }
+    var raw = $('#gInput').value.trim();
+    if (raw === ''){ gameMsg('先在输入框里<b>写一个 1~100 的整数</b>呀！'); return; }
+    var v = Number(raw);
+    if (isNaN(v) || v < 1 || v > 100 || v !== Math.round(v)){
+      gameMsg('“' + esc(raw) + '” 不在 1~100 的范围内，请输入一个<b>整数</b>。');
+      return;
+    }
+    guesses++;
+    $('#gCount').textContent = '已猜 ' + guesses + ' 次';
+    if (v === secret){
+      gameOver = true;
+      var praise = guesses <= 5 ? '太厉害了，简直是读心术！' : (guesses <= 8 ? '不错的直觉，二分法用得挺好！' : '坚持就是胜利，下次试试“折半猜”！');
+      $('#gMsg').innerHTML =
+        '<div class="g-win"><div class="big">🎉</div>' +
+        '<div class="t">猜对啦！答案就是 ' + secret + '</div>' +
+        '<div class="s">一共猜了 <b>' + guesses + '</b> 次。' + praise + '<br>' +
+        '程序内部：把你的数和答案 <b>比一比</b> → 不对就 <b>再来一次</b> → 对了就 <b>结束</b>。</div></div>';
+      $('#gBtn').textContent = '再玩一局';
+      state.played = true;
+      $('#gAfterNote').style.display = 'block';
+      refresh1();
+    } else if (v < secret){
+      gameMsg('你猜 ' + v + ' —— <b>小了</b>，再大一点！⬆️');
+    } else {
+      gameMsg('你猜 ' + v + ' —— <b>大了</b>，再小一点！⬇️');
+    }
+    $('#gInput').value = '';
+    $('#gInput').focus();
+  });
+  $('#gInput').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') $('#gBtn').click();
+  });
+
+  /* ---- 排序练习 ---- */
+  var STEPS = [
+    '计算机随机生成一个 1~100 的整数',
+    '玩家输入一个猜测的数',
+    '程序把输入转换成整数，并和答案比大小',
+    '程序提示“大了”或“小了”，回到上一步继续猜',
+    '猜中了！游戏结束，输出一共猜了几次'
+  ];
+  var poolList = [], ansList = [];
+  function shuffle(a){
+    var b = a.slice();
+    for (var i = b.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = b[i]; b[i] = b[j]; b[j] = t;
+    }
+    return b;
+  }
+  function paintSteps(){
+    var pool = $('#poolSteps'), ans = $('#ansSteps');
+    pool.innerHTML = '';
+    poolList.forEach(function(idx){
+      var b = document.createElement('button');
+      b.className = 'step';
+      b.textContent = STEPS[idx];
+      b.addEventListener('click', function(){
+        poolList.splice(poolList.indexOf(idx), 1);
+        ansList.push(idx);
+        paintSteps();
+      });
+      pool.appendChild(b);
+    });
+    if (poolList.length === 0) pool.innerHTML = '<div class="empty-tip">全部排好了，点“检查顺序”吧</div>';
+    ans.innerHTML = '';
+    if (ansList.length === 0){
+      ans.innerHTML = '<div class="empty-tip">点击左边的卡片，按顺序加到这里</div>';
+    } else {
+      ansList.forEach(function(idx, i){
+        var b = document.createElement('button');
+        b.className = 'step';
+        b.innerHTML = '<i>' + (i + 1) + '.</i>' + esc(STEPS[idx]);
+        b.title = '点一下放回';
+        b.addEventListener('click', function(){
+          ansList.splice(i, 1);
+          poolList.push(idx);
+          paintSteps();
+        });
+        ans.appendChild(b);
+      });
+    }
+  }
+  $('#checkOrderBtn').addEventListener('click', function(){
+    if (ansList.length !== STEPS.length){ toast('还有步骤没有排进去哦'); return; }
+    var ok = ansList.every(function(idx, i){ return idx === i; });
+    if (ok){
+      state.orderDone = true;
+      $('#status1').className = 'status ok';
+      $('#status1').innerHTML = '✅ 顺序完全正确！这就是猜数字游戏的算法流程。';
+      toast('🧩 排序正确！');
+      refresh1();
+    } else {
+      $('#status1').className = 'status warn';
+      $('#status1').innerHTML = '顺序还不对。想一想：<b>先有随机数</b>，玩家才能开始猜；提示之后要<b>回到输入</b>继续循环。';
+    }
+  });
+
+  function refresh1(){
+    if (state.played && state.orderDone){
+      markDone(1);
+      if (!$('#status1').textContent.match(/✅/)){
+        $('#status1').className = 'status ok';
+        $('#status1').innerHTML = '✅ 游戏玩过 + 步骤排对，探究一完成！';
+      }
+    } else if (state.played && !state.orderDone){
+      if (!$('#status1').className.match(/ok/)){
+        $('#status1').className = 'status';
+        $('#status1').innerHTML = '游戏体验完成 ✓，还差<b>步骤排序</b>。';
+      }
+    }
+  }
+
+  /* =============== 探究二 =============== */
+  var DEMO =
+'import random                     # 导入随机模块\n' +
+'secret = random.randint(1, 100)   # 随机生成 1~100 的整数\n' +
+'count = 0                         # 记录猜的次数\n' +
+'\n' +
+'guess = int(input("猜一个 1~100 的数："))\n' +
+'while guess != secret:            # 没猜中就一直循环\n' +
+'    if guess > secret:            # 双分支：判断大小\n' +
+'        print("大了，再小一点")\n' +
+'    else:\n' +
+'        print("小了，再大一点")\n' +
+'    guess = int(input("再猜一次："))\n' +
+'\n' +
+'print("猜对了！你一共猜了", count, "次")';
+  $('#demoCode').innerHTML = hl(DEMO);
+
+  var REF =
+'import random\n' +
+'\n' +
+'secret = random.randint(1, 100)   # 答案\n' +
+'count = 0                         # 猜的次数\n' +
+'print("我想了一个 1~100 的数，最多 7 次猜中它！")\n' +
+'\n' +
+'while True:                       # 循环：一直猜\n' +
+'    try:\n' +
+'        guess = int(input("你猜是几？"))\n' +
+'    except:\n' +
+'        print("请输入整数呀！")\n' +
+'        continue                  # 输错不算，重新输入\n' +
+'    count = count + 1             # 次数加 1\n' +
+'    if guess == secret:\n' +
+'        print("🎉 恭喜你，猜对了！用了", count, "次")\n' +
+'        break                     # 跳出循环，游戏结束\n' +
+'    elif guess > secret:\n' +
+'        print("大了！")\n' +
+'    else:\n' +
+'        print("小了！")';
+  $('#refCode').innerHTML = hl(REF);
+
+  /* ---- 填空 ---- */
+  var FILLS = [
+    { before:'import ', after:'                    # 导入随机模块', ans:'random', line:true },
+    { before:'secret = ', after:'.randint(1, 100)     # 随机生成 1~100 的整数', ans:'random' },
+    { before:'guess = ', after:'(input("猜一个 1~100 的数："))   # 文字变整数', ans:'int' },
+    { before:'', after:' guess != secret:            # 没猜中就一直循环', ans:'while' },
+    { before:'    ', after:' guess > secret:            # 判断谁大谁小', ans:'if' },
+    { before:'    ', after:':                             # 否则（另一种情况）', ans:'else' }
+  ];
+  var OPTS = ['random','int','while','if','else','for','print','input'];
+  var fillWrap = $('#fillArea');
+  var fillSelects = [];
+  FILLS.forEach(function(f, i){
+    var row = document.createElement('div');
+    row.className = 'fill-row';
+    var html = '<code>' + esc(f.before) + '</code>';
+    var sel = document.createElement('select');
+    sel.innerHTML = '<option value="">（空 ' + (i + 1) + '）</option>' +
+      OPTS.map(function(o){ return '<option value="' + o + '">' + o + '</option>'; }).join('');
+    sel.dataset.ans = f.ans;
+    sel.addEventListener('change', function(){
+      sel.classList.remove('good','bad');
+      if (sel.value === ''){
+        refreshFill();
+        return;
+      }
+      sel.classList.add(sel.value === f.ans ? 'good' : 'bad');
+      refreshFill();
+    });
+    html = html.replace('__SEL__', '');
+    var pre = document.createElement('span');
+    pre.innerHTML = '<code>' + esc(f.before) + '</code>';
+    row.appendChild(pre);
+    row.appendChild(sel);
+    var post = document.createElement('span');
+    post.innerHTML = '<code>' + esc(f.after) + '</code>';
+    row.appendChild(post);
+    fillWrap.appendChild(row);
+    fillSelects.push(sel);
+  });
+  function refreshFill(){
+    var allOk = fillSelects.every(function(sel){ return sel.value === sel.dataset.ans; });
+    if (allOk){
+      state.fillDone = true;
+      $('#statusFill').className = 'status ok';
+      $('#statusFill').innerHTML = '✅ 6 个空全部正确！这份程序你已经能读懂了。';
+      refresh2();
+    } else {
+      var okCount = fillSelects.filter(function(sel){ return sel.value === sel.dataset.ans; }).length;
+      $('#statusFill').className = 'status';
+      $('#statusFill').innerHTML = '已填对 <b>' + okCount + ' / 6</b>。提示：先看这句话想干什么，再选词。';
+    }
+  }
+
+  /* ---- 预测题 ---- */
+  var QUIZ = [
+    {
+      q:'程序里 <code>secret = 50</code>。玩家输入 <code>30</code>，屏幕上会显示什么？',
+      opts:['“大了，再小一点”','“小了，再大一点”','“猜对了！”','什么都不显示'],
+      ans:1,
+      why:'30 比 50 小，<code>if guess > secret</code> 不成立，走 else 分支，所以提示“小了”。'
+    },
+    {
+      q:'玩家调皮，输入了文字 <code>abc</code>。运行 <code>int("abc")</code> 会发生什么？',
+      opts:['abc 变成数字 0','程序报错，停止运行','自动跳过，继续猜','输出一个随机数'],
+      ans:1,
+      why:'文字没法变成整数，程序会<b>报错退出</b>。想更“健壮”，就要用 try/except 保护——参考探究三的满分代码。'
+    }
+  ];
+  var quizArea = $('#quizArea');
+  var quizOk = [false, false];
+  QUIZ.forEach(function(item, qi){
+    var box = document.createElement('div');
+    box.className = 'quiz';
+    box.innerHTML = '<div class="q"><b>Q' + (qi + 1) + '.</b> ' + item.q + '</div>';
+    var opts = document.createElement('div');
+    opts.className = 'opts';
+    item.opts.forEach(function(o, oi){
+      var b = document.createElement('button');
+      b.textContent = o;
+      b.addEventListener('click', function(){
+        if (quizOk[qi]) return;
+        if (oi === item.ans){
+          b.classList.add('right');
+          quizOk[qi] = true;
+          var fb = box.querySelector('.fb');
+          fb.innerHTML = '✅ ' + item.why;
+          fb.classList.add('show');
+          refreshQuiz();
+        } else {
+          b.classList.add('wrong');
+          toast('再读一遍代码想想～');
+        }
+      });
+      opts.appendChild(b);
+    });
+    var fb = document.createElement('div');
+    fb.className = 'fb';
+    box.appendChild(opts);
+    box.appendChild(fb);
+    quizArea.appendChild(box);
+  });
+  function refreshQuiz(){
+    if (quizOk.every(Boolean)){
+      state.quizDone = true;
+      refresh2();
+    }
+  }
+  function refresh2(){
+    if (state.fillDone && state.quizDone){
+      markDone(2);
+      toast('🌟 探究二完成！');
+    }
+  }
+
+  /* =============== 探究三 =============== */
+  var KW_TARGETS = [
+    { re:/python|程序|代码|语言/i, label:'提到 Python / 程序', must:true },
+    { re:/猜数字|猜数|猜一个|游戏/i, label:'提到猜数字游戏', must:true },
+    { re:/随机/i, label:'提到“随机”生成', must:true },
+    { re:/1\s*[~\-－到]\s*100|1-100/i, label:'写清范围 1~100', must:true },
+    { re:/大了|小了|提示/i, label:'（加分）说明要提示大小', must:false }
+  ];
+  function paintKw(){
+    var txt = $('#promptInput').value;
+    var wrap = $('#kwList');
+    wrap.innerHTML = '';
+    KW_TARGETS.forEach(function(k){
+      var hit = k.re.test(txt);
+      var el = document.createElement('span');
+      el.className = 'kw' + (hit ? ' hit' : '');
+      el.textContent = (hit ? '✓ ' : '○ ') + k.label;
+      wrap.appendChild(el);
+    });
+    var missMust = KW_TARGETS.filter(function(k){ return k.must && !k.re.test(txt); }).length;
+    var st = $('#statusPrompt');
+    if (txt.trim().length < 8){
+      st.className = 'status';
+      st.innerHTML = '在上方写下你的提示词，写完自动检查关键信息。';
+      state.promptDone = false;
+    } else if (missMust === 0){
+      var bonus = KW_TARGETS[4].re.test(txt);
+      st.className = 'status ok';
+      st.innerHTML = '✅ 提示词清晰明确！' + (bonus ? '还说明了大小提示，AI 会生成得更准。' : '如果再写上“猜大了/猜小了要提示”，会更完整。');
+      state.promptDone = true;
+    } else {
+      st.className = 'status warn';
+      st.innerHTML = '还缺少 <b>' + missMust + '</b> 个关键信息（看下面没打勾的项）。<b>提示词越明确，AI 写得越准。</b>';
+      state.promptDone = false;
+    }
+    refresh3();
+  }
+  $('#promptInput').addEventListener('input', paintKw);
+  $('#copyPromptBtn').addEventListener('click', function(){
+    var t = $('#promptInput').value.trim();
+    if (!t){ toast('先写好提示词再复制'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){ toast('已复制，去 AI 平台粘贴吧！'); },
+        function(){ toast('复制失败，请手动选择复制'); });
+    } else {
+      $('#promptInput').select();
+      try { document.execCommand('copy'); toast('已复制，去 AI 平台粘贴吧！'); }
+      catch(e){ toast('复制失败，请手动选择复制'); }
+    }
+  });
+
+  /* ---- 文件上传 ---- */
+  var upBox = $('#uploadBox'), fileInput = $('#pyFile');
+  upBox.addEventListener('click', function(){ fileInput.click(); });
+  upBox.addEventListener('dragover', function(e){ e.preventDefault(); upBox.classList.add('drag'); });
+  upBox.addEventListener('dragleave', function(){ upBox.classList.remove('drag'); });
+  upBox.addEventListener('drop', function(e){
+    e.preventDefault();
+    upBox.classList.remove('drag');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', function(){
+    if (fileInput.files && fileInput.files[0]) readFile(fileInput.files[0]);
+  });
+  function readFile(f){
+    if (f.size > 200 * 1024){ toast('文件太大了，请检查是不是选错了'); return; }
+    var okName = /\.py$|\.txt$/i.test(f.name);
+    if (!okName){ toast('请选择 .py 或 .txt 文件哦'); return; }
+    var reader = new FileReader();
+    reader.onload = function(){
+      $('#codeInput').value = String(reader.result || '');
+      $('#fileInfo').innerHTML = '📄 已读取：<b>' + esc(f.name) + '</b>（' + f.size + ' 字节），可以编辑后再评分。';
+      toast('代码读取成功，点“分析并评分”');
+      grade();
+    };
+    reader.onerror = function(){ toast('读取失败，试试直接粘贴代码'); };
+    reader.readAsText(f, 'utf-8');
+  }
+  $('#clearCodeBtn').addEventListener('click', function(){
+    $('#codeInput').value = '';
+    $('#fileInfo').textContent = '';
+    $('#report').style.display = 'none';
+    $('#status3').style.display = 'none';
+  });
+
+  /* ---- 评分引擎 ---- */
+  function analyze(code){
+    var s = code || '';
+    var items = [];
+    function chk(cat, pts, ok, name, tip){
+      items.push({ cat:cat, pts:pts, ok:ok, name:name, tip:tip });
+      return ok ? pts : 0;
+    }
+    var score = { correct:0, robust:0, fun:0 };
+
+    /* --- 正确性 60 --- */
+    score.correct += chk('correct', 8,
+      /(^|\n)\s*(import\s+random\b|from\s+random\s+import)/i.test(s),
+      '导入了随机模块 import random',
+      '开头加上 import random——没有它，随机函数会直接报错 NameError');
+    score.correct += chk('correct', 8,
+      /randint\s*\(/i.test(s),
+      '用 random.randint() 生成随机答案',
+      '答案应该由 random.randint(1, 100) 生成，而不是写死的数字');
+    score.correct += chk('correct', 6,
+      /randint\s*\(\s*1\s*,\s*100\s*\)|randint\s*\(\s*1\s*,\s*100\s*\)/i.test(s),
+      '随机范围是 1~100',
+      '把范围写成 randint(1, 100)，和游戏规则保持一致');
+    score.correct += chk('correct', 8,
+      /\binput\s*\(/.test(s),
+      '用 input() 让玩家输入猜测',
+      '加上 input()，让玩家能把猜的数告诉程序');
+    score.correct += chk('correct', 6,
+      /\bint\s*\(/.test(s),
+      '用 int() 把输入转换成整数',
+      'input() 得到的是文字，要用 int() 转成整数才能比大小');
+    score.correct += chk('correct', 8,
+      /\bif\b[^:\n]*(<|>|==|!=)/.test(s),
+      '用 if 条件语句比较大小',
+      '程序需要 if 来判断“猜大了还是猜小了”');
+    score.correct += chk('correct', 8,
+      /\bwhile\b/.test(s),
+      '用 while 循环支持多次猜测',
+      '加一个 while 循环，让玩家猜不对可以继续猜');
+    score.correct += chk('correct', 8,
+      (/==/.test(s) || /\bbreak\b/.test(s)),
+      '有“猜中了就结束”的逻辑（== 判断或 break）',
+      '需要判断“猜中了”：用 == 比较，命中后 break 或结束循环');
+
+    /* --- 健壮性 20 --- */
+    score.robust += chk('robust', 8,
+      /\btry\b[\s\S]*\bexcept\b/.test(s),
+      '用 try/except 防止输入文字导致报错',
+      '玩家可能输入文字！用 try/except 把 int() 包起来，程序就不会崩溃');
+    score.robust += chk('robust', 6,
+      /input\s*\(\s*["'][^"']{2,}["']/.test(s),
+      'input() 里有友好提示文字',
+      '在 input() 的括号里写清提示，例如 input("你猜是几？")');
+    score.robust += chk('robust', 6,
+      (/次数|机会/.test(s)) || /\bwhile\b[^:\n]*[<>!=]/.test(s) || /\bwhile\s+True\b/.test(s),
+      '循环条件明确（限次数 / while True 配合结束条件）',
+      '想想：什么时候循环该停？可以限制次数，或者用 while True 加 break');
+
+    /* --- 趣味创新 20 --- */
+    score.fun += chk('fun', 6,
+      ((/[a-zA-Z_]\w*\s*=\s*0\b/.test(s)) && (/(\+=\s*1|=\s*[a-zA-Z_]\w*\s*\+\s*1|\+\+\+)/.test(s))) || /次数|机会/.test(s),
+      '记录并公布猜的次数',
+      '加一个计数器：count = 0，每次猜后 count = count + 1，结束时告诉大家用了几次');
+    score.fun += chk('fun', 5,
+      /恭喜|太棒|厉害|真棒|牛|成功|聪明|彩蛋|挑战|难度|🎉|👏|🌟|😀|😄| Amazing|amazing/i.test(s),
+      '输出文字有温度（鼓励语 / 表情 / 语气）',
+      'print 的文字可以更 fun：比如“🎉 恭喜你！”“就差一点点啦”');
+    score.fun += chk('fun', 9,
+      /\belif\b|\bfor\b|\bcontinue\b|难度|限制|最多|重新|再来|范围|最高|记录|等级|分段/i.test(s),
+      '有自己的拓展点子（限次数 / 难度分级 / 提示区间等）',
+      '试试课件里的拓展任务：记录猜的次数、限制最多 7 次，或者设计难度分级！');
+
+    return { items:items, score:score };
+  }
+
+  function grade(){
+    var code = $('#codeInput').value;
+    if (!code.trim()){ toast('先上传文件或粘贴代码'); return; }
+    var r = analyze(code);
+    var total = r.score.correct + r.score.robust + r.score.fun;
+
+    $('#report').style.display = 'block';
+    $('#status3').style.display = 'none';
+
+    var barC = $('#barC'), barR = $('#barR'), barF = $('#barF');
+    barC.style.width = '0'; barR.style.width = '0'; barF.style.width = '0';
+    setTimeout(function(){
+      barC.style.width = Math.round(r.score.correct / 60 * 100) + '%';
+      barR.style.width = Math.round(r.score.robust / 20 * 100) + '%';
+      barF.style.width = Math.round(r.score.fun / 20 * 100) + '%';
+    }, 60);
+    $('#valC').textContent = r.score.correct + ' / 60';
+    $('#valR').textContent = r.score.robust + ' / 20';
+    $('#valF').textContent = r.score.fun + ' / 20';
+
+    var stars = total >= 90 ? 5 : total >= 75 ? 4 : total >= 55 ? 3 : total >= 30 ? 2 : 1;
+    var starStr = '';
+    for (var i = 0; i < 5; i++) starStr += i < stars ? '⭐' : '☆';
+
+    var headline;
+    if (total >= 90) headline = '太出色了！这份程序要素齐全、考虑周到，还很有自己的创意。';
+    else if (total >= 75) headline = '很棒的程序！核心功能齐全，再补几个小细节就更完美了。';
+    else if (total >= 55) headline = '基本功能已经实现，对照下面的建议补一补，马上上一个台阶。';
+    else if (total >= 30) headline = '开了个好头！游戏还缺几个关键零件，按建议逐条加上去。';
+    else headline = '别灰心！先对照参考代码把游戏的基本骨架搭起来，再回来评分。';
+
+    $('#totalNum').innerHTML = total + '<small> 分</small>';
+    $('#totalTxt').innerHTML = starStr + '<br>' + headline;
+
+    var good = r.items.filter(function(it){ return it.ok; }).slice(0, 5);
+    var todo = r.items.filter(function(it){ return !it.ok; }).slice(0, 5);
+    $('#goodList').innerHTML = good.length
+      ? good.map(function(it){ return '<li>' + esc(it.name) + '</li>'; }).join('')
+      : '<li>暂时还没发现——从 import random 开始搭起来！</li>';
+    $('#todoList').innerHTML = todo.length
+      ? todo.map(function(it){ return '<li>' + esc(it.tip) + '</li>'; }).join('')
+      : '<li>没有明显缺项了，去挑战拓展任务吧！</li>';
+
+    /* 诊断：两个最关键的坑 */
+    var diagHtml = '';
+    var noImport = !/(^|\n)\s*import\s+random\b/i.test(code);
+    var noInt = !/\bint\s*\(/.test(code);
+    var noWhile = !/\bwhile\b/.test(code);
+    var noIf = !/\bif\b/.test(code);
+    function diag(title, text){ diagHtml += '<div class="it"><b>' + title + '</b>　' + text + '</div>'; }
+    if (noImport) diag('import random', '程序一运行就会报 NameError。它是让计算机学会“抽签”的钥匙，必须写在最前面。');
+    if (noInt) diag('int( )', 'input() 拿到的是文字，"30" > 25 会直接报错。记得 int() 转换后再比较。');
+    if (noWhile) diag('while', '现在只能猜一次游戏就结束了。while 循环能让玩家“猜不对就再来”。');
+    if (noIf) diag('if / else', '缺了条件判断，程序就不知道该说“大了”还是“小了”。');
+    if (diagHtml){
+      $('#diagList').innerHTML = diagHtml;
+      $('#diagBox').classList.add('show');
+    } else {
+      $('#diagBox').classList.remove('show');
+    }
+
+    if (total >= 20){
+      state.graded = true;
+      markDone(3);
+      toast('🧮 评分完成：' + total + ' 分 ' + starStr);
+    } else {
+      toast('评分完成，但代码还不完整，加油！');
+    }
+    refresh3();
+  }
+  $('#gradeBtn').addEventListener('click', grade);
+
+  function refresh3(){
+    if (state.promptDone && state.graded){
+      markDone(3);
+    }
+  }
+
+  /* =============== 探究四：观点投票 =============== */
+  var VOTE_REPLY = {
+    A:'大胆的想法！不过想一想：AI 写的程序<b>对不对、好不好</b>，谁来检查？如果看不懂代码，连 AI 写错了都发现不了。就像计算器算得快，但账要人会对。',
+    B:'说得非常好！AI 是<b>最聪明的助手</b>，但需求是你提的，问题是你分析的，结果是你验证的——<b>会提问、会检查</b>的人，才能把 AI 用好。',
+    C:'这个观点很成熟！简单重复的活交给 AI，关键的<b>思路设计和测试验证</b>要靠自己。今天你写提示词、给代码评分，就是在练这个本领。',
+    D:'没关系，先看一个事实：AI 写的代码要靠人<b>测试验证、多轮修改</b>才靠谱。学编程，学的正是“把问题想清楚”的本领——这恰恰是使用 AI 的入场券。'
+  };
+  $all('#voteBox button').forEach(function(b){
+    b.addEventListener('click', function(){
+      $all('#voteBox button').forEach(function(x){ x.classList.remove('sel'); });
+      b.classList.add('sel');
+      state.voteChoice = (b.dataset.v || '').toUpperCase();
+      state.voteLabel = b.dataset.label || b.textContent.replace(/^[A-D]\.\s*/, '').trim();
+      var echo = $('#voteEcho');
+      echo.style.display = 'block';
+      echo.innerHTML = '<b>你的选择：</b>' + esc(b.textContent) + '<br>' + (VOTE_REPLY[state.voteChoice] || '');
+      var submit4 = $('#submit-act4');
+      if (submit4 && !submit4.disabled) submit4.disabled = false;
+      toast('已选择 ' + state.voteChoice + '，请点下方提交');
+    });
+  });
+
+  var openAssistBtn = $('#openAlgoAssistantBtn');
+  if (openAssistBtn) {
+    openAssistBtn.addEventListener('click', function(){
+      state.openedAssistant = true;
+      window.open('/ai-lab/xiaopai-chat.html', '_blank', 'noopener');
+      toast('已打开算法小助手，生成代码后请粘贴回来评分');
+    });
+  }
+  ;[1,2,3,4].forEach(function(step){
+    var btn = $('#submit-act' + step);
+    if (btn) btn.addEventListener('click', function(){ trySubmitActivity(step); });
+  });
+
+  $('#restartBtn').addEventListener('click', function(){
+    state.played = false; state.orderDone = false;
+    state.fillDone = false; state.quizDone = false;
+    state.promptDone = false; state.graded = false; state.voted = false;
+    state.voteChoice = ''; state.voteLabel = ''; state.openedAssistant = false;
+    learnSpaceNotifiedSteps = {};
+    for (var i = 1; i <= 4; i++){
+      var pg = $('#pg' + i);
+      pg.classList.remove('on');
+      pg.querySelector('.dot').textContent = String(i);
+    }
+    $all('.chip').forEach(function(c){ c.classList.remove('done'); });
+    $('#gAfterNote').style.display = 'none';
+    newGame();
+    poolList = shuffle([0,1,2,3,4]); ansList = []; paintSteps();
+    $('#status1').className = 'status';
+    $('#status1').textContent = '两个小任务都完成，才能点亮第 1 颗星。';
+    fillSelects.forEach(function(sel){
+      sel.value = ''; sel.classList.remove('good','bad');
+    });
+    $('#statusFill').className = 'status';
+    $('#statusFill').innerHTML = '6 个空全部选对，练习 1 才算完成。';
+    quizOk = [false, false];
+    $all('#quizArea button').forEach(function(b){ b.classList.remove('right','wrong'); });
+    $all('#quizArea .fb').forEach(function(f){ f.classList.remove('show'); f.innerHTML=''; });
+    $('#promptInput').value = ''; paintKw();
+    $('#codeInput').value = ''; $('#fileInfo').textContent = '';
+    $('#report').style.display = 'none';
+    $('#status3').style.display = 'none';
+    $('#voteEcho').style.display = 'none';
+    $all('#voteBox button').forEach(function(x){ x.classList.remove('sel'); });
+    ;[1,2,3,4].forEach(function(step){
+      var ok = document.getElementById('submit-ok-' + step);
+      var btn = document.getElementById('submit-act' + step);
+      if (ok) ok.style.display = 'none';
+      if (btn) {
+        btn.disabled = step === 4;
+        btn.textContent = step === 4 ? '提交观点' : '提交任务';
+      }
+    });
+    setPanel(1);
+    toast('已重新开始，再探究一遍吧！');
+  });
+
+  /* =============== 初始化 =============== */
+  applyEmbeddedChrome();
+  newGame();
+  poolList = shuffle([0,1,2,3,4]);
+  paintSteps();
+  paintKw();
+  // 嵌入时按左侧栏 activityIndex/step 打开对应探究（避免总是停在探究一）
+  setPanel(activityIndexFromUrl(1));
+})();
+</script>
+</body>
+</html>

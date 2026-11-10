@@ -326,10 +326,17 @@ CREATE TABLE learn_pretest_g6 (
 -- ============================================================
 
 -- ============================================================
--- 初始化演示数据（密码均为 123456，BCrypt加密）
+-- 初始化演示数据
+-- admin/teacher1 临时强口令 BjSy@2026Edu!（上线后请立刻修改）
+-- student1～3 默认禁用，避免公网弱口令演示账号
 -- 密码用 CONCAT(CHAR(36),...) 拼出 $，避免 Navicat 等工具把 $ 当变量解析导致整文件失败
 -- ============================================================
-INSERT INTO sys_user (username, password, real_name, role, class_id, status) VALUES ('admin', CONCAT(CHAR(36),'2b',CHAR(36),'10',CHAR(36),'W/PCZrjdz.jTDLRRklWBzumK7tDUmpuk/pseBDLVylqyvSfyb7HOK'), '系统管理员', 'ADMIN', NULL, 1), ('teacher1', CONCAT(CHAR(36),'2b',CHAR(36),'10',CHAR(36),'W/PCZrjdz.jTDLRRklWBzumK7tDUmpuk/pseBDLVylqyvSfyb7HOK'), '张老师', 'TEACHER', NULL, 1), ('student1', CONCAT(CHAR(36),'2b',CHAR(36),'10',CHAR(36),'W/PCZrjdz.jTDLRRklWBzumK7tDUmpuk/pseBDLVylqyvSfyb7HOK'), '李明', 'STUDENT', 1, 1), ('student2', CONCAT(CHAR(36),'2b',CHAR(36),'10',CHAR(36),'W/PCZrjdz.jTDLRRklWBzumK7tDUmpuk/pseBDLVylqyvSfyb7HOK'), '王芳', 'STUDENT', 1, 1), ('student3', CONCAT(CHAR(36),'2b',CHAR(36),'10',CHAR(36),'W/PCZrjdz.jTDLRRklWBzumK7tDUmpuk/pseBDLVylqyvSfyb7HOK'), '赵强', 'STUDENT', 1, 1);
+INSERT INTO sys_user (username, password, real_name, role, class_id, status) VALUES
+('admin', CONCAT(CHAR(36),'2y',CHAR(36),'10',CHAR(36),'islenEv.SS7OgNwFAq8sG.Tz4o3a1oNOuEakDJCrU1Tb/3egMN6DG'), '系统管理员', 'ADMIN', NULL, 1),
+('teacher1', CONCAT(CHAR(36),'2y',CHAR(36),'10',CHAR(36),'islenEv.SS7OgNwFAq8sG.Tz4o3a1oNOuEakDJCrU1Tb/3egMN6DG'), '张老师', 'TEACHER', NULL, 1),
+('student1', CONCAT(CHAR(36),'2y',CHAR(36),'10',CHAR(36),'islenEv.SS7OgNwFAq8sG.Tz4o3a1oNOuEakDJCrU1Tb/3egMN6DG'), '李明', 'STUDENT', 1, 0),
+('student2', CONCAT(CHAR(36),'2y',CHAR(36),'10',CHAR(36),'islenEv.SS7OgNwFAq8sG.Tz4o3a1oNOuEakDJCrU1Tb/3egMN6DG'), '王芳', 'STUDENT', 1, 0),
+('student3', CONCAT(CHAR(36),'2y',CHAR(36),'10',CHAR(36),'islenEv.SS7OgNwFAq8sG.Tz4o3a1oNOuEakDJCrU1Tb/3egMN6DG'), '赵强', 'STUDENT', 1, 0);
 
 INSERT INTO sys_class (name, grade_name, teacher_id) VALUES ('七年级1班', '七年级', 2);
 

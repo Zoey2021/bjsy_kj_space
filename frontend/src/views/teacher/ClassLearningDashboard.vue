@@ -382,20 +382,29 @@
 
       <section v-if="themeActivity" class="matrix-section theme-section">
         <div class="section-head">
-          <h3><span class="sec-icon">◎</span> 探究三 · 调查主题</h3>
+          <h3><span class="sec-icon">◎</span> {{ themeSectionTitle }}</h3>
           <span class="theme-count">已填写 {{ themeGroups.filled }} / {{ themeGroups.rows.length }} 人</span>
         </div>
-        <p class="park-tip">学生写下的原话按完全相同分成一组，方便按主题分组。说法接近但不一样的，可以再合并到同一组。</p>
+        <p class="park-tip">{{ themeSectionTip }}</p>
+        <div v-if="themeGroups.groups.length && themeIsVote" class="vote-bars">
+          <div v-for="group in themeVoteBars" :key="group.theme" class="vote-bar-row">
+            <div class="vote-bar-label">{{ group.theme }}</div>
+            <div class="vote-bar-track">
+              <i :style="{ width: group.percent + '%' }" />
+            </div>
+            <div class="vote-bar-count">{{ group.names.length }} 人</div>
+          </div>
+        </div>
         <div v-if="themeGroups.groups.length" class="theme-list">
           <div v-for="group in themeGroups.groups" :key="group.theme" class="theme-card">
             <div class="theme-head">
               <strong>{{ group.theme }}</strong>
               <span>{{ group.names.length }} 人</span>
             </div>
-            <p>{{ group.names.join('、') }}</p>
+            <p>{{ group.names.join('、') || '—' }}</p>
           </div>
         </div>
-        <p v-else class="empty-hint">还没有学生写下调查主题。</p>
+        <p v-else class="empty-hint">{{ themeIsVote ? '还没有学生提交观点。' : (themeIsOpenIdea ? '还没有学生提交想法。' : '还没有学生写下调查主题。') }}</p>
         <p v-if="themeGroups.missing.length" class="theme-missing">还没写：{{ themeGroups.missing.join('、') }}</p>
       </section>
 
@@ -511,7 +520,7 @@
       <el-table :data="detailRows" stripe max-height="360" size="small">
         <el-table-column prop="realName" label="姓名" width="100" />
         <el-table-column prop="username" label="学号" width="100" />
-        <el-table-column v-if="detailHasTheme" label="调查主题" min-width="180">
+        <el-table-column v-if="detailHasTheme" :label="themeFieldLabel" min-width="180">
           <template #default="{ row }">{{ row.surveyTheme || '—' }}</template>
         </el-table-column>
         <el-table-column v-if="detailMode === 'submitted'" label="得分" width="70">
@@ -693,6 +702,48 @@ const themeActivity = computed(() =>
   (data.value.activities || []).find((act) => Array.isArray(act.surveyThemes)) || null
 )
 
+const themeIsVote = computed(() => {
+  const act = themeActivity.value
+  if (!act) return false
+  if (act.voteChart || act.type === 'VOTE' || act.type === 'SURVEY') return true
+  const title = String(act.title || '')
+  return title.includes('投票') || title.includes('观点')
+})
+
+const themeIsOpenIdea = computed(() => {
+  const act = themeActivity.value
+  if (!act || themeIsVote.value) return false
+  if (act.openResponses || act.surveyTheme) return true
+  const title = String(act.title || '')
+  return title.includes('验证与升级') || title.includes('开放')
+})
+
+const themeFieldLabel = computed(() => {
+  if (themeIsVote.value) return '选项'
+  if (themeIsOpenIdea.value) return '学生想法'
+  return '调查主题'
+})
+
+const themeSectionTitle = computed(() => {
+  const act = themeActivity.value
+  if (!act) return '调查汇总'
+  if (themeIsVote.value) {
+    return `探究${chineseNum(act.index)} · ${act.title || '观点投票'}`
+  }
+  if (themeIsOpenIdea.value) {
+    return `探究${chineseNum(act.index)} · ${act.title || '开放想法'}（想法汇总）`
+  }
+  return `探究${chineseNum(act.index)} · ${act.title || '调查主题'}`
+})
+
+const themeSectionTip = computed(() =>
+  themeIsVote.value
+    ? '按选项统计人数，下方列出每位学生的选择，方便课堂讲评。'
+    : themeIsOpenIdea.value
+      ? '学生提交的开放想法按原文分组汇总，方便课堂点评和归类。'
+      : '学生写下的原话按完全相同分成一组，方便按主题分组。说法接近但不一样的，可以再合并到同一组。'
+)
+
 const themeGroups = computed(() => {
   const rows = themeActivity.value?.surveyThemes || []
   const grouped = new Map()
@@ -708,8 +759,21 @@ const themeGroups = computed(() => {
   })
   const groups = [...grouped.entries()]
     .map(([theme, names]) => ({ theme, names }))
-    .sort((a, b) => b.names.length - a.names.length || a.theme.localeCompare(b.theme, 'zh-CN'))
+    .sort((a, b) => {
+      const ka = String(a.theme).charAt(0)
+      const kb = String(b.theme).charAt(0)
+      if (/[A-D]/.test(ka) && /[A-D]/.test(kb) && ka !== kb) return ka.localeCompare(kb)
+      return b.names.length - a.names.length || a.theme.localeCompare(b.theme, 'zh-CN')
+    })
   return { rows, groups, missing, filled: rows.length - missing.length }
+})
+
+const themeVoteBars = computed(() => {
+  const total = Math.max(1, themeGroups.value.filled)
+  return themeGroups.value.groups.map((g) => ({
+    ...g,
+    percent: Math.round((g.names.length * 1000) / total) / 10
+  }))
 })
 
 const matrixColumns = computed(() =>
@@ -1777,6 +1841,50 @@ watch(() => [quiz.value.dimensions, evaluation.value.dimensions], () => nextTick
 .theme-head span { color: #5b4fc7; font-weight: 700; }
 .theme-card p { margin: 0; color: #334155; line-height: 1.6; }
 .theme-missing { margin: 10px 0 0; color: #64748b; font-size: 13px; }
+.vote-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: #faf9ff;
+  border: 1px solid #e9e5ff;
+  border-radius: 12px;
+}
+.vote-bar-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.4fr) 2fr 64px;
+  gap: 10px;
+  align-items: center;
+}
+.vote-bar-label {
+  font-size: 13px;
+  color: #312e81;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.vote-bar-track {
+  height: 12px;
+  border-radius: 999px;
+  background: #ede9fe;
+  overflow: hidden;
+}
+.vote-bar-track i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+  border-radius: 999px;
+}
+.vote-bar-count {
+  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4338ca;
+}
+@media (max-width: 720px) {
+  .vote-bar-row { grid-template-columns: 1fr; gap: 4px; }
+  .vote-bar-count { text-align: left; }
+}
 .tier-counts {
   display: flex;
   flex-wrap: wrap;

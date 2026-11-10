@@ -19,12 +19,22 @@
             v-for="lesson in unit.lessons"
             :key="lesson.id"
             class="lesson-card"
-            :class="statusClass(lesson.status)"
+            :class="[
+              statusClass(lesson.status),
+              { expired: isExpired(lesson), 'is-teacher': mode === 'teacher' }
+            ]"
             @click="onLessonClick(lesson)"
           >
             <div class="lesson-title">{{ lesson.title }}</div>
-            <el-progress v-if="mode === 'student'" :percentage="lesson.progressPercent" :stroke-width="6" />
-            <el-tag v-if="mode === 'student'" size="small" :type="tagType(lesson.status)">
+            <el-progress
+              v-if="mode === 'student' && !isExpired(lesson)"
+              :percentage="lesson.progressPercent"
+              :stroke-width="6"
+            />
+            <el-tag v-if="mode === 'student' && isExpired(lesson)" size="small" type="info" effect="plain">
+              已过期
+            </el-tag>
+            <el-tag v-else-if="mode === 'student'" size="small" :type="tagType(lesson.status)">
               {{ statusText(lesson.status) }}
             </el-tag>
           </div>
@@ -37,6 +47,8 @@
 
 <script setup>
 import { computed } from 'vue'
+import { ElMessage } from 'element-plus'
+import { isExpiredLesson, expiredLessonMeta } from '../../constants/expiredLessons'
 
 const props = defineProps({
   tree: { type: Object, required: true },
@@ -50,7 +62,17 @@ const totalLessons = computed(() => {
   return props.tree.units.reduce((n, u) => n + (u.lessons?.length || 0), 0)
 })
 
-const onLessonClick = (lesson) => emit('lesson-click', lesson)
+const isExpired = (lesson) =>
+  props.mode === 'student' && isExpiredLesson(lesson, props.tree?.name || '')
+
+const onLessonClick = (lesson) => {
+  if (isExpired(lesson)) {
+    const meta = expiredLessonMeta(lesson, props.tree?.name || '')
+    ElMessage.info(meta?.tip || '本课已过期，资源已收回。')
+    return
+  }
+  emit('lesson-click', lesson)
+}
 
 const statusClass = (s) => ({ NOT_STARTED: 'not-started', IN_PROGRESS: 'in-progress', COMPLETED: 'completed' }[s] || '')
 const statusText = (s) => ({ NOT_STARTED: '未开始', IN_PROGRESS: '学习中', COMPLETED: '已完成' }[s] || s)
@@ -127,4 +149,17 @@ const tagType = (s) => ({ NOT_STARTED: 'info', IN_PROGRESS: 'warning', COMPLETED
 }
 .lesson-card.in-progress { border-color: #fcd34d; }
 .lesson-card.completed { border-color: #86efac; }
+.lesson-card.expired {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.88;
+}
+.lesson-card.expired:hover {
+  transform: none;
+  box-shadow: none;
+}
+.lesson-card.expired .lesson-title {
+  color: #64748b;
+}
 </style>

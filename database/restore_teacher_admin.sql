@@ -1,9 +1,10 @@
--- 恢复教师/管理员登录账号（密码均为 123456）
--- 在宝塔终端执行，或导入到 phpMyAdmin / Navicat
+-- 【生产请勿使用】本脚本会把管理员/教师密码恢复为弱口令 123456。
+-- 安全加固后请改用：database/harden_passwords.sql
+-- 仅本地空库救急时可执行；执行后请立刻登录并改密。
 SET NAMES utf8mb4;
 USE learn_space;
 
--- 与系统原演示账号相同的 BCrypt（明文 123456）
+-- 与系统原演示账号相同的 BCrypt（明文 123456）——弱口令，公网环境禁止保留
 SET @pwd = CONCAT(CHAR(36),'2b',CHAR(36),'10',CHAR(36),'W/PCZrjdz.jTDLRRklWBzumK7tDUmpuk/pseBDLVylqyvSfyb7HOK');
 
 INSERT INTO sys_user (username, password, real_name, role, class_id, status)
