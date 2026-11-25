@@ -86,32 +86,54 @@ public class ScratchCommunityService {
                 "UPDATE scratch_project SET status = ?, published = 0, updated_at = NOW() "
                         + "WHERE (sb3_path IS NULL OR TRIM(sb3_path) = '')",
                 STATUS_WITHDRAWN);
-        // 江辰兮内置样例：作品名「勇闯星际」、作者 2021级9班、封面图
+        // 江辰兮内置样例（按 sb3 路径幂等上架）
+        ensureBuiltinSample("勇闯星际", "江辰兮", "2021级9班",
+                "/scratch-samples/jiangchenxi.sb3",
+                "/scratch-samples/jiangchenxi-cover.png");
+        ensureBuiltinSample("猫抓老鼠", "江辰兮", "2021级9班",
+                "/scratch-samples/jiangchenxi-cat-mouse.sb3",
+                "/scratch-samples/jiangchenxi-cat-mouse-cover.png");
+        // 兼容旧标题「609班江辰兮」：若仍挂旧路径，归并到「勇闯星际」
         if (resolveExistingFile("/scratch-samples/jiangchenxi.sb3") != null) {
-            final String sampleSb3 = "/scratch-samples/jiangchenxi.sb3";
-            final String sampleCover = "/scratch-samples/jiangchenxi-cover.png";
-            final String sampleTitle = "勇闯星际";
-            final String sampleAuthor = "江辰兮";
-            final String sampleClass = "2021级9班";
-            int fixed = jdbcTemplate.update(
+            jdbcTemplate.update(
                     "UPDATE scratch_project SET title = ?, author_name = ?, class_name = ?, cover_url = ?, "
                             + "sb3_path = ?, status = ?, published = 1, featured = 1, "
                             + "reject_reason = NULL, updated_at = NOW() "
-                            + "WHERE sb3_path = ? OR title LIKE '%江辰兮%' OR title = ?",
-                    sampleTitle, sampleAuthor, sampleClass, sampleCover,
-                    sampleSb3, STATUS_PUBLISHED, sampleSb3, sampleTitle);
-            if (fixed == 0) {
-                Integer n = jdbcTemplate.queryForObject(
-                        "SELECT COUNT(*) FROM scratch_project WHERE sb3_path = ?",
-                        Integer.class, sampleSb3);
-                if (n == null || n == 0) {
-                    long id = insertProject(sampleTitle, null, sampleAuthor, null, sampleClass,
-                            sampleSb3, 1, 1, STATUS_PUBLISHED);
-                    jdbcTemplate.update(
-                            "UPDATE scratch_project SET cover_url = ?, updated_at = NOW() WHERE id = ?",
-                            sampleCover, id);
-                }
-            }
+                            + "WHERE title = '609班江辰兮' OR (title LIKE '%江辰兮%' AND title <> '猫抓老鼠' "
+                            + "AND title <> '勇闯星际' AND (sb3_path IS NULL OR sb3_path = '' "
+                            + "OR sb3_path = '/scratch-samples/jiangchenxi.sb3'))",
+                    "勇闯星际", "江辰兮", "2021级9班",
+                    "/scratch-samples/jiangchenxi-cover.png",
+                    "/scratch-samples/jiangchenxi.sb3", STATUS_PUBLISHED);
+        }
+    }
+
+    /** 内置示范作品：存在 .sb3 则发布/刷新元数据；仅按 sb3_path 匹配，互不覆盖。 */
+    private void ensureBuiltinSample(String title, String authorName, String className,
+                                     String sb3Path, String coverUrl) {
+        if (resolveExistingFile(sb3Path) == null) {
+            return;
+        }
+        String cover = (coverUrl != null && resolveExistingFile(coverUrl) != null) ? coverUrl : "";
+        int fixed = jdbcTemplate.update(
+                "UPDATE scratch_project SET title = ?, author_name = ?, class_name = ?, cover_url = ?, "
+                        + "sb3_path = ?, status = ?, published = 1, featured = 1, "
+                        + "reject_reason = NULL, updated_at = NOW() WHERE sb3_path = ?",
+                title, authorName, className, cover, sb3Path, STATUS_PUBLISHED, sb3Path);
+        if (fixed > 0) {
+            return;
+        }
+        Integer n = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM scratch_project WHERE sb3_path = ?",
+                Integer.class, sb3Path);
+        if (n != null && n > 0) {
+            return;
+        }
+        long id = insertProject(title, null, authorName, null, className, sb3Path, 1, 1, STATUS_PUBLISHED);
+        if (cover != null && !cover.isEmpty()) {
+            jdbcTemplate.update(
+                    "UPDATE scratch_project SET cover_url = ?, updated_at = NOW() WHERE id = ?",
+                    cover, id);
         }
     }
 
