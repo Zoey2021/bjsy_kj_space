@@ -32,6 +32,16 @@ export const teacherGetPretestG6 = (classId) =>
   request.get('/teacher/pretest/g6', { params: { classId } })
 export const teacherClearPretestG6 = (classId) =>
   request.delete('/teacher/pretest/g6', { params: { classId } })
+
+/** 单元小测 */
+export const getUnitQuiz = (lessonId) => request.get(`/learn/unit-quiz/${lessonId}`)
+export const submitUnitQuiz = (lessonId, data) => request.post(`/learn/unit-quiz/${lessonId}/submit`, data)
+export const teacherGetUnitQuiz = (lessonId, classId) =>
+  request.get(`/teacher/unit-quiz/${lessonId}`, { params: { classId } })
+export const teacherGradeUnitQuiz = (lessonId, data) =>
+  request.post(`/teacher/unit-quiz/${lessonId}/grade`, data)
+export const teacherAutoScoreUnitQuiz = (lessonId, studentId) =>
+  request.get(`/teacher/unit-quiz/${lessonId}/auto-score`, { params: { studentId } })
 export const getParkApplications = (classId, lessonId) =>
   request.get('/teacher/park/applications', { params: { classId, lessonId } })
 export const reviewParkAccess = (data) => request.post('/teacher/park/review', data)
@@ -206,3 +216,33 @@ export const teacherOverrideTier = (data) => request.post('/teacher/tiers/overri
 export const getLessonContent = (lessonId) =>
   request.get('/learn/lesson-content', { params: { lessonId } })
 export const reportHintUsed = (data) => request.post('/learn/hint-used', data)
+
+/** Scratch 作品社区（科技空间） */
+export const listScratchProjects = (sort = 'hot') =>
+  request.get('/scratch/projects', { params: { sort } })
+export const listMyScratchProjects = () => request.get('/scratch/mine')
+export const getScratchProject = (id) => request.get(`/scratch/projects/${id}`)
+export const likeScratchProject = (id) => request.post(`/scratch/projects/${id}/like`)
+export const submitScratchProject = (title, file) => {
+  const form = new FormData()
+  form.append('title', title)
+  form.append('file', file)
+  return request.post('/scratch/projects', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000
+  })
+}
+export const teacherScratchList = (status) =>
+  request.get('/scratch/teacher/projects', { params: status ? { status } : {} })
+export const teacherScratchCounts = () => request.get('/scratch/teacher/counts')
+export const teacherScratchReview = (id, data) =>
+  request.post(`/scratch/teacher/projects/${id}/review`, data)
+export const teacherScratchPublish = (title, file) => {
+  const form = new FormData()
+  form.append('title', title)
+  form.append('file', file)
+  return request.post('/scratch/teacher/publish', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000
+  })
+}

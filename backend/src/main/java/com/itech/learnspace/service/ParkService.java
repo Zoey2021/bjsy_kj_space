@@ -41,6 +41,7 @@ public class ParkService {
     private final CourseTaskRepository taskRepository;
     private final LearnSubmissionRepository submissionRepository;
     private final LearnSubmissionLogRepository submissionLogRepository;
+    private final UnitQuizSubmissionRepository unitQuizSubmissionRepository;
     private final DashboardService dashboardService;
     private final SseService sseService;
     private final LearnPointsRepository pointsRepository;
@@ -57,6 +58,7 @@ public class ParkService {
                        CourseTaskRepository taskRepository,
                        LearnSubmissionRepository submissionRepository,
                        LearnSubmissionLogRepository submissionLogRepository,
+                       UnitQuizSubmissionRepository unitQuizSubmissionRepository,
                        DashboardService dashboardService,
                        SseService sseService,
                        LearnPointsRepository pointsRepository) {
@@ -69,6 +71,7 @@ public class ParkService {
         this.taskRepository = taskRepository;
         this.submissionRepository = submissionRepository;
         this.submissionLogRepository = submissionLogRepository;
+        this.unitQuizSubmissionRepository = unitQuizSubmissionRepository;
         this.dashboardService = dashboardService;
         this.sseService = sseService;
         this.pointsRepository = pointsRepository;
@@ -316,7 +319,7 @@ public class ParkService {
 
         if ("approve".equals(action)) {
             if (!isLessonCompleted(student.getId(), access.getLessonId())) {
-                throw new BusinessException("学生还需完成全部探究活动、课堂小测和学习评价后才能授权");
+                throw new BusinessException("学生还需完成当前课时要求的任务后才能授权（单元小测需先提交）");
             }
             access.setStatus("APPROVED");
         } else if ("reject".equals(action)) {
@@ -648,8 +651,9 @@ public class ParkService {
     }
 
     /**
-     * 游学乐园可申请的条件：当节课的探究活动、课堂小测、学习评价都已提交。
-     * 只交过其中一项，或课时进度被标成已完成，都不算完成。
+     * 游学乐园可申请的条件：
+     * - 普通工作台课：探究活动、课堂小测、学习评价都已提交；
+     * - 单元小测课：已提交单元小测（系统自动批改后即可申请）。
      */
     boolean isLessonCompleted(Long studentId, Long lessonId) {
         return missingParts(studentId, lessonId).isEmpty();
@@ -664,10 +668,27 @@ public class ParkService {
         return "请先完成当前课程" + title + String.join("、", missing) + "后再申请";
     }
 
+    private boolean isUnitQuizDone(Long studentId, Long lessonId) {
+        return unitQuizSubmissionRepository.findByLessonIdAndStudentId(lessonId, studentId)
+                .map(row -> {
+                    String st = row.getStatus();
+                    return "SUBMITTED".equals(st) || "GRADED".equals(st);
+                })
+                .orElse(false);
+    }
+
     private List<String> missingParts(Long studentId, Long lessonId) {
         List<String> missing = new ArrayList<String>();
         if (studentId == null || lessonId == null) {
             missing.add("全部探究活动、课堂小测和学习评价");
+            return missing;
+        }
+        // 课时标题含「单元小测」时，只认单元小测提交
+        CourseLesson lesson = lessonRepository.findById(lessonId).orElse(null);
+        if (lesson != null && lesson.getTitle() != null && lesson.getTitle().contains("单元小测")) {
+            if (!isUnitQuizDone(studentId, lessonId)) {
+                missing.add("单元小测");
+            }
             return missing;
         }
         List<CourseTask> tasks = taskRepository.findByLessonIdOrderBySortOrderAsc(lessonId);
@@ -681,7 +702,14 @@ public class ParkService {
             }
             try {
                 JsonNode cfg = objectMapper.readTree(task.getConfigJson() != null ? task.getConfigJson() : "{}");
-                if (!"student_workspace".equals(cfg.path("layout").asText())) {
+                String layout = cfg.path("layout").asText();
+                if ("unit_quiz".equals(layout)) {
+                    if (!isUnitQuizDone(studentId, lessonId)) {
+                        missing.add("单元小测");
+                    }
+                    return missing;
+                }
+                if (!"student_workspace".equals(layout)) {
                     continue;
                 }
                 Set<Integer> required = new HashSet<Integer>();

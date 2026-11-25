@@ -543,11 +543,6 @@
         <button data-v="D" data-label="我还没想清楚，想听听大家的意见">D. 🤔 我还没想清楚，想听听大家的意见</button>
       </div>
       <div class="note teal" id="voteEcho" style="display:none"></div>
-      <div class="submit-card">
-        <p class="submit-hint">选定观点后点「提交观点」，老师端会统计各选项人数并显示条形图。</p>
-        <button type="button" class="btn primary" id="submit-act4" disabled>提交观点</button>
-        <div class="submit-ok" id="submit-ok-4">✅ 观点已提交，等待老师汇总全班结果</div>
-      </div>
 
       <div class="p-head" style="margin-top:26px"><span class="badge teal">课程总结</span><h2>AI 辅助算法实现的四步法</h2></div>
       <div class="flow">
@@ -561,8 +556,11 @@
         <b>今天你收获了：</b>玩会了猜数字 → 读懂了 input()、if/else、while → 学会写清晰的提示词 → 还给自己的代码做了体检。<br>
         <b>一句话：</b>AI 负责打字快，<b>你负责想得对</b>。
       </div>
-      <div class="btnrow">
-        <button class="btn ghost" id="restartBtn">重新开始探究</button>
+
+      <div class="submit-card" style="margin-top:18px">
+        <p class="submit-hint">选定观点后，在课程总结下方点「提交观点」。老师端会统计各选项人数并显示条形图。</p>
+        <button type="button" class="btn primary" id="submit-act4" disabled>提交观点</button>
+        <div class="submit-ok" id="submit-ok-4">✅ 观点已提交，等待老师汇总全班结果</div>
       </div>
     </div>
   </section>
@@ -585,7 +583,7 @@
     clearTimeout(t._t);
     t._t = setTimeout(function(){ t.classList.remove('show'); }, 2200);
   }
-  var state = { step:1, played:false, orderDone:false, fillDone:false, quizDone:false, promptDone:false, graded:false, voted:false, voteChoice:'', voteLabel:'', openedAssistant:false };
+  var state = { step:1, played:false, orderDone:false, fillDone:false, quizDone:false, promptDone:false, graded:false, gradeTotal:'', voted:false, voteChoice:'', voteLabel:'', openedAssistant:false };
   var learnSpaceNotifiedSteps = {};
   function activityIndexFromUrl(fallback){
     try {
@@ -626,14 +624,25 @@
       if (!state.promptDone) { toast('请先写好提示词'); return; }
       if (!state.openedAssistant) { toast('请先打开算法小助手生成代码'); return; }
       if (!state.graded) { toast('请先粘贴代码并完成评分'); return; }
+      markSubmitted(3);
+      notifyLearnSpaceComplete(3, {
+        code: ($('#codeInput') && $('#codeInput').value) || '',
+        prompt: ($('#promptInput') && $('#promptInput').value) || '',
+        pythonCode: ($('#codeInput') && $('#codeInput').value) || '',
+        gradeTotal: state.gradeTotal || ''
+      });
+      toast('探究3已提交');
+      return;
     } else if (step === 4) {
       if (!state.voteChoice) { toast('请先选择一个观点'); return; }
+      state.voted = true;
       markSubmitted(4);
       markDone(4);
       notifyLearnSpaceComplete(4, {
         voteChoice: state.voteChoice,
         voteLabel: state.voteLabel,
-        surveyTheme: state.voteChoice + ' · ' + state.voteLabel
+        surveyTheme: state.voteChoice + ' · ' + state.voteLabel,
+        voted: true
       });
       toast('观点已提交');
       return;
@@ -1200,6 +1209,7 @@
       $('#diagBox').classList.remove('show');
     }
 
+    state.gradeTotal = total;
     if (total >= 20){
       state.graded = true;
       markDone(3);
@@ -1224,20 +1234,63 @@
     C:'这个观点很成熟！简单重复的活交给 AI，关键的<b>思路设计和测试验证</b>要靠自己。今天你写提示词、给代码评分，就是在练这个本领。',
     D:'没关系，先看一个事实：AI 写的代码要靠人<b>测试验证、多轮修改</b>才靠谱。学编程，学的正是“把问题想清楚”的本领——这恰恰是使用 AI 的入场券。'
   };
+  function paintVoteEcho(){
+    var echo = $('#voteEcho');
+    if (!echo) return;
+    if (!state.voteChoice) {
+      echo.style.display = 'none';
+      echo.innerHTML = '';
+      return;
+    }
+    var btn = document.querySelector('#voteBox button[data-v="' + state.voteChoice + '"]');
+    var title = btn ? btn.textContent : (state.voteChoice + '. ' + state.voteLabel);
+    echo.style.display = 'block';
+    echo.innerHTML = '<b>你的选择：</b>' + esc(title) + '<br>' + (VOTE_REPLY[state.voteChoice] || '');
+  }
   $all('#voteBox button').forEach(function(b){
     b.addEventListener('click', function(){
+      if (state.voted) { toast('观点已提交，不能再改'); return; }
       $all('#voteBox button').forEach(function(x){ x.classList.remove('sel'); });
       b.classList.add('sel');
       state.voteChoice = (b.dataset.v || '').toUpperCase();
       state.voteLabel = b.dataset.label || b.textContent.replace(/^[A-D]\.\s*/, '').trim();
-      var echo = $('#voteEcho');
-      echo.style.display = 'block';
-      echo.innerHTML = '<b>你的选择：</b>' + esc(b.textContent) + '<br>' + (VOTE_REPLY[state.voteChoice] || '');
+      paintVoteEcho();
       var submit4 = $('#submit-act4');
-      if (submit4 && !submit4.disabled) submit4.disabled = false;
-      toast('已选择 ' + state.voteChoice + '，请点下方提交');
+      if (submit4 && !state.voted) submit4.disabled = false;
+      toast('已选择 ' + state.voteChoice + '，请到课程总结下方提交');
     });
   });
+
+  window.__learnDraftExtra = function(){
+    return {
+      voted: !!state.voted,
+      voteChoice: state.voteChoice || '',
+      voteLabel: state.voteLabel || '',
+      notified: state.voted ? [4] : [],
+      code: ($('#codeInput') && $('#codeInput').value) || '',
+      pythonCode: ($('#codeInput') && $('#codeInput').value) || '',
+      prompt: ($('#promptInput') && $('#promptInput').value) || '',
+      gradeTotal: state.gradeTotal || ''
+    };
+  };
+  window.__learnApplyDraftExtra = function(extra){
+    if (!extra || typeof extra !== 'object') return;
+    if (extra.voteChoice) {
+      state.voteChoice = String(extra.voteChoice).toUpperCase();
+      state.voteLabel = extra.voteLabel || state.voteLabel || '';
+      $all('#voteBox button').forEach(function(x){
+        x.classList.toggle('sel', (x.dataset.v || '').toUpperCase() === state.voteChoice);
+      });
+      paintVoteEcho();
+      var submit4 = $('#submit-act4');
+      if (submit4 && !state.voted) submit4.disabled = false;
+    }
+    if (extra.voted) {
+      state.voted = true;
+      markSubmitted(4);
+      markDone(4);
+    }
+  };
 
   var openAssistBtn = $('#openAlgoAssistantBtn');
   if (openAssistBtn) {
@@ -1250,50 +1303,6 @@
   ;[1,2,3,4].forEach(function(step){
     var btn = $('#submit-act' + step);
     if (btn) btn.addEventListener('click', function(){ trySubmitActivity(step); });
-  });
-
-  $('#restartBtn').addEventListener('click', function(){
-    state.played = false; state.orderDone = false;
-    state.fillDone = false; state.quizDone = false;
-    state.promptDone = false; state.graded = false; state.voted = false;
-    state.voteChoice = ''; state.voteLabel = ''; state.openedAssistant = false;
-    learnSpaceNotifiedSteps = {};
-    for (var i = 1; i <= 4; i++){
-      var pg = $('#pg' + i);
-      pg.classList.remove('on');
-      pg.querySelector('.dot').textContent = String(i);
-    }
-    $all('.chip').forEach(function(c){ c.classList.remove('done'); });
-    $('#gAfterNote').style.display = 'none';
-    newGame();
-    poolList = shuffle([0,1,2,3,4]); ansList = []; paintSteps();
-    $('#status1').className = 'status';
-    $('#status1').textContent = '两个小任务都完成，才能点亮第 1 颗星。';
-    fillSelects.forEach(function(sel){
-      sel.value = ''; sel.classList.remove('good','bad');
-    });
-    $('#statusFill').className = 'status';
-    $('#statusFill').innerHTML = '6 个空全部选对，练习 1 才算完成。';
-    quizOk = [false, false];
-    $all('#quizArea button').forEach(function(b){ b.classList.remove('right','wrong'); });
-    $all('#quizArea .fb').forEach(function(f){ f.classList.remove('show'); f.innerHTML=''; });
-    $('#promptInput').value = ''; paintKw();
-    $('#codeInput').value = ''; $('#fileInfo').textContent = '';
-    $('#report').style.display = 'none';
-    $('#status3').style.display = 'none';
-    $('#voteEcho').style.display = 'none';
-    $all('#voteBox button').forEach(function(x){ x.classList.remove('sel'); });
-    ;[1,2,3,4].forEach(function(step){
-      var ok = document.getElementById('submit-ok-' + step);
-      var btn = document.getElementById('submit-act' + step);
-      if (ok) ok.style.display = 'none';
-      if (btn) {
-        btn.disabled = step === 4;
-        btn.textContent = step === 4 ? '提交观点' : '提交任务';
-      }
-    });
-    setPanel(1);
-    toast('已重新开始，再探究一遍吧！');
   });
 
   /* =============== 初始化 =============== */

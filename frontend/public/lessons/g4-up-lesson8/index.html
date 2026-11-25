@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第08课 图表呈现 · 上交作品</title>
+<script>
+(function () {
+  try {
+    var p = new URLSearchParams(location.search);
+    if (p.get('embedded') === '1' || p.get('embed') === '1') {
+      document.documentElement.classList.add('embedded-mode');
+    }
+  } catch (e) {}
+})();
+</script>
+<style>
+:root{
+  --bg:#eef7f5; --card:#fff; --ink:#1e2b33; --muted:#5d6d78;
+  --brand:#0f6d78; --soft:#eaf4f4; --line:#d8e2e4; --ok:#2c7a4b;
+  --accent:#c96a26; --ok-soft:#e6f5eb; --warn-soft:#fff6ec;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  background:
+    radial-gradient(1000px 420px at 0% -10%, #d7efea 0%, rgba(215,239,234,0) 60%),
+    radial-gradient(800px 360px at 100% 0%, #ffe9d6 0%, rgba(255,233,214,0) 55%),
+    var(--bg);
+  color:var(--ink); min-height:100vh;
+}
+.app{max-width:920px;margin:0 auto;padding:18px 18px 64px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:0 10px 28px rgba(15,109,120,.08)}
+.p-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.badge{background:var(--soft);color:var(--brand);font-size:12px;font-weight:700;padding:4px 11px;border-radius:999px}
+.p-head h2{margin:0;font-size:21px}
+.lead{color:var(--muted);font-size:14px;line-height:1.8;margin:8px 0 0}
+.lead b{color:var(--brand)}
+.taskbox{background:linear-gradient(180deg,#f2faf8,#fff);border:1px solid #cfe4e2;border-radius:12px;padding:14px 16px;margin-top:16px}
+.taskbox h3{margin:0 0 8px;font-size:14px;color:var(--brand)}
+.taskbox ol{margin:0;padding-left:20px;font-size:13.5px;line-height:1.9;color:#3d5560}
+.rubric{margin-top:16px;background:#fbfcfc;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.rubric h3{margin:0 0 10px;font-size:14px;color:var(--brand)}
+.check{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px dashed #e4ecec;font-size:14px;line-height:1.6}
+.check:last-child{border-bottom:none}
+.check input{margin-top:3px;accent-color:var(--brand);width:18px;height:18px;flex:0 0 auto}
+.up{
+  margin-top:16px;border:2px dashed #b8dadd;border-radius:14px;padding:28px 18px;text-align:center;
+  background:#f7fbfb;cursor:pointer;transition:.18s
+}
+.up:hover,.up.drag{border-color:var(--brand);background:var(--soft)}
+.up .ic{font-size:34px}
+.up .t{font-size:15px;font-weight:700;margin-top:8px}
+.up .s{font-size:12.5px;color:var(--muted);margin-top:4px}
+.upfile{display:none;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border:1px solid #cfe4e2;border-radius:10px;background:#fff}
+.upfile.show{display:flex}
+.upfile .nm{font-weight:600;color:var(--brand);word-break:break-all}
+.note{margin-top:14px;background:#f7fbfb;border:1px dashed #b8dadd;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.75;color:#3d5560}
+.note.warm{background:var(--warn-soft);border-color:#f0d2b0;color:#8a5a2c}
+.note.ok{background:var(--ok-soft);border-color:#b7dfc4;color:#215c38}
+.btn{border:none;border-radius:11px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn.primary{background:linear-gradient(140deg,#0f6d78,#1a8f9c);color:#fff;box-shadow:0 8px 18px rgba(15,109,120,.28)}
+.btn.primary:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.btn.ghost{background:#fff;border:1px solid var(--line);color:#42577a}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
+.toast{
+  position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+  background:#1e2b33;color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;
+  opacity:0;pointer-events:none;transition:.25s;z-index:99;max-width:90vw
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.submit-ok{display:none;margin-top:10px;color:var(--ok);font-weight:700;font-size:14px}
+.meta{font-size:12.5px;color:var(--muted);margin-top:8px}
+html.embedded-mode .app, body.embedded-mode .app{padding-top:10px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="p-head">
+      <span class="badge">上交作品</span>
+      <h2>第 8 课　图表呈现</h2>
+    </div>
+    <p class="lead">本课在学习空间里<strong>只要上交作品</strong>。请在 WPS / Excel 里按老师要求做好图表，保存成 <b>.xlsx</b> 后上传，并对照下面清单勾选，再点「提交作品」。</p>
+
+    <div class="taskbox">
+      <h3>交什么</h3>
+      <ol>
+        <li>用老师发的模板，做好图表后的 <b>Excel 文件（.xlsx）</b></li>
+        <li>工作表 1：为「手机时间」做一张 <b>柱形图</b></li>
+        <li>工作表 2：为「四种设备」做一张图表</li>
+        <li>图表要有清楚的标题，纵坐标写「时间（分钟）」</li>
+        <li>文件名建议：<b>班级+姓名</b>，例如 <code>401张三.xlsx</code></li>
+      </ol>
+    </div>
+
+    <div class="rubric" id="rubric">
+      <h3>提交前自查（每项对应课堂评分要求）</h3>
+      <label class="check"><input type="checkbox" data-k="c1"> 工作表 1 有「手机时间」柱形图</label>
+      <label class="check"><input type="checkbox" data-k="c2"> 工作表 2 有「四种设备」的图表</label>
+      <label class="check"><input type="checkbox" data-k="c3"> 图表标题写清楚了（不是默认的「图表标题」）</label>
+      <label class="check"><input type="checkbox" data-k="c4"> 有纵标题，写了单位（分钟）</label>
+      <label class="check"><input type="checkbox" data-k="c5"> 文件名按「班级+姓名」，图表没有挡住数据</label>
+    </div>
+
+    <div class="up" id="drop">
+      <div class="ic">📊</div>
+      <div class="t">把做好的图表文件拖到这里</div>
+      <div class="s">或点这里选择　·　请用 .xlsx（WPS 请另存为 Excel 文件）</div>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.et" hidden>
+    <div class="upfile" id="upFile">
+      <span>✅</span>
+      <span class="nm" id="upName"></span>
+      <button type="button" class="btn ghost" id="upAgain" style="margin-left:auto;padding:6px 12px;font-size:12px">换一个</button>
+    </div>
+    <p class="meta" id="fileMeta"></p>
+    <div class="note" id="hintBox">上传后，网页会粗略检查文件里有没有图表；标题、单位等请靠上面的自查勾选。</div>
+    <div class="note ok" id="okBox" style="display:none"></div>
+    <div class="note warm" id="errBox" style="display:none"></div>
+
+    <div class="btnrow">
+      <button type="button" class="btn primary" id="submitBtn" disabled>提交作品</button>
+      <span class="meta" id="readyHint">请先上传文件，并勾选自查项</span>
+    </div>
+    <div class="submit-ok" id="submitOk">✅ 作品已提交。接下来请完成课堂小测和学习评价。</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var params = new URLSearchParams(location.search);
+  var IS_EMBEDDED = params.get('embedded') === '1' || params.get('embed') === '1';
+  try {
+    if (!IS_EMBEDDED && window.parent && window.parent !== window) IS_EMBEDDED = true;
+  } catch (e) {}
+  if (IS_EMBEDDED) {
+    document.documentElement.classList.add('embedded-mode');
+    document.body.classList.add('embedded-mode');
+  }
+
+  function $(id) { return document.getElementById(id); }
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._t);
+    t._t = setTimeout(function () { t.classList.remove('show'); }, 2200);
+  }
+
+  var state = {
+    submitted: false,
+    fileName: '',
+    fileSize: 0,
+    chartCount: 0,
+    fileOk: false
+  };
+  var notified = false;
+
+  function activityIndex() {
+    var n = parseInt(params.get('activityIndex') || params.get('step') || '1', 10);
+    return Number.isFinite(n) ? n : 1;
+  }
+
+  function notifyComplete(extra) {
+    if (!window.parent || window.parent === window || notified) return;
+    notified = true;
+    var payload = {
+      activityIndex: activityIndex(),
+      step: 1,
+      stepCompleted: true,
+      source: 'g4-up-lesson8',
+      workSubmitted: true,
+      fileName: state.fileName,
+      fileSize: state.fileSize,
+      chartCount: state.chartCount
+    };
+    if (extra) {
+      for (var k in extra) {
+        if (Object.prototype.hasOwnProperty.call(extra, k)) payload[k] = extra[k];
+      }
+    }
+    window.parent.postMessage({ type: 'LEARN_SPACE_SUBMIT', payload: payload }, '*');
+  }
+
+  function checkedMap() {
+    var map = {};
+    document.querySelectorAll('#rubric input[type=checkbox]').forEach(function (el) {
+      map[el.getAttribute('data-k')] = !!el.checked;
+    });
+    return map;
+  }
+
+  function allChecked() {
+    var map = checkedMap();
+    return ['c1', 'c2', 'c3', 'c4', 'c5'].every(function (k) { return map[k]; });
+  }
+
+  function refreshReady() {
+    var ready = state.fileOk && allChecked() && !state.submitted;
+    $('submitBtn').disabled = !ready;
+    if (state.submitted) {
+      $('readyHint').textContent = '已提交';
+    } else if (!state.fileOk) {
+      $('readyHint').textContent = '请先上传 .xlsx 作品文件';
+    } else if (!allChecked()) {
+      $('readyHint').textContent = '请勾选全部自查项后再提交';
+    } else {
+      $('readyHint').textContent = '可以提交了';
+    }
+  }
+
+  function asciiHas(bytes, needle) {
+    var n = [];
+    for (var i = 0; i < needle.length; i++) n.push(needle.charCodeAt(i));
+    outer:
+    for (var i = 0; i < bytes.length - n.length; i++) {
+      for (var j = 0; j < n.length; j++) {
+        if (bytes[i + j] !== n[j]) continue outer;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function countChartsInXlsx(bytes) {
+    // 在 zip 中央目录/本地头里搜 xl/charts/chart*.xml 文件名（未压缩明文）
+    var key = 'xl/charts/chart';
+    var n = [];
+    for (var i = 0; i < key.length; i++) n.push(key.charCodeAt(i));
+    var count = 0;
+    for (var i = 0; i < bytes.length - n.length; i++) {
+      var ok = true;
+      for (var j = 0; j < n.length; j++) {
+        if (bytes[i + j] !== n[j]) { ok = false; break; }
+      }
+      if (ok) {
+        count++;
+        i += n.length;
+      }
+    }
+    // 每个 chartN.xml 通常在 local + central 各出现一次，取一半更接近真实张数
+    return Math.max(0, Math.round(count / 2));
+  }
+
+  function showErr(html) {
+    $('errBox').style.display = 'block';
+    $('errBox').innerHTML = html;
+    $('okBox').style.display = 'none';
+  }
+  function showOk(html) {
+    $('okBox').style.display = 'block';
+    $('okBox').innerHTML = html;
+    $('errBox').style.display = 'none';
+  }
+
+  async function handleFile(file) {
+    if (!file) return;
+    var name = file.name || '';
+    $('errBox').style.display = 'none';
+    $('okBox').style.display = 'none';
+    state.fileOk = false;
+    state.chartCount = 0;
+    state.fileName = name;
+    state.fileSize = file.size || 0;
+
+    if (/\.et$/i.test(name)) {
+      showErr('这是 WPS 的 <b>.et</b> 格式。请在 WPS 里「文件 → 另存为 → Excel 文件（*.xlsx）」后再上传。');
+      refreshReady();
+      return;
+    }
+    if (/\.xls$/i.test(name) && !/\.xlsx$/i.test(name)) {
+      showErr('这是旧版 .xls。请另存为 <b>.xlsx</b> 再上传。');
+      refreshReady();
+      return;
+    }
+    if (!/\.xlsx$/i.test(name)) {
+      showErr('请上传 <b>.xlsx</b> 文件。');
+      refreshReady();
+      return;
+    }
+
+    try {
+      var buf = new Uint8Array(await file.arrayBuffer());
+      if (!asciiHas(buf, 'PK')) {
+        showErr('文件打不开，请确认是 Excel 的 .xlsx。');
+        refreshReady();
+        return;
+      }
+      var charts = countChartsInXlsx(buf);
+      state.chartCount = charts;
+      state.fileOk = true;
+      $('upName').textContent = name;
+      $('upFile').classList.add('show');
+      $('fileMeta').textContent = '大小约 ' + Math.max(1, Math.round(state.fileSize / 1024)) + ' KB'
+        + (charts > 0 ? ('　·　检测到约 ' + charts + ' 张图表') : '　·　未检测到图表文件，请确认已插入图表');
+      if (charts >= 2) {
+        showOk('文件已就绪，并且检测到约 <b>' + charts + '</b> 张图表。请勾选自查项后提交。');
+      } else if (charts === 1) {
+        showOk('文件已就绪，目前检测到约 1 张图表。本课通常需要两张，请再检查工作表 2。');
+      } else {
+        showErr('文件能打开，但没找到图表。请先在表格里插入柱形图等图表，再另存上传。');
+        state.fileOk = false;
+      }
+    } catch (err) {
+      showErr('读取失败：' + (err && err.message ? err.message : '未知错误'));
+    }
+    refreshReady();
+  }
+
+  var drop = $('drop');
+  var fileInput = $('fileInput');
+  drop.addEventListener('click', function () { fileInput.click(); });
+  $('upAgain').addEventListener('click', function (e) {
+    e.stopPropagation();
+    fileInput.click();
+  });
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+  ;['dragenter', 'dragover'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) {
+      e.preventDefault();
+      drop.classList.add('drag');
+    });
+  });
+  ;['dragleave', 'drop'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) {
+      e.preventDefault();
+      drop.classList.remove('drag');
+      if (ev === 'drop' && e.dataTransfer && e.dataTransfer.files[0]) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+  });
+
+  document.querySelectorAll('#rubric input[type=checkbox]').forEach(function (el) {
+    el.addEventListener('change', refreshReady);
+  });
+
+  $('submitBtn').addEventListener('click', function () {
+    if (state.submitted) return;
+    if (!state.fileOk) { toast('请先上传作品'); return; }
+    if (!allChecked()) { toast('请勾选全部自查项'); return; }
+    state.submitted = true;
+    $('submitBtn').disabled = true;
+    $('submitBtn').textContent = '已提交';
+    $('submitOk').style.display = 'block';
+    document.querySelectorAll('#rubric input[type=checkbox]').forEach(function (el) {
+      el.disabled = true;
+    });
+    notifyComplete({
+      checklist: checkedMap(),
+      score: 100,
+      userScore: 100
+    });
+    toast('作品已提交');
+    refreshReady();
+  });
+
+  window.__learnDraftExtra = function () {
+    return {
+      submitted: state.submitted,
+      fileName: state.fileName,
+      fileSize: state.fileSize,
+      chartCount: state.chartCount,
+      checklist: checkedMap(),
+      notified: state.submitted ? [1] : []
+    };
+  };
+  window.__learnApplyDraftExtra = function (extra) {
+    if (!extra || typeof extra !== 'object') return;
+    if (extra.checklist) {
+      Object.keys(extra.checklist).forEach(function (k) {
+        var el = document.querySelector('#rubric input[data-k="' + k + '"]');
+        if (el) el.checked = !!extra.checklist[k];
+      });
+    }
+    if (extra.fileName) {
+      state.fileName = extra.fileName;
+      state.fileSize = extra.fileSize || 0;
+      state.chartCount = extra.chartCount || 0;
+      state.fileOk = true;
+      $('upName').textContent = extra.fileName;
+      $('upFile').classList.add('show');
+      $('fileMeta').textContent = '已恢复上次选择的文件名：' + extra.fileName
+        + (extra.chartCount ? ('　·　约 ' + extra.chartCount + ' 张图表') : '');
+    }
+    if (extra.submitted) {
+      state.submitted = true;
+      $('submitBtn').disabled = true;
+      $('submitBtn').textContent = '已提交';
+      $('submitOk').style.display = 'block';
+      document.querySelectorAll('#rubric input[type=checkbox]').forEach(function (el) {
+        el.disabled = true;
+      });
+    }
+    refreshReady();
+  };
+
+  refreshReady();
+})();
+</script>
+</body>
+</html>

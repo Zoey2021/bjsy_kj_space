@@ -52,19 +52,14 @@
                 {{ mall.applyOpen ? '学生可在兑换商城申请' : '学生暂不能申请兑换' }}
               </span>
             </div>
-            <p class="shop-note">按一学期 18 节课、每节大约 11～15 分来定价。零食、文具、表扬信是大多数同学期末能换到的；奶茶留给积分更高的同学。游学乐园每分钟消耗 2 积分，从可兑积分里扣，星星和等级不降。</p>
-            <MallGiftGrid :items="mall.items || []" />
+            <p class="shop-note">实物兑换正在与学校星动力对接开发中。游学乐园每分钟消耗 2 积分，从可兑积分里扣，星星和等级不降。</p>
+            <section class="coming-soon" aria-live="polite">
+              <p>正在与学校星动力对接开发中，敬请期待！</p>
+            </section>
             <h3 class="sec-title">本班兑换申请</h3>
             <el-table :data="mall.orders || []" stripe empty-text="该班暂无兑换申请" class="soft-table">
               <el-table-column prop="studentName" label="学生" width="120" />
-              <el-table-column label="奖品" min-width="180">
-                <template #default="{ row }">
-                  <span class="order-item">
-                    <img v-if="mallIconSrc(row)" class="order-thumb" :src="mallIconSrc(row)" :alt="row.itemName" />
-                    <span>{{ row.itemName }}</span>
-                  </span>
-                </template>
-              </el-table-column>
+              <el-table-column prop="itemName" label="奖品" min-width="180" />
               <el-table-column prop="points" label="扣除积分" width="110" />
               <el-table-column label="状态" width="100">
                 <template #default>已申请</template>
@@ -85,8 +80,6 @@ import { onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import Ranking from './Ranking.vue'
-import MallGiftGrid from '../../components/points/MallGiftGrid.vue'
-import { mallIconSrc } from '../../constants/mallIcons'
 import { getClasses, getTeacherMall, getTeacherPointsRules, saveTeacherPointsRules, setMallApplyOpen } from '../../api'
 
 const route = useRoute()
@@ -229,11 +222,19 @@ onMounted(async () => {
 .open-hint { font-size: 13px; color: #b91c1c; }
 .open-hint.on { color: #15803d; }
 .sec-title { margin: 22px 0 10px; font-size: 16px; color: #312e81; }
-.order-item { display: inline-flex; align-items: center; gap: 8px; }
-.order-thumb {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  object-fit: cover;
+.coming-soon {
+  margin: 0 0 8px;
+  padding: 28px 20px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  border: 1px dashed #c7d2fe;
+  text-align: center;
+}
+.coming-soon p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #4338ca;
+  line-height: 1.7;
 }
 </style>

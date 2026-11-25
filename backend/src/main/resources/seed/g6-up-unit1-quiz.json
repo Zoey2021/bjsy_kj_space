@@ -1,0 +1,383 @@
+{
+  "layout": "unit_quiz",
+  "quizKey": "g6-up-unit1",
+  "title": "第一单元小测",
+  "subtitle": "六年级上册 · 算法的实现 · 诊断性测试 · 建议用时 30 分钟 · 满分 100 分",
+  "intro": "本卷共三大题：单选题 10 题（每题 4 分）、多选题 5 题（每题 4 分）、填空题 4 题组共 10 空（每空 4 分）。多选题全部选对得 4 分，漏选得 2 分，错选或不选得 0 分。遇到不确定、靠猜的题目，请勾选题旁的「?」标记——不影响得分，但能帮助老师找到薄弱点。提交后系统会自动批改并给出等级；完成后可向老师申请游学乐园。",
+  "maxScore": 100,
+  "paperHtmlStudent": "/lessons/g6-up-unit1-quiz/student.html",
+  "paperHtmlTeacher": "/lessons/g6-up-unit1-quiz/teacher.html",
+  "sections": [
+    { "id": "single", "title": "一、单选题", "hint": "每题只有一个正确答案，每题 4 分，共 40 分" },
+    { "id": "multi", "title": "二、多选题", "hint": "每题有 2～3 个正确答案；全对 4 分，漏选 2 分，错选或不选 0 分，共 20 分" },
+    { "id": "fill", "title": "三、填空题", "hint": "共 4 题组、10 空，每空 4 分，共 40 分" }
+  ],
+  "questions": [
+    {
+      "id": "q1",
+      "section": "single",
+      "no": 1,
+      "type": "single",
+      "score": 4,
+      "required": true,
+      "stem": "在计算机中运用算法解决问题，一般要经历的过程是（　）",
+      "options": [
+        { "value": "A", "label": "设计算法 → 问题分析 → 抽象与建模 → 验证与优化算法" },
+        { "value": "B", "label": "编写程序 → 运行程序 → 分析问题 → 调试程序" },
+        { "value": "C", "label": "问题分析 → 抽象与建模 → 设计算法 → 验证与优化算法" },
+        { "value": "D", "label": "抽象与建模 → 设计算法 → 验证与优化算法 → 问题分析" }
+      ],
+      "answer": "C"
+    },
+    {
+      "id": "q2",
+      "section": "single",
+      "no": 2,
+      "type": "single",
+      "score": 4,
+      "required": true,
+      "stem": "关于算法与计算机程序，下列说法正确的是（　）",
+      "options": [
+        { "value": "A", "label": "一个算法只能用一种程序设计语言来实现" },
+        { "value": "B", "label": "算法就是程序，程序就是算法，两者没有区别" },
+        { "value": "C", "label": "没有计算机，算法就无法实施" },
+        { "value": "D", "label": "同一个算法可以用 Python、C 等不同的程序设计语言编写成程序" }
+      ],
+      "answer": "D"
+    },
+    {
+      "id": "q3",
+      "section": "single",
+      "no": 3,
+      "type": "single",
+      "score": 4,
+      "required": true,
+      "stem": "教材“作品投票”程序中使用了 tp、a、b、i 等变量，其中变量 i 的作用是（　）",
+      "options": [
+        { "value": "A", "label": "记录已投票的人数，控制循环次数" },
+        { "value": "B", "label": "存放每次输入的投票内容" },
+        { "value": "C", "label": "存放 A 作品的得票数" },
+        { "value": "D", "label": "存放两个候选作品的总得票数" }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": "q4",
+      "section": "single",
+      "no": 4,
+      "type": "single",
+      "score": 4,
+      "required": true,
+      "stem": "对“鸡兔同笼”问题进行抽象时，被确定为关键要素、可以用变量表示的是（　）",
+      "options": [
+        { "value": "A", "label": "鸡的头数与兔的脚数" },
+        { "value": "B", "label": "鸡、兔的只数" },
+        { "value": "C", "label": "总头数 35 与总脚数 94" },
+        { "value": "D", "label": "笼子的颜色与大小" }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": "q5",
+      "section": "single",
+      "no": 5,
+      "type": "single",
+      "score": 4,
+      "required": true,
+      "stem": "“鸡兔同笼”解题程序中有语句 while tu < 36:，这里的 36 表示（　）",
+      "options": [
+        { "value": "A", "label": "兔最多有 36 只" },
+        { "value": "B", "label": "鸡和兔一共 36 只" },
+        { "value": "C", "label": "让 tu 依次取 0～35，共覆盖 36 种可能的兔只数" },
+        { "value": "D", "label": "循环体只需要执行 35 次" }
+      ],
+      "answer": "C"
+    },
+    {
+      "id": "q6",
+      "section": "single",
+      "no": 6,
+      "type": "single",
+      "score": 4,
+      "required": true,
+      "stem": "使用枚举法解决问题，关键是（　）",
+      "options": [
+        { "value": "A", "label": "确定枚举的范围和正确解的判断条件" },
+        { "value": "B", "label": "使用运行速度最快的计算机" },
+        { "value": "C", "label": "把算法画成流程图后交给人工智能" },
+        { "value": "D", "label": "尽量只尝试一种可能的解" }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": "q7",
+      "section": "single",
+      "no": 7,
+      "type": "single",
+      "score": 4,
+      "required": true,
+      "stem": "要判断“鸡的脚数与兔的脚数之和是否等于 94”，下列 Python 条件写法正确的是（　）",
+      "options": [
+        { "value": "A", "label": "if ji*2 + tu*4 = 94:" },
+        { "value": "B", "label": "if ji*2 + tu*4 ≠ 94:" },
+        { "value": "C", "label": "if ji*2 + tu*4 <> 94:" },
+        { "value": "D", "label": "if ji*2 + tu*4 == 94:" }
+      ],
+      "answer": "D"
+    },
+    {
+      "id": "q8",
+      "section": "single",
+      "no": 8,
+      "type": "single",
+      "score": 4,
+      "required": true,
+      "stem": "小华写了 cai = input(\"猜一个1至100之间的数字\")，接着用 if cai < da: 比较大小，程序不能正确比较，原因是（　）",
+      "options": [
+        { "value": "A", "label": "提示语里不能出现数字" },
+        { "value": "B", "label": "input() 得到的内容默认是字符串，比较前须用 int() 转换成整数" },
+        { "value": "C", "label": "变量 cai 必须全部写成大写字母" },
+        { "value": "D", "label": "目标数 da 必须先赋值为 0" }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": "q9",
+      "section": "single",
+      "no": 9,
+      "type": "single",
+      "score": 4,
+      "required": true,
+      "stem": "运行程序时 IDLE 显示 NameError: name 'Tu' is not defined，最可能的原因是（　）",
+      "options": [
+        { "value": "A", "label": "程序中使用了中文标点" },
+        { "value": "B", "label": "while 语句后面漏写了冒号" },
+        { "value": "C", "label": "把变量 tu 写成了 Tu，而 Python 严格区分大小写" },
+        { "value": "D", "label": "循环体没有缩进" }
+      ],
+      "answer": "C"
+    },
+    {
+      "id": "q10",
+      "section": "single",
+      "no": 10,
+      "type": "single",
+      "score": 4,
+      "required": true,
+      "stem": "借助人工智能生成“猜数字”程序代码之后，接下来最合理的做法是（　）",
+      "options": [
+        { "value": "A", "label": "先阅读、分析代码（变量设置、算法结构），再用多组数据运行验证" },
+        { "value": "B", "label": "直接提交，人工智能生成的程序一定正确" },
+        { "value": "C", "label": "只测试“第一次就猜对”这一种情况" },
+        { "value": "D", "label": "把提示词改得越短越好，其余不必检查" }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": "q11",
+      "section": "multi",
+      "no": 11,
+      "type": "multi",
+      "score": 4,
+      "partialScore": 2,
+      "required": true,
+      "stem": "关于 Python 程序的书写规范，下列说法正确的有（　）",
+      "options": [
+        { "value": "A", "label": "所有标点都须在英文半角状态下输入" },
+        { "value": "B", "label": "Python 使用缩进和\":\"来区分代码之间的层次" },
+        { "value": "C", "label": "变量 Tu 和 tu 表示的是同一个变量" },
+        { "value": "D", "label": "以 # 开头的注释语句，程序运行时不会执行" }
+      ],
+      "answer": ["A", "B", "D"]
+    },
+    {
+      "id": "q12",
+      "section": "multi",
+      "no": 12,
+      "type": "multi",
+      "score": 4,
+      "partialScore": 2,
+      "required": true,
+      "stem": "关于用枚举法解决“鸡兔同笼”问题，下列说法正确的有（　）",
+      "options": [
+        { "value": "A", "label": "把枚举范围设为 1～35 就够了，兔不可能是 0 只" },
+        { "value": "B", "label": "可以只枚举兔的只数 tu，鸡的只数用 35 - tu 算出" },
+        { "value": "C", "label": "正确解的判断条件是 ji*2 + tu*4 == 94" },
+        { "value": "D", "label": "找到一组正确解后必须立即结束整个程序，否则结果会出错" }
+      ],
+      "answer": ["B", "C"]
+    },
+    {
+      "id": "q13",
+      "section": "multi",
+      "no": 13,
+      "type": "multi",
+      "score": 4,
+      "partialScore": 2,
+      "required": true,
+      "stem": "调试程序时，可能造成程序“不能正常运行或结果出错”的原因有（　）",
+      "options": [
+        { "value": "A", "label": "录入错误，例如把 tu 写成了 Tu" },
+        { "value": "B", "label": "只要程序能运行不报错，结果就一定正确" },
+        { "value": "C", "label": "语法错误，例如 while 后漏写冒号、循环体不缩进" },
+        { "value": "D", "label": "逻辑错误，例如把正确解的判断条件写错" }
+      ],
+      "answer": ["A", "C", "D"]
+    },
+    {
+      "id": "q14",
+      "section": "multi",
+      "no": 14,
+      "type": "multi",
+      "score": 4,
+      "partialScore": 2,
+      "required": true,
+      "stem": "关于“猜数字”人机交互程序，下列说法正确的有（　）",
+      "options": [
+        { "value": "A", "label": "人机交互的主要流程包括用户输入数据、计算机处理数据、计算机输出数据" },
+        { "value": "B", "label": "cai 与 da 之间存在“大于”“小于”“等于”三种关系" },
+        { "value": "C", "label": "当 cai = da 时，应继续让用户反复输入，直到猜错为止" },
+        { "value": "D", "label": "每一轮循环都必须由用户重新输入一次目标数 da" }
+      ],
+      "answer": ["A", "B"]
+    },
+    {
+      "id": "q15",
+      "section": "multi",
+      "no": 15,
+      "type": "multi",
+      "score": 4,
+      "partialScore": 2,
+      "required": true,
+      "stem": "关于“算法必须有输出”和程序验证，下列说法正确的有（　）",
+      "options": [
+        { "value": "A", "label": "程序能运行出一次正确结果，就说明算法一定没有问题" },
+        { "value": "B", "label": "改变总头数、总脚数后若无解，程序也应输出“此题无解”之类的提示" },
+        { "value": "C", "label": "可用变量 jie 记录是否有解：jie = 1 表示有解，jie = 0 表示无解" },
+        { "value": "D", "label": "验证程序应采用多组不同数据，覆盖偏大、偏小、答对等情况" }
+      ],
+      "answer": ["B", "C", "D"]
+    },
+    {
+      "id": "q16",
+      "section": "fill",
+      "no": 16,
+      "type": "fill_group",
+      "required": true,
+      "stem": "下面是教材“作品投票”算法对应的 Python 程序，请阅读后填空。",
+      "code": "a = 0\nb = 0\ni = 1\nwhile i < 1001:\n    tp = input(\"输入a投票给A作品，输入b投票给B作品\")\n    if tp == \"a\":\n        a = a + 1\n    else:\n        b = b + 1\n    i = i + 1\nprint(a, b)",
+      "blanks": [
+        {
+          "id": "q16_1",
+          "label": "（1）变量 tp 中存放的是",
+          "score": 4,
+          "answer": "每次输入的投票内容（\"a\"或\"b\"）",
+          "accept": ["每次输入的投票内容", "投票内容", "用户输入的一票", "投票给谁", "a或b", "a或b的投票", "输入的a或b"]
+        },
+        {
+          "id": "q16_2",
+          "label": "（2）i < 1001 与 i = i + 1 配合，可保证共有 ___ 名学生完成投票",
+          "score": 4,
+          "answer": "1000",
+          "accept": ["1000", "一千", "1000名", "1000人"]
+        },
+        {
+          "id": "q16_3",
+          "label": "（3）若不小心删去了 i = i + 1 这一行，程序会",
+          "score": 4,
+          "answer": "一直循环、无法结束（死循环），反复要求输入",
+          "accept": ["死循环", "一直循环", "无法结束", "无限循环", "反复要求输入", "不停要求输入"]
+        }
+      ]
+    },
+    {
+      "id": "q17",
+      "section": "fill",
+      "no": 17,
+      "type": "fill_group",
+      "required": true,
+      "stem": "下面是“鸡兔同笼”枚举程序，请补全三处空缺，使程序能枚举 0～35 之间兔的只数并输出正确解。",
+      "code": "tu = 0\nwhile tu < （1）:\n    ji = 35 - tu\n    if ji * 2 + tu * 4 （2） 94:\n        print(ji, \"只鸡，\", tu, \"只兔。\")\n    tu = （3）",
+      "blanks": [
+        {
+          "id": "q17_1",
+          "label": "（1）",
+          "score": 4,
+          "answer": "36",
+          "accept": ["36"]
+        },
+        {
+          "id": "q17_2",
+          "label": "（2）",
+          "score": 4,
+          "answer": "==",
+          "accept": ["=="]
+        },
+        {
+          "id": "q17_3",
+          "label": "（3）",
+          "score": 4,
+          "answer": "tu + 1",
+          "accept": ["tu + 1", "tu+1", "tu += 1", "tu+=1"]
+        }
+      ]
+    },
+    {
+      "id": "q18",
+      "section": "fill",
+      "no": 18,
+      "type": "fill_group",
+      "required": true,
+      "stem": "小明在 IDLE 中运行“鸡兔同笼”程序，遇到两种报错，请按教材对程序错误的分类填一填。",
+      "code": "情况一：NameError: name 'Tu' is not defined\n情况二：SyntaxError: expected an indented block after 'while' statement on line 2",
+      "blanks": [
+        {
+          "id": "q18_1",
+          "label": "情况一属于 ___ 错误",
+          "score": 4,
+          "answer": "录入（变量名大小写）",
+          "accept": ["录入", "录入错误", "变量名", "大小写", "变量名大小写"]
+        },
+        {
+          "id": "q18_2",
+          "label": "情况二属于 ___ 错误",
+          "score": 4,
+          "answer": "语法",
+          "accept": ["语法", "语法错误"]
+        }
+      ]
+    },
+    {
+      "id": "q19",
+      "section": "fill",
+      "no": 19,
+      "type": "fill_group",
+      "required": true,
+      "stem": "小华请人工智能生成了“猜数字”程序片段（da 是目标数，cai 是用户猜的数）：",
+      "code": "da = 55\ncai = int(input(\"猜一个1至100之间的数字\"))\nwhile （1）:\n    if cai < da:\n        print(\"小了\")\n    else:\n        print(\"大了\")\n    cai = int(input(\"再猜一次：\"))\nprint(\"对了\")",
+      "blanks": [
+        {
+          "id": "q19_1",
+          "label": "（1）横线处应填入 ___，才能实现“没猜对就继续猜”",
+          "score": 4,
+          "answer": "cai != da",
+          "accept": ["cai != da", "cai!=da", "not cai == da", "cai <> da"],
+          "halfAccept": ["cai ≠ da", "cai≠da"]
+        },
+        {
+          "id": "q19_2",
+          "label": "（2）若用户第一次输入 50，程序会输出提示 ___，然后等待再次输入",
+          "score": 4,
+          "answer": "小了",
+          "accept": ["小了", "\"小了\"", "'小了'"]
+        }
+      ]
+    }
+  ],
+  "gradeRules": {
+    "A": { "min": 80, "feedback": "本单元学的很好！继续保持" },
+    "B": { "min": 60, "feedback": "本单元学的还行！但是还需要查缺补漏，有问题多问问张老师噢！" },
+    "C": { "min": 40, "feedback": "本单元学起来是不是感觉很困难！多找张老师聊一聊吧！" },
+    "D": { "min": 0, "feedback": "你是不是没有好好学？" }
+  }
+}

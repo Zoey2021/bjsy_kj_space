@@ -770,7 +770,28 @@ const themeGroups = computed(() => {
 
 const themeVoteBars = computed(() => {
   const total = Math.max(1, themeGroups.value.filled)
-  return themeGroups.value.groups.map((g) => ({
+  const groups = themeGroups.value.groups
+  // 观点投票：固定按 A–D 出条，没人选的选项也显示 0，方便课堂讲评
+  if (themeIsVote.value) {
+    const byLetter = new Map()
+    groups.forEach((g) => {
+      const letter = String(g.theme || '').trim().charAt(0).toUpperCase()
+      if (!/[A-D]/.test(letter)) return
+      if (!byLetter.has(letter)) byLetter.set(letter, { theme: g.theme, names: [...g.names] })
+      else byLetter.get(letter).names.push(...g.names)
+    })
+    return ['A', 'B', 'C', 'D'].map((letter) => {
+      const hit = byLetter.get(letter)
+      const names = hit?.names || []
+      const theme = hit?.theme || `${letter} · 暂无人选`
+      return {
+        theme,
+        names,
+        percent: Math.round((names.length * 1000) / total) / 10
+      }
+    })
+  }
+  return groups.map((g) => ({
     ...g,
     percent: Math.round((g.names.length * 1000) / total) / 10
   }))

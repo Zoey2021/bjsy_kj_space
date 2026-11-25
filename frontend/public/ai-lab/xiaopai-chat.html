@@ -256,7 +256,15 @@ const messagesEl = document.getElementById("messages");
 const inputEl = document.getElementById("input");
 const sendBtn = document.getElementById("send");
 const fileEl = document.getElementById("file");
-let sessionId = "web_" + Date.now();
+/** 按学生账号隔离会话，避免同班同时打开时串到同一条扣子会话 */
+function buildSessionId() {
+  var user = (localStorage.getItem("username") || localStorage.getItem("realName") || "guest")
+    .replace(/[^\w\u4e00-\u9fa5\-]/g, "")
+    .slice(0, 32) || "guest";
+  var rand = Math.random().toString(36).slice(2, 10);
+  return "stu_" + user + "_" + Date.now() + "_" + rand;
+}
+let sessionId = buildSessionId();
 /** 已上传图片的公开 URL（非 base64） */
 let hasImageUrl = null;
 let uploading = false;

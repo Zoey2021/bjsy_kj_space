@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第8课 算法的多样性 · 学生任务台</title>
+<style>
+:root{
+  --bg1:#f4f7ff; --bg2:#eaf0ff; --ink:#1e2a44; --sub:#5c6a88; --line:#dde5f7;
+  --brand:#4b63d8; --brand2:#7c6ae6; --pink:#ff6b9d; --mint:#14b28c; --gold:#f0a320;
+  --card:#ffffff; --shadow:0 10px 30px rgba(63,88,168,.10); --radius:18px;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+ color:var(--ink);background:linear-gradient(135deg,#f7f9ff 0%,#eef2ff 45%,#f3edff 100%);}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+ background:radial-gradient(circle at 8% 6%,rgba(120,140,255,.14),transparent 34%),
+            radial-gradient(circle at 92% 90%,rgba(255,140,190,.13),transparent 36%);}
+.wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.brandline{display:flex;align-items:center;gap:12px}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--brand),var(--brand2));
+ display:grid;place-items:center;color:#fff;font-weight:800;font-size:20px;box-shadow:0 6px 16px rgba(75,99,216,.30)}
+.brandline h1{font-size:22px;margin:0;letter-spacing:.5px}
+.brandline p{margin:3px 0 0;font-size:13px;color:var(--sub)}
+.sid{display:flex;align-items:center;gap:9px;background:#fff;padding:9px 14px;border-radius:14px;border:1px solid var(--line);box-shadow:var(--shadow)}
+.sid label{font-size:13px;color:var(--sub);white-space:nowrap}
+.sid input{width:120px;border:0;outline:0;font-size:15px;color:var(--ink);background:transparent}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 26px}
+.step{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 14px;position:relative;overflow:hidden;opacity:.62;transition:.25s}
+.step.on{opacity:1;border-color:#c9d4ff;box-shadow:0 6px 18px rgba(75,99,216,.12)}
+.step.on::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(var(--brand),var(--brand2))}
+.step b{display:block;font-size:14px}
+.step span{font-size:12px;color:var(--sub)}
+.step i{font-style:normal;display:inline-block;margin-right:7px;width:22px;height:22px;line-height:22px;text-align:center;
+ border-radius:50%;background:#eef2ff;color:var(--brand);font-size:12px;font-weight:700}
+.step.on i{background:var(--brand);color:#fff}
+.hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 14px;flex-wrap:wrap}
+.hd h2{font-size:18px;margin:0}
+.hd .tip{font-size:13px;color:var(--sub)}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+ padding:20px;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden}
+.card:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(63,88,168,.18)}
+.card .num{font-size:34px;font-weight:800;line-height:1;color:var(--brand);opacity:.22;position:absolute;right:16px;top:12px}
+.card .kicker{display:inline-block;font-size:12px;padding:4px 10px;border-radius:20px;background:#eef2ff;color:var(--brand);font-weight:700}
+.card h3{font-size:19px;margin:14px 0 8px}
+.card p{font-size:13.5px;line-height:1.75;color:var(--sub);margin:0 0 14px;min-height:72px}
+.card .meta{border-top:1px dashed var(--line);padding-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--sub)}
+.badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;background:#f1f3f8;color:#8a94ab}
+.badge.done{background:#e3f8ef;color:#0d966f}
+.card .deco{height:5px;border-radius:5px;margin:-20px -20px 16px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+.card:nth-child(2) .deco{background:linear-gradient(90deg,#14b28c,#65c9ff)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-top:22px}
+.panel h2{font-size:16px;margin:0 0 14px}
+.rec{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.rec div{background:#f7f9ff;border:1px solid #e9eefc;border-radius:12px;padding:12px}
+.rec span{display:block;font-size:12px;color:var(--sub);margin-bottom:6px}
+.rec b{font-size:16px;color:var(--brand)}
+details{margin-top:18px;background:#fbfcff;border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--brand)}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+th,td{border:1px solid var(--line);padding:9px 10px;text-align:left;line-height:1.6}
+th{background:#f1f5ff;color:var(--ink);font-weight:700}
+td{color:var(--sub)}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:22px;font-size:12.5px;color:var(--sub)}
+.btn{border:0;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;background:#eef2ff;color:var(--brand)}
+.btn:hover{background:#e0e8ff}
+@media(max-width:820px){.cards,.rec{grid-template-columns:1fr}.steps{grid-template-columns:repeat(2,1fr)}.card p{min-height:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brandline">
+      <div class="logo">8</div>
+      <div><h1>第8课 算法的多样性</h1><p>六年级上册 · 第二单元 算法的效率 · 学生任务台</p></div>
+    </div>
+    <div class="sid"><label for="sid">班级学号</label><input id="sid" placeholder="例如 60312" autocomplete="off"></div>
+  </div>
+
+  <div class="steps" id="steps">
+    <div class="step" data-k="s1"><b><i>1</i>课前热身</b><span>用原有猜数工具，不进任务台</span></div>
+    <div class="step" data-k="s2"><b><i>2</i>过程探究</b><span>探究1 纸质涂色卡 → 探究2 补全流程图</span></div>
+    <div class="step" data-k="s3"><b><i>3</i>实验验证</b><span>探究3 跑算法、比次数</span></div>
+    <div class="step" data-k="s4"><b><i>4</i>反思总结</b><span>为什么算法需要多样性？</span></div>
+  </div>
+
+  <div class="hd"><h2>今天的两站任务：探究2 与探究3</h2><div class="tip">探究1「折半涂色卡」课上用纸质卡完成；任务台从探究2 开始，每站结束点「完成本任务」保存记录</div></div>
+  <div class="cards">
+    <a class="card" href="02-过程探究.html">
+      <div class="deco"></div><div class="num">2</div>
+      <span class="kicker">探究活动 2 · 过程探究</span>
+      <h3>流程图补全</h3>
+      <p>补完整顺序查找法流程图的两个空位，再两人讨论，把二分查找法流程图 ①～④ 填进探究记录表。</p>
+      <div class="meta"><span>对应课件 P9、P18 与拼图素材</span><span class="badge" id="b2">未完成</span></div>
+    </a>
+    <a class="card" href="03-算法验证.html">
+      <div class="deco"></div><div class="num">3</div>
+      <span class="kicker">探究活动 3 · 实验验证与反思总结</span>
+      <h3>两种算法跑一跑</h3>
+      <p>顺序查找和二分查找同步执行，看变量怎么变、比较了几次。再试试 1～100 找 37，和超出范围的 137。</p>
+      <div class="meta"><span>对应课件 P20–P24</span><span class="badge" id="b3">未完成</span></div>
+    </a>
+  </div>
+
+  <div class="panel">
+    <h2>我的学习记录（保存在这台电脑）</h2>
+    <div class="rec">
+      <div><span>顺序查找流程图（第 1 张）</span><b id="r2">—</b></div>
+      <div><span>二分查找流程图（第 2 张）</span><b id="r3">—</b></div>
+      <div><span>验证台结论</span><b id="r4">—</b></div>
+    </div>
+    <details>
+      <summary>给老师：探究1／2／3 与上课流程的对应关系</summary>
+      <table>
+        <tr><th>环节</th><th>课件页 / 素材</th><th>用什么</th><th>说明</th></tr>
+        <tr><td>课前热身（不纳入任务台）</td><td>P3–P4</td><td>原有「学生版寻找幸运数字.html」「教师版幸运猜数字.html」</td><td>热身只有两三分钟，沿用现成工具，学生不必再开一个界面、也不必重复填学号</td></tr>
+        <tr><td>探究1 折半涂色卡（不纳入任务台）</td><td>P13–P17，其中 P16／P17 为「探究活动1」</td><td>纸质涂色卡、纸条、3 只荧光笔</td><td>按老师要求保留纸笔操作：折纸模拟从中间猜，填第③次猜的 A／B／cai，观察完整涂色卡「折半—缩范围」的规律；学生端不再重复做一套</td></tr>
+        <tr><td>探究2 流程图补全（第 1 站）</td><td>P9、P18；流程图我会拼.pptx</td><td>本界面（原拼图纸片仍可配合用）</td><td>两张流程图：第 1 张还原原 PPT 两个虚线空位 cai=1／cai=cai+1；第 2 张按 P18 补全二分查找 ①～④ 并填探究记录表</td></tr>
+        <tr><td>探究3 算法验证（第 2 站）</td><td>P20–P24</td><td>双击运行两个 Python 程序 → 本界面</td><td>变量 cai／A／B 的变化过程可视化，逐步执行 + 比较次数对比，自然引出「解决问题的效率」与 P24 的反思</td></tr>
+      </table>
+      <p style="font-size:13px;color:var(--sub);line-height:1.8;margin:12px 0 0">两个界面都是单文件、无外部依赖，可直接发到学生机双击打开；进度写在本机浏览器存储里，不需要网络、不需要账号。首页与两个界面的「完成本任务」会汇总成学习记录。</p>
+    </details>
+  </div>
+
+  <div class="foot"><span>提示：两个界面可以单独分发，也可以从本页依次进入。数据只保存在本机，换电脑不会同步。</span>
+  <button class="btn" id="clear">清空本机学习记录</button></div>
+</div>
+
+<script>
+var KEY='ZJXX_L8_V1';
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
+function save(d){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
+var d=load();
+var sid=document.getElementById('sid');
+sid.value=d.sid||'';
+sid.addEventListener('input',function(){d.sid=sid.value.trim();save(d)});
+function on(el){el.classList.add('on')}
+function badge(id,ok,txt){var e=document.getElementById(id);if(ok){e.textContent=txt||'已完成';e.classList.add('done')}}
+var f1=d.t2&&d.t2.flow1, f2=d.t2&&d.t2.flow2;
+if(!f1&&!f2&&d.t2&&d.t2.flowDone){f1=true;f2=true}  // 兼容旧版本只存 flowDone 的记录
+var t2=f1&&f2, t3=d.t3&&d.t3.done;
+badge('b2',t2);badge('b3',t3);
+if(f1)document.getElementById('r2').textContent='已完成';
+if(f2)document.getElementById('r3').textContent='已完成';
+if(t2)on(document.querySelector('[data-k=s2]'));
+if(t3){on(document.querySelector('[data-k=s3]'));on(document.querySelector('[data-k=s4]'));document.getElementById('r4').textContent=d.t3.note||'已完成'}
+document.getElementById('clear').onclick=function(){
+  if(confirm('确定清空这台电脑上的第8课学习记录吗？')){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>六年级上册 第一单元《算法的实现》单元测试卷（学生卷）</title>
+<style>
+  @page { size: A4 portrait; margin: 16mm 17mm 15mm 17mm; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#eef1f5; color:#1a1a1a;
+         font-family:"PingFang SC","Songti SC","STSong","Microsoft YaHei",serif;
+         font-size:10.5pt; line-height:1.72; }
+  .sheet { width:210mm; min-height:297mm; margin:16px auto; padding:16mm 17mm 15mm 17mm;
+           background:#fff; box-shadow:0 2px 18px rgba(0,0,0,.10); }
+  h1 { text-align:center; font-size:17pt; letter-spacing:1px; margin:0 0 2mm; }
+  .sub { text-align:center; font-size:9.5pt; color:#555; margin:0 0 5mm; }
+  .meta { width:100%; border-collapse:collapse; margin:0 0 3mm; font-size:10pt; }
+  .meta td { border:1px solid #333; padding:2.2mm 2mm; height:9mm; }
+  .meta .lbl { width:12%; text-align:center; background:#f6f6f6; white-space:nowrap; }
+  .notice { border:1px solid #b9c6d8; background:#f5f8fc; padding:2.6mm 3.2mm; font-size:9.6pt; margin:0 0 5mm; }
+  .notice b { color:#1b4f8f; }
+  .notice ul { margin:1.2mm 0 0; padding-left:5.5mm; }
+  h2 { font-size:12pt; margin:6mm 0 2.5mm; padding:1.5mm 0 1.5mm 2.5mm;
+       border-left:4px solid #2b6cb0; background:#eef4fb; }
+  h2 span { font-weight:normal; font-size:9.6pt; color:#555; margin-left:3mm; }
+  .q { margin:0 0 3.2mm; break-inside:avoid; page-break-inside:avoid; }
+  .q .stem { margin:0 0 1mm; }
+  .q .no { font-weight:bold; margin-right:1.5mm; }
+  .opts { margin:0; padding-left:7mm; }
+  .opts div { margin:0.5mm 0; }
+  .code { font-family:"SFMono-Regular",Consolas,"Courier New",monospace; font-size:9.2pt;
+          line-height:1.55; background:#fafafa; border:1px solid #d8dde5;
+          border-left:3px solid #6b8db8; padding:2.4mm 3mm; margin:2mm 0 2.5mm;
+          white-space:pre; break-inside:avoid; page-break-inside:avoid; }
+  .blank { display:inline-block; min-width:26mm; border-bottom:1px solid #333; height:1.1em;
+           vertical-align:-2px; }
+  .blank.s { min-width:16mm; }
+  .fill { margin:1.2mm 0 1.2mm 4mm; }
+  .end { margin-top:7mm; text-align:center; font-size:9.5pt; color:#666;
+         border-top:1px dashed #bbb; padding-top:3mm; }
+  .toolbar { max-width:210mm; margin:14px auto 0; text-align:right; }
+  .toolbar button { font-size:10pt; padding:6px 16px; border:1px solid #2b6cb0;
+                    background:#2b6cb0; color:#fff; border-radius:5px; cursor:pointer; }
+  @media print { body{background:#fff;} .sheet{box-shadow:none;margin:0;padding:0;width:auto;min-height:0;}
+                 .toolbar{display:none;} }
+</style>
+</head>
+<body>
+<div class="toolbar"><button onclick="window.print()">打印 / 另存为 PDF</button></div>
+<div class="sheet">
+
+  <h1>六年级上册 第一单元《算法的实现》单元测试卷</h1>
+  <p class="sub">浙江教育出版社《信息科技》· 诊断性测试 · 建议用时 30 分钟 · 满分 100 分</p>
+
+  <table class="meta">
+    <tr><td class="lbl">学校</td><td></td><td class="lbl">班级</td><td></td><td class="lbl">姓名</td><td></td><td class="lbl">学号</td><td></td></tr>
+    <tr><td class="lbl">得分</td><td colspan="7"></td></tr>
+  </table>
+
+  <div class="notice">
+    <b>答题说明</b>
+    <ul>
+      <li>本卷共三大题：单选题 10 题（每题 4 分）、多选题 5 题（每题 4 分）、填空题 4 题组共 10 空（每空 4 分）。</li>
+      <li>多选题：全部选对得 4 分，漏选得 2 分，错选或不选得 0 分。请把答案字母填在题前括号内。</li>
+      <li><b>特别提醒：</b>遇到"不确定、靠猜"的题目，请在题号左上角画一个"<b>?</b>"。这个标记<b>不影响得分</b>，但能帮助老师更准确地找到你的薄弱点，请如实标记。</li>
+      <li>建议时间：单选 8 分钟、多选 6 分钟、填空 12 分钟、检查 4 分钟。</li>
+    </ul>
+  </div>
+
+  <h2>一、单选题<span>每题只有一个正确答案，每题 4 分，共 40 分</span></h2>
+
+  <div class="q"><div class="stem"><span class="no">（　）1.</span>在计算机中运用算法解决问题，一般要经历的过程是（　）</div>
+    <div class="opts">
+      <div>A. 设计算法 → 问题分析 → 抽象与建模 → 验证与优化算法</div>
+      <div>B. 编写程序 → 运行程序 → 分析问题 → 调试程序</div>
+      <div>C. 问题分析 → 抽象与建模 → 设计算法 → 验证与优化算法</div>
+      <div>D. 抽象与建模 → 设计算法 → 验证与优化算法 → 问题分析</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）2.</span>关于算法与计算机程序，下列说法正确的是（　）</div>
+    <div class="opts">
+      <div>A. 一个算法只能用一种程序设计语言来实现</div>
+      <div>B. 算法就是程序，程序就是算法，两者没有区别</div>
+      <div>C. 没有计算机，算法就无法实施</div>
+      <div>D. 同一个算法可以用 Python、C 等不同的程序设计语言编写成程序</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）3.</span>教材"作品投票"程序中使用了 tp、a、b、i 等变量，其中变量 i 的作用是（　）</div>
+    <div class="opts">
+      <div>A. 记录已投票的人数，控制循环次数</div>
+      <div>B. 存放每次输入的投票内容</div>
+      <div>C. 存放 A 作品的得票数</div>
+      <div>D. 存放两个候选作品的总得票数</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）4.</span>对"鸡兔同笼"问题进行抽象时，被确定为关键要素、可以用变量表示的是（　）</div>
+    <div class="opts">
+      <div>A. 鸡的头数与兔的脚数</div>
+      <div>B. 鸡、兔的只数</div>
+      <div>C. 总头数 35 与总脚数 94</div>
+      <div>D. 笼子的颜色与大小</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）5.</span>"鸡兔同笼"解题程序中有语句 <code>while tu &lt; 36:</code>，这里的 36 表示（　）</div>
+    <div class="opts">
+      <div>A. 兔最多有 36 只</div>
+      <div>B. 鸡和兔一共 36 只</div>
+      <div>C. 让 tu 依次取 0～35，共覆盖 36 种可能的兔只数</div>
+      <div>D. 循环体只需要执行 35 次</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）6.</span>使用枚举法解决问题，关键是（　）</div>
+    <div class="opts">
+      <div>A. 确定枚举的范围和正确解的判断条件</div>
+      <div>B. 使用运行速度最快的计算机</div>
+      <div>C. 把算法画成流程图后交给人工智能</div>
+      <div>D. 尽量只尝试一种可能的解</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）7.</span>要判断"鸡的脚数与兔的脚数之和是否等于 94"，下列 Python 条件写法正确的是（　）</div>
+    <div class="opts">
+      <div>A. <code>if ji*2 + tu*4 = 94:</code></div>
+      <div>B. <code>if ji*2 + tu*4 ≠ 94:</code></div>
+      <div>C. <code>if ji*2 + tu*4 &lt;&gt; 94:</code></div>
+      <div>D. <code>if ji*2 + tu*4 == 94:</code></div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）8.</span>小华写了 <code>cai = input("猜一个1至100之间的数字")</code>，接着用 <code>if cai &lt; da:</code> 比较大小，程序不能正确比较，原因是（　）</div>
+    <div class="opts">
+      <div>A. 提示语里不能出现数字</div>
+      <div>B. input() 得到的内容默认是字符串，比较前须用 int() 转换成整数</div>
+      <div>C. 变量 cai 必须全部写成大写字母</div>
+      <div>D. 目标数 da 必须先赋值为 0</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）9.</span>运行程序时 IDLE 显示 <code>NameError: name 'Tu' is not defined</code>，最可能的原因是（　）</div>
+    <div class="opts">
+      <div>A. 程序中使用了中文标点</div>
+      <div>B. while 语句后面漏写了冒号</div>
+      <div>C. 把变量 tu 写成了 Tu，而 Python 严格区分大小写</div>
+      <div>D. 循环体没有缩进</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）10.</span>借助人工智能生成"猜数字"程序代码之后，接下来最合理的做法是（　）</div>
+    <div class="opts">
+      <div>A. 先阅读、分析代码（变量设置、算法结构），再用多组数据运行验证</div>
+      <div>B. 直接提交，人工智能生成的程序一定正确</div>
+      <div>C. 只测试"第一次就猜对"这一种情况</div>
+      <div>D. 把提示词改得越短越好，其余不必检查</div>
+    </div></div>
+
+  <h2>二、多选题<span>每题有 2～3 个正确答案，全部选对得 4 分，漏选得 2 分，错选或不选得 0 分，共 20 分</span></h2>
+
+  <div class="q"><div class="stem"><span class="no">（　）11.</span>关于 Python 程序的书写规范，下列说法正确的有（　）</div>
+    <div class="opts">
+      <div>A. 所有标点都须在英文半角状态下输入</div>
+      <div>B. Python 使用缩进和":"来区分代码之间的层次</div>
+      <div>C. 变量 Tu 和 tu 表示的是同一个变量</div>
+      <div>D. 以 # 开头的注释语句，程序运行时不会执行</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）12.</span>关于用枚举法解决"鸡兔同笼"问题，下列说法正确的有（　）</div>
+    <div class="opts">
+      <div>A. 把枚举范围设为 1～35 就够了，兔不可能是 0 只</div>
+      <div>B. 可以只枚举兔的只数 tu，鸡的只数用 35 - tu 算出</div>
+      <div>C. 正确解的判断条件是 ji*2 + tu*4 == 94</div>
+      <div>D. 找到一组正确解后必须立即结束整个程序，否则结果会出错</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）13.</span>调试程序时，可能造成程序"不能正常运行或结果出错"的原因有（　）</div>
+    <div class="opts">
+      <div>A. 录入错误，例如把 tu 写成了 Tu</div>
+      <div>B. 只要程序能运行不报错，结果就一定正确</div>
+      <div>C. 语法错误，例如 while 后漏写冒号、循环体不缩进</div>
+      <div>D. 逻辑错误，例如把正确解的判断条件写错</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）14.</span>关于"猜数字"人机交互程序，下列说法正确的有（　）</div>
+    <div class="opts">
+      <div>A. 人机交互的主要流程包括用户输入数据、计算机处理数据、计算机输出数据</div>
+      <div>B. cai 与 da 之间存在"大于""小于""等于"三种关系</div>
+      <div>C. 当 cai = da 时，应继续让用户反复输入，直到猜错为止</div>
+      <div>D. 每一轮循环都必须由用户重新输入一次目标数 da</div>
+    </div></div>
+
+  <div class="q"><div class="stem"><span class="no">（　）15.</span>关于"算法必须有输出"和程序验证，下列说法正确的有（　）</div>
+    <div class="opts">
+      <div>A. 程序能运行出一次正确结果，就说明算法一定没有问题</div>
+      <div>B. 改变总头数、总脚数后若无解，程序也应输出"此题无解"之类的提示</div>
+      <div>C. 可用变量 jie 记录是否有解：jie = 1 表示有解，jie = 0 表示无解</div>
+      <div>D. 验证程序应采用多组不同数据，覆盖偏大、偏小、答对等情况</div>
+    </div></div>
+
+  <h2>三、填空题<span>共 4 题组、10 空，每空 4 分，共 40 分</span></h2>
+
+  <div class="q"><div class="stem"><span class="no">16.</span>下面是教材"作品投票"算法对应的 Python 程序，请阅读后填空。</div>
+    <div class="code">a = 0
+b = 0
+i = 1
+while i &lt; 1001:
+    tp = input("输入a投票给A作品，输入b投票给B作品")
+    if tp == "a":
+        a = a + 1
+    else:
+        b = b + 1
+    i = i + 1
+print(a, b)</div>
+    <div class="fill">（1）变量 tp 中存放的是 <span class="blank"></span>。</div>
+    <div class="fill">（2）<code>i &lt; 1001</code> 与 <code>i = i + 1</code> 配合，可保证共有 <span class="blank s"></span> 名学生完成投票。</div>
+    <div class="fill">（3）若不小心删去了 <code>i = i + 1</code> 这一行，程序会 <span class="blank"></span>。</div>
+  </div>
+
+  <div class="q"><div class="stem"><span class="no">17.</span>下面是"鸡兔同笼"枚举程序，请补全三处空缺，使程序能枚举 0～35 之间兔的只数并输出正确解。</div>
+    <div class="code">tu = 0
+while tu &lt; <span style="border-bottom:1px solid #333">　　（1）　　</span>:
+    ji = 35 - tu
+    if ji * 2 + tu * 4 <span style="border-bottom:1px solid #333">　　（2）　　</span> 94:
+        print(ji, "只鸡，", tu, "只兔。")
+    tu = <span style="border-bottom:1px solid #333">　　（3）　　</span></div>
+    <div class="fill">（1）<span class="blank s"></span>　　（2）<span class="blank s"></span>　　（3）<span class="blank s"></span></div>
+  </div>
+
+  <div class="q"><div class="stem"><span class="no">18.</span>小明在 IDLE 中运行"鸡兔同笼"程序，遇到两种报错，请按教材对程序错误的分类填一填。</div>
+    <div class="code">情况一：NameError: name 'Tu' is not defined
+情况二：SyntaxError: expected an indented block after 'while' statement on line 2</div>
+    <div class="fill">情况一属于 <span class="blank"></span> 错误；情况二属于 <span class="blank"></span> 错误。</div>
+  </div>
+
+  <div class="q"><div class="stem"><span class="no">19.</span>小华请人工智能生成了"猜数字"程序片段（da 是目标数，cai 是用户猜的数）：</div>
+    <div class="code">da = 55
+cai = int(input("猜一个1至100之间的数字"))
+while <span style="border-bottom:1px solid #333">　　（1）　　</span>:
+    if cai &lt; da:
+        print("小了")
+    else:
+        print("大了")
+    cai = int(input("再猜一次："))
+print("对了")</div>
+    <div class="fill">（1）横线处应填入 <span class="blank s"></span>，才能实现"没猜对就继续猜"。</div>
+    <div class="fill">（2）若用户第一次输入 50，程序会输出提示 <span class="blank s"></span>，然后等待再次输入。</div>
+  </div>
+
+  <div class="end">—— 答题结束，请检查是否漏题；不确定标记的"?"也请保留 ——</div>
+</div>
+</body>
+</html>

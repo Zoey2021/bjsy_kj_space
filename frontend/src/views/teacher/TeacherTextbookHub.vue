@@ -38,6 +38,7 @@ import { teacherGetOutline } from '../../api'
 import { resolveTextbookPdfUrl } from '../../utils/textbookPdf'
 import { openSchoolPpt, resolveSchoolPptUrl } from '../../utils/schoolPpt'
 import { isKechuangBook, accountScope, SCOPE_ALL, SCOPE_KECHUANG } from '../../utils/schoolCourseAccess'
+import { isUnitQuizLesson, teacherUnitQuizPath } from '../../utils/unitQuiz'
 
 const route = useRoute()
 const router = useRouter()
@@ -53,6 +54,10 @@ const activeTab = ref('outline')
 const goMap = () => router.push('/teacher/course-map')
 
 const goLesson = (lesson) => {
+  if (isUnitQuizLesson(lesson)) {
+    router.push(teacherUnitQuizPath(lesson.id, gradeId))
+    return
+  }
   router.push({ path: `/teacher/lesson/${lesson.id}`, query: { gradeId: String(gradeId) } })
 }
 

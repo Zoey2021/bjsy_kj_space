@@ -19,6 +19,7 @@ import com.itech.learnspace.service.PretestG4Service;
 import com.itech.learnspace.service.PretestG6Service;
 import com.itech.learnspace.service.ScaffoldService;
 import com.itech.learnspace.service.SseService;
+import com.itech.learnspace.service.UnitQuizService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -36,6 +37,7 @@ public class LearnController {
     private final ParkService parkService;
     private final PretestG4Service pretestG4Service;
     private final PretestG6Service pretestG6Service;
+    private final UnitQuizService unitQuizService;
     private final SseService sseService;
     private final DashboardService dashboardService;
     private final PointsMallService pointsMallService;
@@ -45,6 +47,7 @@ public class LearnController {
     public LearnController(LearnService learnService, AuthService authService,
                            NotificationService notificationService, ParkService parkService,
                            PretestG4Service pretestG4Service, PretestG6Service pretestG6Service,
+                           UnitQuizService unitQuizService,
                            SseService sseService, DashboardService dashboardService,
                            PointsMallService pointsMallService, ScaffoldService scaffoldService,
                            AvatarService avatarService) {
@@ -54,6 +57,7 @@ public class LearnController {
         this.parkService = parkService;
         this.pretestG4Service = pretestG4Service;
         this.pretestG6Service = pretestG6Service;
+        this.unitQuizService = unitQuizService;
         this.sseService = sseService;
         this.dashboardService = dashboardService;
         this.pointsMallService = pointsMallService;
@@ -219,6 +223,26 @@ public class LearnController {
             throw new BusinessException(403, "仅学生可查看");
         }
         return ApiResponse.ok(pretestG6Service.mySubmission(user.getId()));
+    }
+
+    /** 单元小测：试卷 + 本人提交/等级（不含分数） */
+    @GetMapping("/unit-quiz/{lessonId}")
+    public ApiResponse<Map<String, Object>> unitQuiz(@PathVariable Long lessonId) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可作答单元小测");
+        }
+        return ApiResponse.ok(unitQuizService.studentBundle(lessonId, user));
+    }
+
+    @PostMapping("/unit-quiz/{lessonId}/submit")
+    public ApiResponse<Map<String, Object>> submitUnitQuiz(@PathVariable Long lessonId,
+                                                           @RequestBody(required = false) Map<String, Object> body) {
+        SysUser user = authService.currentUser();
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new BusinessException(403, "仅学生可提交单元小测");
+        }
+        return ApiResponse.ok("提交成功", unitQuizService.submit(lessonId, user, body));
     }
 
     /** 班级学习大屏：本班排行 + 本课环节完成人数 */

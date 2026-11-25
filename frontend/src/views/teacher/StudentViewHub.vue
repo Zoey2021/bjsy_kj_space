@@ -9,6 +9,11 @@
 
     <div class="tw-body">
       <div class="cards">
+        <button type="button" class="entry-card" @click="router.push('/teacher/tech-world/scratch')">
+          <span class="entry-icon">🧩</span>
+          <b>编程作品社区</b>
+          <span>上传作品供学生在线玩耍与点赞；也可审核学生投稿。</span>
+        </button>
         <button type="button" class="entry-card" @click="router.push('/teacher/tech-world/mall')">
           <span class="entry-icon">🎁</span>
           <b>积分商城</b>
@@ -64,7 +69,7 @@ const router = useRouter()
 }
 .cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 .entry-card {

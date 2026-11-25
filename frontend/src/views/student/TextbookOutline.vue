@@ -46,6 +46,7 @@ import {
   isDownVolumeLocked,
   GRADE_ACCESS
 } from '../../utils/cohortGradeAccess'
+import { isUnitQuizLesson, studentUnitQuizPath } from '../../utils/unitQuiz'
 const route = useRoute()
 const router = useRouter()
 const tree = ref(null)
@@ -101,7 +102,13 @@ const guardGradeAccess = async () => {
 onMounted(load)
 watch(() => route.params.gradeId, load)
 
-const goLesson = (lesson) => router.push(`/student/lesson/${lesson.id}`)
+const goLesson = (lesson) => {
+  if (isUnitQuizLesson(lesson)) {
+    router.push(studentUnitQuizPath(lesson.id))
+    return
+  }
+  router.push(`/student/lesson/${lesson.id}`)
+}
 const goSchoolLesson = (lesson) => {
   const ppt = resolveSchoolPptUrl(lesson)
   openSchoolPpt(ppt)

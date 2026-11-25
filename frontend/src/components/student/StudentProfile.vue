@@ -12,7 +12,8 @@
         </button>
       </template>
       <template v-else>
-        <DigitalAvatar :figure="figure" :hair="equipped.hair" :outfit="equipped.outfit" :extra="equipped.extra" />
+        <DigitalAvatar :figure="figure" :hair="look.hair" :outfit="look.outfit" :extra="look.extra" />
+        <p v-if="trying" class="try-tip">正在试穿「{{ trying.name }}」</p>
         <div class="switch">
           <button type="button" :class="{ on: figure === 'boy' }" @click="pick('boy')">男生</button>
           <button type="button" :class="{ on: figure === 'girl' }" @click="pick('girl')">女生</button>
@@ -31,6 +32,7 @@
 
     <section v-if="figure" class="shop">
       <h3>装扮 · 可兑 {{ points }} 积分</h3>
+      <p class="shop-hint">点一下先试穿；还没拥有的装扮会询问是否兑换，确认后才扣积分。</p>
       <div v-for="group in groups" :key="group.slot" class="slot">
         <div class="slot-name">{{ group.label }}</div>
         <button
@@ -38,7 +40,10 @@
           :key="item.id"
           type="button"
           class="item"
-          :class="{ on: equipped[group.slot] === item.id }"
+          :class="{
+            on: equipped[group.slot] === item.id,
+            try: trying && trying.id === item.id
+          }"
           :disabled="busy"
           @click="wear(item)"
         >
@@ -53,7 +58,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { chooseAvatarFigure, equipAvatarItem, getStudentAvatar } from '../../api'
 import { avatarItemSrc } from '../../utils/avatarLook'
 import DigitalAvatar from './DigitalAvatar.vue'
@@ -69,6 +74,8 @@ const loading = ref(false)
 const busy = ref(false)
 const figure = ref('')
 const equipped = ref({ hair: '', outfit: '', extra: '' })
+const look = ref({ hair: '', outfit: '', extra: '' })
+const trying = ref(null)
 const catalog = ref([])
 const owned = ref([])
 const points = ref(0)
@@ -87,11 +94,19 @@ const groups = computed(() => ['hair', 'outfit', 'extra'].map((slot) => ({
   items: catalog.value.filter((item) => item.figure === figure.value && item.slot === slot)
 })))
 
+const isOwned = (item) => !!(item.owned || owned.value.includes(item.id) || !item.cost)
+
 const labelOf = (item) => {
+  if (trying.value?.id === item.id) return '试穿中'
   if (equipped.value[item.slot] === item.id) return '穿着中'
-  if (item.owned || owned.value.includes(item.id) || !item.cost) return '换上'
+  if (isOwned(item)) return '换上'
   if (points.value < item.cost) return `还差 ${item.cost - points.value} 分`
-  return `${item.cost} 积分`
+  return `${item.cost} 积分 · 可试穿`
+}
+
+const syncLook = (slots) => {
+  look.value = { hair: '', outfit: '', extra: '', ...(slots || {}) }
+  trying.value = null
 }
 
 const apply = (data) => {
@@ -103,6 +118,7 @@ const apply = (data) => {
   }
   figure.value = data.figure || ''
   equipped.value = { hair: '', outfit: '', extra: '', ...(data.equipped || {}) }
+  syncLook(equipped.value)
   catalog.value = data.catalog || []
   owned.value = data.owned || []
   points.value = Number(data.redeemablePoints || 0)
@@ -131,6 +147,7 @@ const pick = async (next) => {
   if (preview.value) {
     figure.value = next
     equipped.value = defaultsFor(next)
+    syncLook(equipped.value)
     return
   }
   busy.value = true
@@ -142,23 +159,67 @@ const pick = async (next) => {
   }
 }
 
+const tryOn = (item) => {
+  look.value = { ...look.value, [item.slot]: item.id }
+  trying.value = item
+}
+
+const revertTryOn = () => {
+  syncLook(equipped.value)
+}
+
+const confirmRedeem = async (item) => {
+  try {
+    await ElMessageBox.confirm(
+      `正在试穿「${item.name}」。确定用 ${item.cost} 积分兑换并穿上吗？可兑积分会减少，星星和等级还在。`,
+      '兑换确认',
+      { type: 'warning', confirmButtonText: '确定兑换', cancelButtonText: '先不换' }
+    )
+    return true
+  } catch {
+    return false
+  }
+}
+
 const wear = async (item) => {
-  if (equipped.value[item.slot] === item.id) return
+  if (busy.value) return
   if (preview.value) {
+    look.value = { ...look.value, [item.slot]: item.id }
     equipped.value = { ...equipped.value, [item.slot]: item.id }
+    trying.value = null
     ElMessage.success(`教师查看：已换上「${item.name}」，不会扣积分。`)
     return
   }
-  const have = item.owned || owned.value.includes(item.id) || !item.cost
-  if (!have && points.value < item.cost) {
-    ElMessage.info(`还差 ${item.cost - points.value} 积分才能换上「${item.name}」。`)
+
+  // 点回当前穿着：取消试穿，恢复已保存形象
+  if (equipped.value[item.slot] === item.id && isOwned(item)) {
+    if (trying.value) revertTryOn()
     return
   }
+
+  // 先试穿到形象上
+  tryOn(item)
+
+  const have = isOwned(item)
+  if (!have) {
+    if (points.value < item.cost) {
+      ElMessage.info(`还差 ${item.cost - points.value} 积分才能兑换「${item.name}」。可以先看看试穿效果。`)
+      return
+    }
+    const ok = await confirmRedeem(item)
+    if (!ok) {
+      revertTryOn()
+      return
+    }
+  }
+
   busy.value = true
   try {
     const res = await equipAvatarItem(item.id)
     apply(res.data)
     if (res.data?.message) ElMessage.success(res.data.message)
+  } catch {
+    revertTryOn()
   } finally {
     busy.value = false
   }
@@ -176,6 +237,18 @@ onMounted(load)
   align-items: start;
 }
 .preview-note { margin: 8px 0 0; color: #0f766e; }
+.try-tip {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #b45309;
+}
+.shop-hint {
+  margin: -4px 0 4px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
 .stage {
   display: flex;
   flex-direction: column;
@@ -200,6 +273,13 @@ onMounted(load)
   cursor: pointer;
 }
 .switch button.on, .item.on { background: #eef2ff; border-color: #818cf8; color: #3730a3; }
+.item.try {
+  background: #fff7ed;
+  border-color: #fb923c;
+  color: #9a3412;
+  box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.25);
+}
+.item.try small { color: #c2410c; }
 .id-card, .shop {
   background: #f8fafc;
   border-radius: 16px;

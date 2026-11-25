@@ -64,6 +64,8 @@ public class SecurityConfig {
                 .antMatchers("/api/auth/login").permitAll()
                 .antMatchers("/api/auth/dingtalk/**").permitAll()
                 .antMatchers("/api/auth/class-code/**").permitAll()
+                // 已发布 Scratch 作品文件：播放器 iframe 内 fetch 不带登录头，需公开可读
+                .antMatchers(HttpMethod.GET, "/api/scratch/projects/*/sb3").permitAll()
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
             .and()

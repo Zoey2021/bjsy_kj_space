@@ -1129,13 +1129,10 @@ public class DashboardService {
         if (node == null) {
             return "";
         }
-        String voteLabel = node.path("voteLabel").asText("").trim();
-        String voteChoice = node.path("voteChoice").asText("").trim().toUpperCase();
-        if (StringUtils.hasText(voteChoice) || StringUtils.hasText(voteLabel)) {
-            if (StringUtils.hasText(voteChoice) && StringUtils.hasText(voteLabel)) {
-                return voteChoice + " · " + voteLabel;
-            }
-            return StringUtils.hasText(voteLabel) ? voteLabel : voteChoice;
+        String fromVote = formatVoteTheme(node.path("voteChoice").asText("").trim(),
+                node.path("voteLabel").asText("").trim());
+        if (StringUtils.hasText(fromVote)) {
+            return fromVote;
         }
         String theme = node.path("surveyTheme").asText("").trim();
         if (StringUtils.hasText(theme)) {
@@ -1144,6 +1141,26 @@ public class DashboardService {
         String openIdea = node.path("openIdea").asText("").trim();
         if (StringUtils.hasText(openIdea)) {
             return openIdea;
+        }
+        JsonNode drafts = node.path("activityDrafts");
+        if (drafts.isObject()) {
+            String[] draftKeys = {"4", "3", "2", "1"};
+            for (String key : draftKeys) {
+                JsonNode extra = drafts.path(key).path("extra");
+                String draftVote = formatVoteTheme(extra.path("voteChoice").asText("").trim(),
+                        extra.path("voteLabel").asText("").trim());
+                if (StringUtils.hasText(draftVote)) {
+                    return draftVote;
+                }
+                String draftTheme = extra.path("surveyTheme").asText("").trim();
+                if (StringUtils.hasText(draftTheme)) {
+                    return draftTheme;
+                }
+                String draftIdea = extra.path("openIdea").asText("").trim();
+                if (StringUtils.hasText(draftIdea)) {
+                    return draftIdea;
+                }
+            }
         }
         JsonNode fields = node.path("activityDrafts").path("3").path("fields");
         if (fields.isArray()) {
@@ -1157,6 +1174,18 @@ public class DashboardService {
             }
         }
         return "";
+    }
+
+    private String formatVoteTheme(String voteChoice, String voteLabel) {
+        String choice = voteChoice == null ? "" : voteChoice.trim().toUpperCase();
+        String label = voteLabel == null ? "" : voteLabel.trim();
+        if (!StringUtils.hasText(choice) && !StringUtils.hasText(label)) {
+            return "";
+        }
+        if (StringUtils.hasText(choice) && StringUtils.hasText(label)) {
+            return choice + " · " + label;
+        }
+        return StringUtils.hasText(label) ? label : choice;
     }
 
     private JsonNode parseContentJson(LearnSubmission sub) {

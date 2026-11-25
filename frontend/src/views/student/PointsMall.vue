@@ -70,25 +70,13 @@
       </div>
     </section>
 
-    <MallGiftGrid
-      mode="apply"
-      :items="data.items || []"
-      :apply-open="!!data.applyOpen"
-      :redeemable-points="spendable"
-      :applying="applying"
-      @apply="onApply"
-    />
+    <section class="coming-soon" aria-live="polite">
+      <p>正在与学校星动力对接开发中，敬请期待！</p>
+    </section>
 
     <h3 class="sec-title">我的兑换记录</h3>
     <el-table :data="data.orders || []" stripe empty-text="还没有兑换记录">
-      <el-table-column label="奖品" min-width="180">
-        <template #default="{ row }">
-          <span class="order-item">
-            <img v-if="mallIconSrc(row)" class="order-thumb" :src="mallIconSrc(row)" :alt="row.itemName" />
-            <span>{{ row.itemName }}</span>
-          </span>
-        </template>
-      </el-table-column>
+      <el-table-column prop="itemName" label="奖品" min-width="180" />
       <el-table-column prop="points" label="扣除积分" width="110" />
       <el-table-column label="状态" width="100">
         <template #default>已申请</template>
@@ -102,14 +90,10 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { getStudentMall, redeemMallItem } from '../../api'
-import MallGiftGrid from '../../components/points/MallGiftGrid.vue'
-import { mallIconSrc } from '../../constants/mallIcons'
+import { getStudentMall } from '../../api'
 import { growthFromPoints, parkMinutes } from '../../utils/growthLevel'
 
 const loading = ref(false)
-const applying = ref(false)
 const data = ref({})
 const studentName = computed(() => data.value.studentName || localStorage.getItem('realName') || '同学')
 const spendable = computed(() => Number(data.value.redeemablePoints || 0))
@@ -127,59 +111,17 @@ const load = async () => {
     const res = await getStudentMall()
     data.value = res.data || {}
   } catch {
-    if (import.meta.env.DEV && !(data.value.items || []).length) {
+    if (import.meta.env.DEV) {
       data.value = {
         studentName: localStorage.getItem('realName') || '同学',
         redeemablePoints: 15,
         earnedPoints: 15,
         applyOpen: false,
-        items: [
-          { id: 1, code: 'star_future_2', name: '星未来积分2', cost: 80 },
-          { id: 2, code: 'snack', name: '零食1份', cost: 160 },
-          { id: 3, code: 'stationery', name: '文具1份', cost: 160 },
-          { id: 4, code: 'praise_letter', name: '表扬信', cost: 180 },
-          { id: 5, code: 'milk_tea', name: '奶茶1份', cost: 250 },
-          { id: 6, code: 'info_blindbox', name: '信息盲盒小礼物', cost: 140 }
-        ],
         orders: []
       }
     }
   } finally {
     loading.value = false
-  }
-}
-
-const onApply = async (item) => {
-  if (data.value.preview) {
-    const gap = Number(item.cost || 0) - spendable.value
-    if (gap > 0) {
-      ElMessage.info(`还差 ${gap} 积分就能兑换「${item.name}」。教师查看不会真正扣分。`)
-    } else {
-      ElMessage.info(`教师查看：学生用 ${item.cost} 积分可以兑换「${item.name}」。这里不会真正扣分。`)
-    }
-    return
-  }
-  const gap = Number(item.cost || 0) - spendable.value
-  if (gap > 0) {
-    ElMessage.info(`还差 ${gap} 积分就能兑换「${item.name}」。`)
-    return
-  }
-  try {
-    await ElMessageBox.confirm(
-      `确定用 ${item.cost} 积分兑换「${item.name}」？可兑积分会减少，星星和等级还在。`,
-      '兑换确认',
-      { type: 'warning', confirmButtonText: '确定兑换' }
-    )
-  } catch {
-    return
-  }
-  applying.value = true
-  try {
-    await redeemMallItem(item.id)
-    ElMessage.success(`兑换成功！用 ${item.cost} 积分换到「${item.name}」。`)
-    await load()
-  } finally {
-    applying.value = false
   }
 }
 
@@ -258,11 +200,19 @@ onMounted(load)
 .legend-step span { color: #94a3b8; font-weight: 700; }
 .legend-step svg { width: 22px; height: 22px; flex: none; }
 .sec-title { margin: 22px 0 10px; font-size: 16px; }
-.order-item { display: inline-flex; align-items: center; gap: 8px; }
-.order-thumb {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  object-fit: cover;
+.coming-soon {
+  margin: 8px 0 4px;
+  padding: 36px 24px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  border: 1px dashed #c7d2fe;
+  text-align: center;
+}
+.coming-soon p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #4338ca;
+  line-height: 1.7;
 }
 </style>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>六年级上册 第一单元《算法的实现》单元测试卷（教师用卷·诊断版）</title>
+<style>
+  @page { size: A4 portrait; margin: 14mm 13mm 13mm 13mm; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#eef1f5; color:#1a1a1a;
+         font-family:"PingFang SC","Songti SC","STSong","Microsoft YaHei",serif;
+         font-size:9.6pt; line-height:1.6; }
+  .sheet { width:210mm; min-height:297mm; margin:16px auto; padding:14mm 13mm 13mm 13mm;
+           background:#fff; box-shadow:0 2px 18px rgba(0,0,0,.10); }
+  h1 { text-align:center; font-size:16pt; margin:0 0 2mm; }
+  .sub { text-align:center; color:#555; font-size:9.2pt; margin:0 0 5mm; }
+  h2 { font-size:12pt; margin:6mm 0 2.5mm; padding:1.4mm 0 1.4mm 2.4mm;
+       border-left:4px solid #b04a2b; background:#fdf2ed; page-break-after:avoid; }
+  h2 span { font-size:9pt; font-weight:normal; color:#666; margin-left:3mm; }
+  h3 { font-size:10.5pt; margin:4mm 0 1.5mm; color:#8c3a20; }
+  p { margin:1.5mm 0; }
+  ul,ol { margin:1.5mm 0 2mm; padding-left:6mm; }
+  li { margin:0.8mm 0; }
+  table { border-collapse:collapse; width:100%; font-size:8.8pt; margin:2mm 0 3mm; }
+  th,td { border:1px solid #9aa5b1; padding:1.4mm 1.6mm; vertical-align:top; }
+  th { background:#eef2f7; text-align:left; font-weight:600; }
+  tr { page-break-inside:avoid; }
+  .center { text-align:center; }
+  .key { color:#b02a2a; font-weight:600; }
+  .code { font-family:"SFMono-Regular",Consolas,monospace; background:#f6f7f9;
+          padding:0 1mm; font-size:8.8pt; }
+  .box { border:1px solid #b9c6d8; background:#f5f8fc; padding:2.4mm 3mm; margin:2mm 0; }
+  .box b { color:#1b4f8f; }
+  table.fill td { height:8mm; }
+  table.fill th { background:#f7f7f7; }
+  .tiny { font-size:8.4pt; color:#555; }
+  .cards { display:flex; flex-wrap:wrap; gap:4mm; }
+  .card { width:calc(50% - 2mm); border:1px dashed #888; padding:3mm; font-size:9pt; }
+  .card b { display:block; margin-bottom:2mm; }
+  .toolbar { max-width:210mm; margin:14px auto 0; text-align:right; }
+  .toolbar button { font-size:10pt; padding:6px 16px; border:1px solid #b04a2b;
+                    background:#b04a2b; color:#fff; border-radius:5px; cursor:pointer; }
+  @media print { body{background:#fff;} .sheet{box-shadow:none;margin:0;padding:0;width:auto;min-height:0;}
+                 .toolbar{display:none;} }
+</style>
+</head>
+<body>
+<div class="toolbar"><button onclick="window.print()">打印 / 另存为 PDF</button></div>
+<div class="sheet">
+
+  <h1>六年级上册 第一单元《算法的实现》单元测试卷 · 教师用卷</h1>
+  <p class="sub">诊断版：参考答案 · 双向细目表 · 逐题错因诊断 · 班级统计表 · 讲评补救建议</p>
+
+  <h2>一、这套卷子怎么用（先看这里）<span>诊断逻辑与批改流程</span></h2>
+  <div class="box">
+    <b>命题意图</b>：不是排名，而是定位困难点。全卷 25 个作答点，每一题都对应教材第一单元的一个<b>具体知识点 + 一种常见误区</b>；干扰项全部来自学生真实易错处（<code>=</code> 与 <code>==</code>、枚举边界、变量语义、报错类型、AI 生成代码照单全收等），因此<b>错在哪一题、错成哪个选项，本身就是诊断信息</b>。
+  </div>
+  <ol>
+    <li><b>批改时额外记录两件事</b>：①每道题的错误选项/错误写法；②学生在题号旁画的"<b>?</b>"标记。</li>
+    <li><b>按知识域统计得分率</b>（用第五部分的空白表），而不是只看总分。总分相近的两个学生，薄弱点可能完全不同。</li>
+    <li><b>用"?"标记区分四类学生状态</b>：
+      <table>
+        <tr><th style="width:22%">作答 × 标记</th><th style="width:34%">说明</th><th>处理建议</th></tr>
+        <tr><td>答错 + 未标 ?</td><td class="key">隐性误区：以为自己会，实为概念性错误</td><td>最危险，全班优先讲评，需纠正错误概念</td></tr>
+        <tr><td>答错 + 标 ?</td><td>自知不会，知识有缺口</td><td>小组/个别补救，补完用变式题复测</td></tr>
+        <tr><td>答对 + 标 ?</td><td>靠猜测或记忆不牢，属"假性掌握"</td><td>换情境再测一题，确认真会</td></tr>
+        <tr><td>答对 + 未标 ?</td><td>已掌握</td><td>可安排为同伴讲解员</td></tr>
+      </table>
+    </li>
+    <li><b>记录未完成题号</b>：30 分钟做不完，若集中在第 16、17、19 题，通常说明"读代码速度慢"，也是 D 域（Python 语法与程序阅读）的薄弱信号。</li>
+  </ol>
+  <p><b>薄弱判定阈值</b>：某知识域得分率 ≥85% 为"已掌握"；60%～84% 为"基本掌握、需巩固"；<span class="key">＜60% 判为薄弱，优先补救</span>。多选题另看错因类型：<b>漏选集中</b>＝概念边界模糊（知道一半）；<b>错选集中</b>＝概念性错误或凭感觉作答。</p>
+
+  <h2>二、参考答案<span>满分 100 分 · 建议用时 30 分钟</span></h2>
+  <table>
+    <colgroup><col style="width:7%"><col style="width:12%"><col style="width:7%"><col style="width:12%"><col style="width:7%"><col style="width:12%"><col style="width:7%"><col style="width:12%"><col style="width:7%"><col style="width:17%"></colgroup>
+    <tr><th>题号</th><th>答案</th><th>题号</th><th>答案</th><th>题号</th><th>答案</th><th>题号</th><th>答案</th><th>题号</th><th>答案</th></tr>
+    <tr><td class="center">1</td><td class="center key">C</td><td class="center">2</td><td class="center key">D</td><td class="center">3</td><td class="center key">A</td><td class="center">4</td><td class="center key">B</td><td class="center">5</td><td class="center key">C</td></tr>
+    <tr><td class="center">6</td><td class="center key">A</td><td class="center">7</td><td class="center key">D</td><td class="center">8</td><td class="center key">B</td><td class="center">9</td><td class="center key">C</td><td class="center">10</td><td class="center key">A</td></tr>
+  </table>
+  <table>
+    <colgroup><col style="width:8%"><col style="width:14%"><col style="width:8%"><col style="width:14%"><col style="width:8%"><col style="width:14%"><col style="width:8%"><col style="width:26%"></colgroup>
+    <tr><th>题号</th><th>答案</th><th>题号</th><th>答案</th><th>题号</th><th>答案</th><th>题号</th><th>答案</th></tr>
+    <tr><td class="center">11</td><td class="center key">ABD</td><td class="center">12</td><td class="center key">BC</td><td class="center">13</td><td class="center key">ACD</td><td class="center">14</td><td class="center key">AB</td></tr>
+    <tr><td class="center">15</td><td class="center key">BCD</td><td class="center">16</td><td class="key">（1）每次输入的投票内容（"a"或"b"）<br>（2）1000<br>（3）一直循环、无法结束（死循环），反复要求输入</td><td class="center">17</td><td class="key">（1）36　（2）==　（3）tu + 1</td><td class="center">18 / 19</td><td class="key">18：录入（变量名大小写）错误；语法错误<br>19：（1）<code>cai != da</code>　（2）"小了"</td></tr>
+  </table>
+  <p class="tiny">评分补充：多选漏选得 2 分、错选或不选 0 分。16（1）答"投票给谁/用户输入的一票"均给分；16（3）答"票数不对"不给分（未识别死循环）。17（2）写 <code>=</code> 不给分。19（1）若写成流程图符号 <code>cai ≠ da</code>，建议给 2 分并单独标记：说明循环逻辑理解正确、但未转换为 Python 语法（这是很有价值的诊断信号，不要简单判错）。</p>
+
+  <h2>三、命题双向细目表<span>教材 7 课全覆盖 · 按知识域统计即可定位薄弱点</span></h2>
+  <table>
+    <colgroup><col style="width:6%"><col style="width:26%"><col style="width:19%"><col style="width:8%"><col style="width:12%"><col style="width:29%"></colgroup>
+    <tr><th>域</th><th>知识域</th><th>对应课（教材页）</th><th>题号</th><th>分值</th><th>能力层级分布</th></tr>
+    <tr><td class="center">A</td><td>问题解决的一般过程；算法与程序的关系</td><td>第1课 p2–6、第4课 p14–15</td><td>1、2</td><td class="center">8</td><td>识记 1 题、理解 1 题</td></tr>
+    <tr><td class="center">B</td><td>抽象与建模（变量语义、关键要素、人机交互模型）</td><td>第1课 p3–4、第2课 p7–9、第6课 p25–26</td><td>3、4、14</td><td class="center">12</td><td>识记 1 题、理解 2 题</td></tr>
+    <tr><td class="center">C</td><td>算法设计与控制结构（枚举法、循环、分支）</td><td>第1课 p4–5、第3课 p10–13、第6课 p26–27</td><td>5、6、12、17、19</td><td class="center">32</td><td>识记 1、理解 1、应用 2、分析/迁移 1</td></tr>
+    <tr><td class="center">D</td><td>Python 基础语法与程序阅读</td><td>第4课 p15–17、第7课 p31</td><td>7、8、11、16</td><td class="center">24</td><td>识记 1、应用 2、分析 1</td></tr>
+    <tr><td class="center">E</td><td>程序执行、调试与错误分类</td><td>第5课 p18–21</td><td>9、13、18</td><td class="center">16</td><td>理解 1、识记 1、分析 1</td></tr>
+    <tr><td class="center">F</td><td>AI 辅助实现、算法完善与多组数据验证</td><td>第5课 p22–23、第7课 p28–32</td><td>10、15</td><td class="center">8</td><td>应用 1、理解 1</td></tr>
+    <tr><th colspan="4">合计</th><th class="center">100</th><th>基础识记约 30% · 理解约 30% · 应用与分析约 40%</th></tr>
+  </table>
+  <p class="tiny">交叉说明：11 题同时涉及 E（书写规范）、15 题同时涉及 E（算法必须有输出）、16 题同时涉及 B/C、17 题同时涉及 D、19 题同时涉及 F。统计得分率时以"主域"归一次即可，避免重复计分。</p>
+
+  <h2>四、逐题错因诊断表<span>错成什么样 → 说明哪里不会 → 怎么补</span></h2>
+  <table>
+    <colgroup><col style="width:5%"><col style="width:9%"><col style="width:24%"><col style="width:28%"><col style="width:34%"></colgroup>
+    <tr><th>题</th><th>主域</th><th>高频错答 / 诊断信号</th><th>暴露的困难点</th><th>补救建议（可直接做）</th></tr>
+    <tr><td class="center">1</td><td class="center">A</td><td>选 B（先写程序）、选 A/D（顺序乱）</td><td>把"写代码"当成解题第一步，缺少问题分析意识；不理解四步流程</td><td>用投票情境做四步卡片排序：问题分析 → 抽象建模 → 设计算法 → 验证优化</td></tr>
+    <tr><td class="center">2</td><td class="center">A</td><td>选 A、选 C</td><td>算法与程序概念混同；误以为算法必须依赖计算机</td><td>同一"猜数字"算法分别用自然语言、流程图、Python 描述，对比三者关系</td></tr>
+    <tr><td class="center">3</td><td class="center">B</td><td>选 B（把 i 当 tp）、选 C/D</td><td>变量语义混淆，读不出变量在算法中的角色</td><td>做"变量—含义—初值—何时变化"四栏配对卡（tp / a / b / i）</td></tr>
+    <tr><td class="center">4</td><td class="center">B</td><td>选 C（把 35、94 当关键要素）、选 D</td><td>抽象能力弱：分不清关键要素、已知常量、无关信息</td><td>重画教材 p9"对象—数量—关系"三栏表，用笔圈出可用变量表示的量</td></tr>
+    <tr><td class="center">5</td><td class="center">C</td><td>选 A（兔最多 36 只）、选 D（35 次）</td><td>循环边界与枚举范围对不上，典型 off-by-one</td><td>列表写出 tu = 0,1,…,35,36 时循环是否执行，直观看到"取 0～35 共 36 种"</td></tr>
+    <tr><td class="center">6</td><td class="center">A</td><td>选 D、选 B</td><td>未建立枚举法两要素：范围 + 正确解判断条件</td><td>用"算 24 点""摘录好词好句"举例，让学生自己说出范围与条件</td></tr>
+    <tr><td class="center">7</td><td class="center">D</td><td class="key">选 A（写成 =），或选 C（&lt;&gt;）</td><td>把数学等号迁移到 Python；赋值号与比较运算符混淆（本单元最高频错误）</td><td>并排对比 <code>a = a + 1</code>（赋值）与 <code>if ... == 94:</code>（判断），上机各写一行看报错</td></tr>
+    <tr><td class="center">8</td><td class="center">D</td><td>选 C、D 或空答</td><td>不知道 input() 返回字符串、需 int() 转整型</td><td>IDLE 中输入字符串与数字比较，亲历报错；再补上 int() 观察变化</td></tr>
+    <tr><td class="center">9</td><td class="center">E</td><td>选 B/D（把 NameError 当语法错误）</td><td>读不懂报错信息，无法把报错定位到大小写/变量名</td><td>"报错信息—错误类型—修改方法"三列配对练习（教材 p20–21 三个例子）</td></tr>
+    <tr><td class="center">10</td><td class="center">F</td><td>选 B（照单全收）、选 C（只测一次）</td><td>对 AI 生成代码缺乏核验意识；不会设计覆盖分支的测试数据</td><td>发一段"AI 生成但有错"的猜数字代码让学生找茬，并列出三组测试数据</td></tr>
+    <tr><td class="center">11</td><td class="center">D</td><td>漏选 D、错选 C</td><td>语法规范知识碎片化；大小写敏感未建立；不理解注释不执行</td><td>做一张"Python 书写规范检查清单"（半角标点 / 冒号 / 缩进 / 大小写 / # 注释），上机逐项自查</td></tr>
+    <tr><td class="center">12</td><td class="center">C</td><td>错选 A（范围从 1 开始）、错选 D（找到解就停）</td><td>枚举边界遗漏 0；不理解教材算法会继续枚举到范围结束</td><td>把教材 p12 表格的 35 / 12 / 0 三列补完整，讨论"兔 0 只"是否可能被漏掉</td></tr>
+    <tr><td class="center">13</td><td class="center">E</td><td>错选 B（认为不报错＝正确）</td><td>缺少"逻辑错误"概念，误把能运行等同于结果正确</td><td>给一个能正常运行但条件写错、结果不对的程序，让学生找逻辑错误</td></tr>
+    <tr><td class="center">14</td><td class="center">B</td><td>错选 C、D</td><td>人机交互三环节不清；循环终止条件（cai = da 时结束）搞反</td><td>按"输入 cai — 数据比较 — 输出提示"三栏重画教材 p26 模型表，再对照 p27 流程图</td></tr>
+    <tr><td class="center">15</td><td class="center">F</td><td>错选 A、漏选 B 或 D</td><td>不知道"算法必须有输出"；缺少无解处理与多分支验证意识</td><td>把总脚数改成无解的数据运行，观察"什么都不输出"的问题，再加 jie 变量与提示</td></tr>
+    <tr><td class="center">16</td><td class="center">D</td><td>（1）答成票数；（2）填 1001；（3）答"票数变多/结果错"</td><td>读代码能力弱；不知道循环变量更新（i = i + 1）决定循环能否结束</td><td>逐行标注变量含义，手工跟踪前 3 次循环；删掉 i = i + 1 上机观察死循环</td></tr>
+    <tr><td class="center">17</td><td class="center">C</td><td>（1）填 35；（2）填 =；（3）填 1 或 tu</td><td>代码补全不精确；边界与比较符双重失分；不会写递增</td><td>对照教材 p16 完整代码逐行订正，运行确认输出"23 只鸡，12 只兔"</td></tr>
+    <tr><td class="center">18</td><td class="center">E</td><td>情况二答"逻辑错误"；两空都答"语法错误"</td><td>三类错误（录入 / 语法 / 逻辑）分类不清</td><td>各举一例上机复现：Tu、漏冒号、条件写错，记录三者的报错差异</td></tr>
+    <tr><td class="center">19</td><td class="center">C/F</td><td class="key">（1）写 cai &lt; da / cai = da；（2）答"大了"</td><td>循环条件与分支方向同时混淆；"猜的数小于目标数 → 提示小了"的大小关系反了</td><td>用 da = 55、cai = 50 手工走一遍教材 p27 流程图，再写出代码；追加 75 一组复测</td></tr>
+  </table>
+
+  <h2>五、班级诊断统计表<span>批改后填写 / 可复制到 Excel</span></h2>
+  <table class="fill">
+    <colgroup><col style="width:7%"><col style="width:20%"><col style="width:13%"><col style="width:8%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:19%"></colgroup>
+    <tr><th>域</th><th>知识域</th><th>题号</th><th>满分</th><th>班级均分</th><th>得分率</th><th>薄弱判定<br>（&lt;60% 打 ✓）</th><th>优先级 / 备注</th></tr>
+    <tr><td class="center">A</td><td>问题解决过程、算法与程序</td><td>1、2</td><td class="center">8</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="center">B</td><td>抽象与建模</td><td>3、4、14</td><td class="center">12</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="center">C</td><td>算法设计与控制结构</td><td>5、6、12、17、19</td><td class="center">32</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="center">D</td><td>Python 语法与程序阅读</td><td>7、8、11、16</td><td class="center">24</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="center">E</td><td>执行、调试与错误分类</td><td>9、13、18</td><td class="center">16</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="center">F</td><td>AI 辅助与多组数据验证</td><td>10、15</td><td class="center">8</td><td></td><td></td><td></td><td></td></tr>
+    <tr><th colspan="3">全班最高频错因（写题号 + 错误写法）</th><th colspan="5"></th></tr>
+    <tr><th colspan="3">"答错但没标 ?"人数最多的题（隐性误区）</th><th colspan="5"></th></tr>
+    <tr><th colspan="3">30 分钟未完成人数 / 集中卡住的题号</th><th colspan="5"></th></tr>
+  </table>
+
+  <h2>六、按薄弱域讲评与补救<span>讲评顺序建议：先 C、D，再 E、B，最后 A、F</span></h2>
+  <table>
+    <colgroup><col style="width:8%"><col style="width:38%"><col style="width:54%"></colgroup>
+    <tr><th>若薄弱域</th><th>典型表现</th><th>一节课内可做的补救动作</th></tr>
+    <tr><td class="center">A / B</td><td>审题后直接写代码；说不清变量代表什么；把已知数当关键要素</td><td>暂停写代码，回到"问题分析 → 抽象建模"：用卡片/表格把对象、数量、关系摆出来，先口头说清算法，再动笔</td></tr>
+    <tr><td class="center">C</td><td>循环边界总差 1；判断条件写反；流程图与代码对不上</td><td>用"手工跟踪表"逐轮记录变量值（tu、ji、总脚数），把流程图每一步对应到代码行；先读后写</td></tr>
+    <tr><td class="center">D</td><td><code>=</code>/<code>==</code> 混用、漏冒号与缩进、字符串直接比大小、看不懂代码</td><td>不靠背语法：发"规范检查清单"＋一段埋了 5 处错的代码，上机逐一订正到能运行，形成肌肉记忆</td></tr>
+    <tr><td class="center">E</td><td>见到报错就举手等答案；认为不报错就对了</td><td>教师故意埋三类错误，让学生根据报错信息填"错误类型—位置—改法"三列表</td></tr>
+    <tr><td class="center">F</td><td>AI 给什么就交什么；只测一次就下结论</td><td>讲清提示词三要素（明确程序设计语言 / 清晰描述算法 / 说明验证要求），并要求每组提交"偏大、偏小、相等、无解"四类测试用例</td></tr>
+  </table>
+  <div class="box">
+    <b>复测建议</b>：讲评后 3～5 天，用同一知识点换情境出 5 题小测（如把"投票"换成"统计班级图书借阅"、把"鸡兔同笼"换成"百钱买百鸡"、把"猜数字"目标数改成 1～50），重点看原先"答错且未标 ?"的学生是否真正转变。若 C、D 两域仍低于 60%，说明需要先补"读代码"而不是继续加新题。
+  </div>
+
+  <h2>七、学生个人诊断卡<span>可裁剪，一人一张，随卷发回</span></h2>
+  <div class="cards">
+    <div class="card"><b>《算法的实现》单元诊断卡</b>
+      姓名 <u>　　　　　　</u>　总分 <u>　　　　</u><br>
+      A <u>　　</u> /8　B <u>　　</u> /12　C <u>　　</u> /32<br>
+      D <u>　　</u> /24　E <u>　　</u> /16　F <u>　　</u> /8<br>
+      最需要补的一个知识点：<u>　　　　　　　　　　</u><br>
+      错得最可惜的一题：<u>　　　　</u>，原因是 <u>　　　　　　</u><br>
+      老师的一句话建议：<u>　　　　　　　　　　　　　</u>
+    </div>
+    <div class="card"><b>《算法的实现》单元诊断卡</b>
+      姓名 <u>　　　　　　</u>　总分 <u>　　　　</u><br>
+      A <u>　　</u> /8　B <u>　　</u> /12　C <u>　　</u> /32<br>
+      D <u>　　</u> /24　E <u>　　</u> /16　F <u>　　</u> /8<br>
+      最需要补的一个知识点：<u>　　　　　　　　　　</u><br>
+      错得最可惜的一题：<u>　　　　</u>，原因是 <u>　　　　　　</u><br>
+      老师的一句话建议：<u>　　　　　　　　　　　　　</u>
+    </div>
+  </div>
+
+  <h2>附：题目与教材页对应<span>便于按课回查</span></h2>
+  <p class="tiny">第1课 算法与问题解决（p2–6）→ 1、3、11、16｜第2课 抽象与建模（p7–9）→ 4｜第3课 算法设计（p10–13）→ 5、6、12、17｜第4课 用程序设计语言描述算法（p14–17）→ 2、7、11、17｜第5课 算法的执行（p18–23）→ 9、11、13、15、18｜第6课 "猜数字"算法设计（p24–27）→ 14、19｜第7课 用人工智能辅助算法实现（p28–32）→ 8、10、11、15、19</p>
+  <p class="tiny">命题依据：浙江教育出版社《信息科技 六年级上册》（2026 培训专用）第一单元"算法的实现"，教材页 2–32；单元学习目标为"知道实现算法的一般步骤 / 理解算法与程序的关系 / 利用算法与程序解决简单问题"。</p>
+
+</div>
+</body>
+</html>

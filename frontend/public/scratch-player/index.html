@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scratch 在线体验</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0f172a; color: #e2e8f0; font-family: "PingFang SC", "Microsoft YaHei", sans-serif; overflow: hidden; }
+    .wrap { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+    .bar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 8px 12px; background: #020617; border-bottom: 1px solid #1f2937; font-size: 13px;
+      flex: 0 0 auto;
+    }
+    .bar button {
+      border: 0; border-radius: 8px; padding: 6px 12px; font-weight: 700; cursor: pointer;
+      background: #22c55e; color: #052e16;
+    }
+    .bar button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .bar button.stop { background: #ef4444; color: #fff; }
+    .status { color: #94a3b8; }
+    #stage {
+      flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+      background: #000; position: relative; padding: 0;
+      width: 100%;
+    }
+    #container {
+      position: relative;
+      flex: none;
+      width: 480px;
+      height: 360px;
+      background: #111;
+      box-shadow: 0 0 0 1px #1f2937;
+      overflow: hidden;
+    }
+    #container > * { width: 100% !important; height: 100% !important; }
+    .err {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      padding: 24px; text-align: center; line-height: 1.7; color: #fecaca; background: rgba(0,0,0,.78);
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="bar">
+      <button type="button" id="btn-flag" disabled>▶ 开始</button>
+      <button type="button" id="btn-stop" class="stop" disabled>■ 停止</button>
+      <span class="status" id="status">正在准备播放器…</span>
+    </div>
+    <div id="stage">
+      <div id="container"></div>
+    </div>
+  </div>
+
+  <script src="./scaffolding-min.js"></script>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var sb3 = params.get('sb3') || '';
+      var origin = (params.get('origin') || location.origin || '').replace(/\/$/, '');
+      var statusEl = document.getElementById('status');
+      var btnFlag = document.getElementById('btn-flag');
+      var btnStop = document.getElementById('btn-stop');
+      var stage = document.getElementById('stage');
+      var container = document.getElementById('container');
+      var scaffolding = null;
+
+      function setStatus(t) { statusEl.textContent = t; }
+      function showError(msg) {
+        var box = document.createElement('div');
+        box.className = 'err';
+        box.textContent = msg;
+        stage.appendChild(box);
+      }
+      function absoluteUrl(path) {
+        if (!path) return '#';
+        if (path.indexOf('http') === 0) return path;
+        if (path.charAt(0) === '/') return location.origin + path;
+        return origin + '/' + path;
+      }
+      function authHeaders() {
+        var headers = {};
+        try {
+          var t = localStorage.getItem('token');
+          if (t) headers['Authorization'] = 'Bearer ' + t;
+        } catch (e) {}
+        return headers;
+      }
+
+      function fitStage() {
+        var pad = 8;
+        var availW = Math.max(160, stage.clientWidth - pad * 2);
+        var availH = Math.max(120, stage.clientHeight - pad * 2);
+        var w = availW;
+        var h = w * 0.75;
+        if (h > availH) {
+          h = availH;
+          w = h * (4 / 3);
+        }
+        container.style.width = Math.floor(w) + 'px';
+        container.style.height = Math.floor(h) + 'px';
+        if (scaffolding) {
+          try { scaffolding.relayout(); } catch (e) {}
+        }
+      }
+
+      if (!sb3) {
+        setStatus('缺少作品地址');
+        showError('没有找到作品文件。');
+        return;
+      }
+      if (typeof Scaffolding === 'undefined') {
+        setStatus('播放器加载失败');
+        showError('本站 Scratch 播放器脚本未能加载，请强制刷新后重试。');
+        return;
+      }
+
+      var projectUrl = absoluteUrl(sb3);
+
+      fitStage();
+      scaffolding = new Scaffolding.Scaffolding();
+      scaffolding.setup();
+      scaffolding.appendTo(container);
+      fitStage();
+
+      btnFlag.onclick = function () {
+        try { scaffolding.greenFlag(); } catch (e) {}
+      };
+      btnStop.onclick = function () {
+        try { scaffolding.stopAll(); } catch (e) {}
+      };
+
+      setStatus('正在加载作品…');
+      fetch(projectUrl, { credentials: 'same-origin', headers: authHeaders(), cache: 'no-store' })
+        .then(function (res) {
+          if (!res.ok) {
+            if (res.status === 404) throw new Error('作品文件不存在（可能上传未成功，请老师重新上传）');
+            if (res.status === 401 || res.status === 403) throw new Error('请重新登录后再试玩');
+            throw new Error('作品文件读取失败（HTTP ' + res.status + '）');
+          }
+          return res.arrayBuffer();
+        })
+        .then(function (buf) {
+          if (!buf || buf.byteLength < 64) throw new Error('作品文件为空或损坏');
+          setStatus('正在解析作品…');
+          return scaffolding.loadProject(buf);
+        })
+        .then(function () {
+          btnFlag.disabled = false;
+          btnStop.disabled = false;
+          fitStage();
+          setStatus('加载完成，点「开始」体验');
+          try { scaffolding.greenFlag(); setStatus('正在运行'); } catch (e) {}
+          setTimeout(fitStage, 50);
+          setTimeout(fitStage, 300);
+        })
+        .catch(function (err) {
+          setStatus('加载失败');
+          var msg = (err && err.message) ? err.message : '无法打开这个 Scratch 作品';
+          if (msg === 'Failed to fetch' || /NetworkError/i.test(msg)) {
+            msg = '无法加载作品文件，请检查网络后刷新重试。';
+          }
+          showError(msg);
+        });
+
+      window.addEventListener('resize', fitStage);
+      if (window.ResizeObserver) {
+        try { new ResizeObserver(fitStage).observe(stage); } catch (e) {}
+      }
+    })();
+  </script>
+</body>
+</html>

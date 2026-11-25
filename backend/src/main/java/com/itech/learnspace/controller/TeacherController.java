@@ -17,6 +17,7 @@ import com.itech.learnspace.service.PointsMallService;
 import com.itech.learnspace.service.PretestG4Service;
 import com.itech.learnspace.service.PretestG6Service;
 import com.itech.learnspace.service.ScaffoldService;
+import com.itech.learnspace.service.UnitQuizService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,6 +31,7 @@ public class TeacherController {
     private final ParkService parkService;
     private final PretestG4Service pretestG4Service;
     private final PretestG6Service pretestG6Service;
+    private final UnitQuizService unitQuizService;
     private final AuthService authService;
     private final PointsMallService pointsMallService;
     private final ScaffoldService scaffoldService;
@@ -37,6 +39,7 @@ public class TeacherController {
 
     public TeacherController(NotificationService notificationService, ParkService parkService,
                              PretestG4Service pretestG4Service, PretestG6Service pretestG6Service,
+                             UnitQuizService unitQuizService,
                              AuthService authService, PointsMallService pointsMallService,
                              ScaffoldService scaffoldService,
                              com.itech.learnspace.service.AccountAccessService accountAccessService) {
@@ -44,6 +47,7 @@ public class TeacherController {
         this.parkService = parkService;
         this.pretestG4Service = pretestG4Service;
         this.pretestG6Service = pretestG6Service;
+        this.unitQuizService = unitQuizService;
         this.authService = authService;
         this.pointsMallService = pointsMallService;
         this.scaffoldService = scaffoldService;
@@ -144,6 +148,28 @@ public class TeacherController {
         SysUser teacher = checkTeacher();
         int deleted = pretestG6Service.clearClass(teacher.getId(), teacher.getRole(), classId);
         return ApiResponse.ok("已清空 " + deleted + " 条提交", deleted);
+    }
+
+    /** 单元小测：班级提交与批改情况 */
+    @GetMapping("/unit-quiz/{lessonId}")
+    public ApiResponse<Map<String, Object>> unitQuiz(@PathVariable Long lessonId,
+                                                     @RequestParam Long classId) {
+        SysUser teacher = checkTeacher();
+        return ApiResponse.ok(unitQuizService.teacherOverview(lessonId, classId, teacher.getId(), teacher.getRole()));
+    }
+
+    @PostMapping("/unit-quiz/{lessonId}/grade")
+    public ApiResponse<Map<String, Object>> gradeUnitQuiz(@PathVariable Long lessonId,
+                                                          @RequestBody Map<String, Object> body) {
+        SysUser teacher = checkTeacher();
+        return ApiResponse.ok("批改已保存", unitQuizService.grade(lessonId, teacher.getId(), teacher.getRole(), body));
+    }
+
+    @GetMapping("/unit-quiz/{lessonId}/auto-score")
+    public ApiResponse<Map<String, Object>> autoScoreUnitQuiz(@PathVariable Long lessonId,
+                                                              @RequestParam Long studentId) {
+        SysUser teacher = checkTeacher();
+        return ApiResponse.ok(unitQuizService.autoScore(lessonId, studentId, teacher.getId(), teacher.getRole()));
     }
 
     @GetMapping("/points/rules")

@@ -318,6 +318,7 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getLesson, submitTask, recordVisit, getMyRecords, getMe, getMyPretestG6, getLessonContent } from '../../api'
+import { isUnitQuizLesson, studentUnitQuizPath, teacherUnitQuizPath } from '../../utils/unitQuiz'
 import LessonClassQuiz from '../../components/student/LessonClassQuiz.vue'
 import LessonSelfEvaluation from '../../components/student/LessonSelfEvaluation.vue'
 import LessonQuickNav from '../../components/lesson/LessonQuickNav.vue'
@@ -508,8 +509,12 @@ const appendActivityParams = (path, act) => {
         ? '&v=20261110c'
       : path.includes('/lessons/g6-up-lesson7/')
         ? '&v=20261103b'
+      : path.includes('/lessons/g6-up-lesson8/')
+        ? '&v=20261122b'
       : path.includes('/lessons/g4-up-lesson7/')
         ? '&v=20261105a'
+      : path.includes('/lessons/g4-up-lesson8/')
+        ? '&v=20261117a'
       : path.includes('/lessons/g4-up-lesson5/')
         ? '&v=20261021g'
       : path.includes('/lessons/g4-up-lesson4/')
@@ -625,6 +630,7 @@ const fieldHasContent = (fields) => (fields || []).some((f) => {
 const extraHasProgress = (extra) => !!(
   extra && (extra.tablePassed || extra.modelPassed || extra.sum1 || extra.sum2 || extra.sum3
     || extra.progress || extra.qAll || extra.tableHit
+    || extra.voted || extra.voteChoice || extra.surveyTheme || extra.openIdea
     || (Array.isArray(extra.filled) && extra.filled.length)
     || (Array.isArray(extra.notified) && extra.notified.length))
 )
@@ -1499,6 +1505,25 @@ onMounted(async () => {
   tasks.value = lessonRes.data.tasks || []
   textbookPdfUrl.value = lessonRes.data.textbookPdfUrl || ''
   tasks.value.forEach((t) => { answers[t.id] = {} })
+
+  const quizLike = isUnitQuizLesson(lesson.value)
+    || tasks.value.some((t) => {
+      try {
+        return JSON.parse(t.configJson || '{}').layout === 'unit_quiz'
+      } catch {
+        return false
+      }
+    })
+  if (quizLike) {
+    const lid = lesson.value?.id || route.params.id
+    const gradeId = route.query.gradeId
+    router.replace(
+      isTeacherPreview.value
+        ? teacherUnitQuizPath(lid, gradeId)
+        : studentUnitQuizPath(lid)
+    )
+    return
+  }
 
   if (lessonExpired.value) {
     return
