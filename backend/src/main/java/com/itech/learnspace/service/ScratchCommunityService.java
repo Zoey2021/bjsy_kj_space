@@ -86,20 +86,30 @@ public class ScratchCommunityService {
                 "UPDATE scratch_project SET status = ?, published = 0, updated_at = NOW() "
                         + "WHERE (sb3_path IS NULL OR TRIM(sb3_path) = '')",
                 STATUS_WITHDRAWN);
-        // 江辰兮等内置样例：统一回挂到 scratch-samples，避免 generated 卷旧路径丢失
+        // 江辰兮内置样例：作品名「勇闯星际」、作者 2021级9班、封面图
         if (resolveExistingFile("/scratch-samples/jiangchenxi.sb3") != null) {
+            final String sampleSb3 = "/scratch-samples/jiangchenxi.sb3";
+            final String sampleCover = "/scratch-samples/jiangchenxi-cover.png";
+            final String sampleTitle = "勇闯星际";
+            final String sampleAuthor = "江辰兮";
+            final String sampleClass = "2021级9班";
             int fixed = jdbcTemplate.update(
-                    "UPDATE scratch_project SET sb3_path = ?, status = ?, published = 1, featured = 1, "
+                    "UPDATE scratch_project SET title = ?, author_name = ?, class_name = ?, cover_url = ?, "
+                            + "sb3_path = ?, status = ?, published = 1, featured = 1, "
                             + "reject_reason = NULL, updated_at = NOW() "
-                            + "WHERE title LIKE '%江辰兮%' OR sb3_path = '/scratch-samples/jiangchenxi.sb3'",
-                    "/scratch-samples/jiangchenxi.sb3", STATUS_PUBLISHED);
+                            + "WHERE sb3_path = ? OR title LIKE '%江辰兮%' OR title = ?",
+                    sampleTitle, sampleAuthor, sampleClass, sampleCover,
+                    sampleSb3, STATUS_PUBLISHED, sampleSb3, sampleTitle);
             if (fixed == 0) {
                 Integer n = jdbcTemplate.queryForObject(
                         "SELECT COUNT(*) FROM scratch_project WHERE sb3_path = ?",
-                        Integer.class, "/scratch-samples/jiangchenxi.sb3");
+                        Integer.class, sampleSb3);
                 if (n == null || n == 0) {
-                    insertProject("609班江辰兮", null, "张又予（老师）", null, null,
-                            "/scratch-samples/jiangchenxi.sb3", 1, 1, STATUS_PUBLISHED);
+                    long id = insertProject(sampleTitle, null, sampleAuthor, null, sampleClass,
+                            sampleSb3, 1, 1, STATUS_PUBLISHED);
+                    jdbcTemplate.update(
+                            "UPDATE scratch_project SET cover_url = ?, updated_at = NOW() WHERE id = ?",
+                            sampleCover, id);
                 }
             }
         }
